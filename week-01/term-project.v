@@ -422,6 +422,18 @@ Fixpoint evaluate (ae : arithmetic_expression) : expressible_value :=
               then Expressible_msg (String.append "numerical underflow: -" (string_of_nat (n2 - n1)))
               else Expressible_nat (n1 - n2)
           end
+      end  
+  | Times ae1 ae2 =>
+      match evaluate ae1 with
+      | Expressible_msg s1 =>
+          Expressible_msg s1
+      | Expressible_nat n1 =>
+          match evaluate ae2 with
+          | Expressible_msg s2 =>
+              Expressible_msg s2
+          | Expressible_nat n2 =>
+              Expressible_nat (n1 * n2)
+          end
       end
   end.
 
