@@ -378,7 +378,9 @@ Definition test_evaluate (candidate : arithmetic_expression -> expressible_value
   && (expressible_value_eqb (candidate (Minus (Minus (Literal 4) (Literal 5)) (Literal 5))) (Expressible_msg "numerical underflow: -1"))
   && (expressible_value_eqb (candidate (Plus (Minus (Literal 4) (Literal 5)) (Literal 5))) (Expressible_msg "numerical underflow: -1"))
   && (expressible_value_eqb (candidate (Minus (Literal 5) (Minus (Literal 4) (Literal 5)))) (Expressible_msg "numerical underflow: -1"))
-  && (expressible_value_eqb (candidate (Plus (Literal 5) (Minus (Literal 4) (Literal 5)))) (Expressible_msg "numerical underflow: -1")).
+  && (expressible_value_eqb (candidate (Plus (Literal 5) (Minus (Literal 4) (Literal 5)))) (Expressible_msg "numerical underflow: -1"))
+  && (expressible_value_eqb (candidate (Times (Literal 5) (Minus (Literal 4) (Literal 5)))) (Expressible_msg "numerical underflow: -1"))
+  && (expressible_value_eqb (candidate (Times (Literal 5) (Plus (Literal 4) (Literal 5)))) (Expressible_nat 45)).
 
 Definition test_evaluate_rtl (candidate : arithmetic_expression -> expressible_value) : bool :=
   (expressible_value_eqb (candidate (Minus (Minus (Literal 1) (Literal 5)) (Minus (Literal 1) (Literal 4)))) (Expressible_msg "numerical underflow: -3"))
@@ -391,7 +393,9 @@ Definition test_evaluate_rtl (candidate : arithmetic_expression -> expressible_v
   && (expressible_value_eqb (candidate (Minus (Minus (Literal 4) (Literal 5)) (Literal 5))) (Expressible_msg "numerical underflow: -1"))
   && (expressible_value_eqb (candidate (Plus (Minus (Literal 4) (Literal 5)) (Literal 5))) (Expressible_msg "numerical underflow: -1"))
   && (expressible_value_eqb (candidate (Minus (Literal 5) (Minus (Literal 4) (Literal 5)))) (Expressible_msg "numerical underflow: -1"))
-  && (expressible_value_eqb (candidate (Plus (Literal 5) (Minus (Literal 4) (Literal 5)))) (Expressible_msg "numerical underflow: -1")).
+  && (expressible_value_eqb (candidate (Plus (Literal 5) (Minus (Literal 4) (Literal 5)))) (Expressible_msg "numerical underflow: -1"))
+  && (expressible_value_eqb (candidate (Times (Literal 5) (Minus (Literal 4) (Literal 5)))) (Expressible_msg "numerical underflow: -1"))
+  && (expressible_value_eqb (candidate (Times (Literal 5) (Plus (Literal 4) (Literal 5)))) (Expressible_nat 45)).
 
 Fixpoint evaluate (ae : arithmetic_expression) : expressible_value :=
   match ae with
@@ -467,6 +471,18 @@ Fixpoint evaluate_rtl (ae : arithmetic_expression) : expressible_value :=
               else Expressible_nat (n1 - n2)
           end
       end
+  | Times ae1 ae2 =>
+      match evaluate_rtl ae2 with
+      | Expressible_msg s2 =>
+          Expressible_msg s2
+      | Expressible_nat n2 =>
+          match evaluate_rtl ae1 with
+          | Expressible_msg s1 =>
+              Expressible_msg s1
+          | Expressible_nat n1 =>
+              Expressible_nat (n1 * n2)
+          end
+      end
   end.
 
 Compute (test_evaluate evaluate = true).
@@ -523,6 +539,24 @@ Proof.
   fold_unfold_tactic evaluate.
 Qed.
 
+Lemma fold_unfold_evaluate_Times :
+  forall (ae1 ae2 : arithmetic_expression),
+    evaluate (Times ae1 ae2) =
+      match evaluate ae1 with
+      | Expressible_msg s1 =>
+          Expressible_msg s1
+      | Expressible_nat n1 =>
+          match evaluate ae2 with
+          | Expressible_msg s2 =>
+              Expressible_msg s2
+          | Expressible_nat n2 =>
+              Expressible_nat (n1 * n2)
+          end
+      end.
+Proof.
+  fold_unfold_tactic evaluate.
+Qed.
+
 (* Task 1b interpret *)
 
 Definition test_interpret_alt (candidate : source_program -> expressible_value) : bool:=
@@ -571,25 +605,38 @@ Proof.
         intros ae1 ae2 e1 e2 H_ae1 H_ae2;
         rewrite -> fold_unfold_evaluate_Plus, H_ae1, H_ae2;
         reflexivity.
-
     + split.
-      { 
+      { split.
         intros ae1 ae2 s1 H_ae1.
         rewrite -> fold_unfold_evaluate_Minus.
         rewrite -> H_ae1.
         reflexivity.
-       }
 
+        split.
+        { 
+          intros ae1 ae2 n1 s2 H_ae1 H_ae2.
+          rewrite -> fold_unfold_evaluate_Minus, H_ae1, H_ae2.
+          reflexivity.
+        }
+        
+        split;
+          intros ae1 ae2 n1 n2 H_ae1 H_ae2 H_n1_n2;
+          rewrite -> fold_unfold_evaluate_Minus, H_ae1, H_ae2, H_n1_n2;
+          reflexivity.
+      }
+      
       split.
-      { 
-        intros ae1 ae2 n1 s2 H_ae1 H_ae2.
-        rewrite -> fold_unfold_evaluate_Minus, H_ae1, H_ae2.
+      {
+        intros ae1 ae2 s1 H_ae1.
+        rewrite -> fold_unfold_evaluate_Times.
+        rewrite -> H_ae1.
         reflexivity.
-       }
-
+      }
+      
       split;
-        intros ae1 ae2 n1 n2 H_ae1 H_ae2 H_n1_n2;
-        rewrite -> fold_unfold_evaluate_Minus, H_ae1, H_ae2, H_n1_n2;
+        intros ae1 ae2 e1 e2 H_ae1 H_ae2;
+        rewrite -> fold_unfold_evaluate_Times;
+        rewrite -> H_ae1, H_ae2;
         reflexivity.
 Qed.
 
@@ -615,7 +662,8 @@ Qed.
 Inductive byte_code_instruction : Type :=
   PUSH : nat -> byte_code_instruction
 | ADD : byte_code_instruction
-| SUB : byte_code_instruction.
+| SUB : byte_code_instruction
+| MUL : byte_code_instruction.
 
 (* Target_Program programs: *)
 
@@ -733,7 +781,10 @@ Definition test_decode_execute (candidate : byte_code_instruction -> data_stack 
   && (eqb_result_of_decoding_and_execution (candidate (ADD) (1 :: nil)) (KO "ADD: stack underflow"))
   && (eqb_result_of_decoding_and_execution (candidate (SUB) (nil)) (KO "SUB: stack underflow"))
   && (eqb_result_of_decoding_and_execution (candidate (ADD) (4 :: 3 :: 2 :: 1 :: nil)) (OK (7 :: 2 :: 1 :: nil)))
-  && (eqb_result_of_decoding_and_execution (candidate (SUB) (3 :: 4 :: 2 :: 5 :: nil)) (OK (1 :: 2 :: 5 :: nil))).
+  && (eqb_result_of_decoding_and_execution (candidate (SUB) (3 :: 4 :: 2 :: 5 :: nil)) (OK (1 :: 2 :: 5 :: nil)))
+  && (eqb_result_of_decoding_and_execution (candidate (MUL) (3 :: 4 :: 2 :: 5 :: nil)) (OK (12 :: 2 :: 5 :: nil)))
+.
+
 
 Definition decode_execute (bci : byte_code_instruction) (ds : data_stack) : result_of_decoding_and_execution :=
   match bci with
@@ -760,6 +811,15 @@ Definition decode_execute (bci : byte_code_instruction) (ds : data_stack) : resu
                   OK ((n1 - n2) :: ds'')
               end
           | nil => KO "SUB: stack underflow"
+          end
+      end
+  | MUL =>
+      match ds with
+      | nil => KO "MUL: stack underflow"
+      | n2 :: ds' =>
+          match ds' with
+          | n1 :: ds'' => OK ((n1 * n2) :: ds'')
+          | nil => KO "MUL: stack underflow"
           end
       end
   end.
@@ -1220,7 +1280,10 @@ Definition specification_of_compile_aux (compile_aux : arithmetic_expression -> 
      compile_aux (Plus ae1 ae2) = (compile_aux ae1) ++ (compile_aux ae2) ++ (ADD :: nil))
   /\
   (forall ae1 ae2 : arithmetic_expression,
-     compile_aux (Minus ae1 ae2) = (compile_aux ae1) ++ (compile_aux ae2) ++ (SUB :: nil)).
+      compile_aux (Minus ae1 ae2) = (compile_aux ae1) ++ (compile_aux ae2) ++ (SUB :: nil))
+  /\
+  (forall ae1 ae2 : arithmetic_expression,
+      compile_aux (Times ae1 ae2) = (compile_aux ae1) ++ (compile_aux ae2) ++ (MUL :: nil)).
 
 (* Task 6:
    a. time permitting, prove that the definition above specifies at most one function;
@@ -1239,7 +1302,7 @@ Proposition there_is_at_most_one_compile_aux_function :
 Proof.
   intros compile_aux_1 compile_aux_2 H_compile_aux_1 H_compile_aux_2.
   unfold specification_of_compile_aux in H_compile_aux_1, H_compile_aux_2.
-  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
+  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2].
 
   (* Case 1: Literal*)
   - destruct H_compile_aux_1 as [H_compile_aux_1_Literal_nil [_ _]].
@@ -1257,10 +1320,18 @@ Proof.
     reflexivity.
 
     (* Case 3: Minus *)
-  - destruct H_compile_aux_1 as [_ [_ H_compile_aux_1_Minus]].
-    destruct H_compile_aux_2 as [_ [_ H_compile_aux_2_Minus]].
+  - destruct H_compile_aux_1 as [_ [_ [H_compile_aux_1_Minus _]]].
+    destruct H_compile_aux_2 as [_ [_ [H_compile_aux_2_Minus _]]].
     rewrite -> H_compile_aux_1_Minus.
     rewrite -> H_compile_aux_2_Minus.
+    rewrite -> IHae1.
+    rewrite -> IHae2.
+    reflexivity.
+
+  - destruct H_compile_aux_1 as [_ [_ [_ H_compile_aux_1_Times]]].
+    destruct H_compile_aux_2 as [_ [_ [_ H_compile_aux_2_Times]]].
+    rewrite -> H_compile_aux_1_Times.
+    rewrite -> H_compile_aux_2_Times.
     rewrite -> IHae1.
     rewrite -> IHae2.
     reflexivity.
@@ -1273,6 +1344,7 @@ Fixpoint compile_aux (ae : arithmetic_expression) : list byte_code_instruction :
     | Literal n => PUSH n :: nil
     | Plus ae1 ae2 => compile_aux ae1 ++ compile_aux ae2 ++ (ADD :: nil)
     | Minus ae1 ae2 => compile_aux ae1 ++ compile_aux ae2 ++ (SUB :: nil)
+    | Times ae1 ae2 => compile_aux ae1 ++ compile_aux ae2 ++ (MUL :: nil)
     end.
 
 Definition test_eqb_byte_code_instruction (candidate : byte_code_instruction -> byte_code_instruction -> bool) :=
@@ -1283,7 +1355,11 @@ Definition test_eqb_byte_code_instruction (candidate : byte_code_instruction -> 
   && (Bool.eqb (candidate SUB SUB) true)
   && (Bool.eqb (candidate SUB (PUSH 1)) false)
   && (Bool.eqb (candidate (PUSH 1) (PUSH 1)) true)
-  && (Bool.eqb (candidate (PUSH 2) (PUSH 1)) false).
+  && (Bool.eqb (candidate (PUSH 2) (PUSH 1)) false)
+  && (Bool.eqb (candidate MUL (PUSH 1)) false)
+  && (Bool.eqb (candidate SUB MUL) false)
+.
+
 
 Definition eqb_byte_code_instruction (bci1 bci2 : byte_code_instruction) :=
   match bci1 with
@@ -1308,6 +1384,13 @@ Definition eqb_byte_code_instruction (bci1 bci2 : byte_code_instruction) :=
       | _ =>
           false
       end
+  | MUL =>
+      match bci2 with
+      | MUL =>
+          true
+      | _ =>
+          false
+      end
   end.
 
 Compute (test_eqb_byte_code_instruction eqb_byte_code_instruction).
@@ -1321,7 +1404,9 @@ Definition test_compile_aux (candidate : arithmetic_expression -> (list byte_cod
   && (eqb_list_byte_code_instruction (candidate (Plus (Literal 5) (Literal 2)))
         (PUSH 5 :: PUSH 2 :: ADD :: nil))
   && (eqb_list_byte_code_instruction (candidate (Minus (Literal 5) (Literal 2)))
-        (PUSH 5 :: PUSH 2 :: SUB :: nil)).
+        (PUSH 5 :: PUSH 2 :: SUB :: nil))
+  && (eqb_list_byte_code_instruction (candidate (Times (Literal 5) (Literal 2)))
+        (PUSH 5 :: PUSH 2 :: MUL :: nil)).
 
 Compute (test_compile_aux compile_aux = true).
 
@@ -1351,6 +1436,14 @@ Proof.
   fold_unfold_tactic compile_aux.
 Qed.
 
+Lemma fold_unfold_compile_aux_Times :
+  forall (ae1 ae2 : arithmetic_expression),
+    compile_aux (Times ae1 ae2) =
+       compile_aux ae1 ++ compile_aux ae2 ++ (MUL :: nil).
+Proof.
+  fold_unfold_tactic compile_aux.
+Qed.
+
 Theorem compile_aux_satisfies_the_specification_of_compile_aux :
   specification_of_compile_aux compile_aux.
 Proof.
@@ -1361,8 +1454,11 @@ Proof.
   - split.
     + intros ae1 ae2.
       exact (fold_unfold_compile_aux_Plus ae1 ae2).
-    + intros ae1 ae2.
-      exact (fold_unfold_compile_aux_Minus ae1 ae2).
+    + split.
+      * intros ae1 ae2.
+        exact (fold_unfold_compile_aux_Minus ae1 ae2).
+      * intros ae1 ae2.
+        exact (fold_unfold_compile_aux_Times ae1 ae2).
 Qed.
 
 (*********)
@@ -1390,7 +1486,7 @@ Proposition there_is_at_most_one_compile_function :
 Proof.
   intros compile1 compile2 H_compile1 H_compile2.
   unfold specification_of_compile in H_compile1, H_compile2.
-  case ae as [ n | ae1 ae2 | ae1 ae2 ].
+  case ae as [ n | ae1 ae2 | ae1 ae2 | ae1 ae2 ].
 
   (* Case 1: Literal *)
   - Check (H_compile1 compile_aux compile_aux_satisfies_the_specification_of_compile_aux (Literal n)).
@@ -1409,6 +1505,11 @@ Proof.
   - Check (H_compile1 compile_aux compile_aux_satisfies_the_specification_of_compile_aux (Minus ae1 ae2)).
     rewrite -> (H_compile1 compile_aux compile_aux_satisfies_the_specification_of_compile_aux (Minus ae1 ae2)).
     rewrite -> (H_compile2 compile_aux compile_aux_satisfies_the_specification_of_compile_aux (Minus ae1 ae2)).
+    reflexivity.
+
+  - Check (H_compile1 compile_aux compile_aux_satisfies_the_specification_of_compile_aux (Times ae1 ae2)).
+    rewrite -> (H_compile1 compile_aux compile_aux_satisfies_the_specification_of_compile_aux (Times ae1 ae2)).
+    rewrite -> (H_compile2 compile_aux compile_aux_satisfies_the_specification_of_compile_aux (Times ae1 ae2)).
     reflexivity.
 Qed.
 
@@ -1487,6 +1588,7 @@ Fixpoint compile_alt_aux_aux (ae : arithmetic_expression) (a : list byte_code_in
   | Literal n => PUSH n :: a
   | Plus ae1 ae2 => compile_alt_aux_aux ae1 (compile_alt_aux_aux ae2 (ADD :: a))
   | Minus ae1 ae2 => compile_alt_aux_aux ae1 (compile_alt_aux_aux ae2 (SUB :: a))
+  | Times ae1 ae2 => compile_alt_aux_aux ae1 (compile_alt_aux_aux ae2 (MUL :: a))
   end.
 
 Lemma fold_unfold_compile_alt_aux_aux_Literal :
@@ -1516,6 +1618,15 @@ Proof.
   fold_unfold_tactic compile_alt_aux_aux.
 Qed.
 
+Lemma fold_unfold_compile_alt_aux_aux_Times :
+  forall (ae1 ae2 : arithmetic_expression)
+         (a : list byte_code_instruction),
+    compile_alt_aux_aux (Times ae1 ae2) a =
+      compile_alt_aux_aux ae1 (compile_alt_aux_aux ae2 (MUL :: a)).
+Proof.
+  fold_unfold_tactic compile_alt_aux_aux.
+Qed.
+
 Lemma about_compile_alt_aux_aux :
   forall (ae : arithmetic_expression)
          (a : list byte_code_instruction),
@@ -1525,7 +1636,7 @@ Proof.
            let a := (PUSH 50 :: PUSH 20 :: nil) in
            compile_alt_aux_aux ae a = (compile_alt_aux_aux ae nil) ++ a).
   intro ae.
-  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intro a.
+  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intro a.
   - rewrite -> 2(fold_unfold_compile_alt_aux_aux_Literal).
     rewrite -> fold_unfold_list_append_cons.
     rewrite -> fold_unfold_list_append_nil.
@@ -1548,6 +1659,16 @@ Proof.
     rewrite -> app_assoc_reverse.
     rewrite -> (IHae2 (SUB :: a)).
     rewrite -> (IHae2 (SUB :: nil)).
+    rewrite -> app_assoc_reverse.
+    rewrite -> fold_unfold_list_append_cons.
+    rewrite -> fold_unfold_list_append_nil.
+    reflexivity.
+  - rewrite -> 2fold_unfold_compile_alt_aux_aux_Times.
+    rewrite -> (IHae1 (compile_alt_aux_aux ae2 (MUL :: a))).
+    rewrite -> (IHae1 (compile_alt_aux_aux ae2 (MUL :: nil))).
+    rewrite -> app_assoc_reverse.
+    rewrite -> (IHae2 (MUL :: nil)).
+    rewrite -> (IHae2 (MUL :: a)).
     rewrite -> app_assoc_reverse.
     rewrite -> fold_unfold_list_append_cons.
     rewrite -> fold_unfold_list_append_nil.
@@ -1564,7 +1685,7 @@ Lemma about_compile_alt_aux_aux_alt :
 Proof.
   unfold make_Eureka_lemma.
   intro ae.
-  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intro a.
+  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intro a.
   - rewrite -> 2(fold_unfold_compile_alt_aux_aux_Literal).
     rewrite -> fold_unfold_list_append_cons.
     rewrite -> fold_unfold_list_append_nil.
@@ -1587,6 +1708,16 @@ Proof.
     rewrite -> app_assoc_reverse.
     rewrite -> (IHae2 (SUB :: a)).
     rewrite -> (IHae2 (SUB :: nil)).
+    rewrite -> app_assoc_reverse.
+    rewrite -> fold_unfold_list_append_cons.
+    rewrite -> fold_unfold_list_append_nil.
+    reflexivity.
+  - rewrite -> 2fold_unfold_compile_alt_aux_aux_Times.
+    rewrite -> (IHae1 (compile_alt_aux_aux ae2 (MUL :: nil))).
+    rewrite -> (IHae1 (compile_alt_aux_aux ae2 (MUL :: a))).
+    rewrite -> app_assoc_reverse.
+    rewrite -> (IHae2 (MUL :: a)).
+    rewrite -> (IHae2 (MUL :: nil)).
     rewrite -> app_assoc_reverse.
     rewrite -> fold_unfold_list_append_cons.
     rewrite -> fold_unfold_list_append_nil.
@@ -1621,15 +1752,20 @@ Proof.
       rewrite -> (about_compile_alt_aux_aux ae1 (compile_alt_aux_aux ae2 (ADD :: nil))).
       rewrite -> (about_compile_alt_aux_aux ae2 (ADD :: nil)).
       reflexivity.
-    + unfold compile_alt_aux.
-      intros ae1 ae2.
-      rewrite -> fold_unfold_compile_alt_aux_aux_Minus.
-      rewrite -> (about_compile_alt_aux_aux ae1 (compile_alt_aux_aux ae2 (SUB :: nil))).
-      rewrite -> (about_compile_alt_aux_aux ae2 (SUB :: nil)).
-      reflexivity.
+    + split.
+      * unfold compile_alt_aux.
+        intros ae1 ae2.
+        rewrite -> fold_unfold_compile_alt_aux_aux_Minus.
+        rewrite -> (about_compile_alt_aux_aux ae1 (compile_alt_aux_aux ae2 (SUB :: nil))).
+        rewrite -> (about_compile_alt_aux_aux ae2 (SUB :: nil)).
+        reflexivity.
+      * unfold compile_alt_aux.
+        intros ae1 ae2.
+        rewrite -> fold_unfold_compile_alt_aux_aux_Times.
+        rewrite -> (about_compile_alt_aux_aux ae1 (compile_alt_aux_aux ae2 (MUL :: nil))).
+        rewrite -> (about_compile_alt_aux_aux ae2 (MUL :: nil)).
+        reflexivity.
 Qed.
-
-Check (compile_aux).
 
 Theorem compile_aux_and_compile_alt_aux_are_equivalent :
   forall ae : arithmetic_expression,
@@ -1656,7 +1792,7 @@ Lemma about_ae_OK :
         evaluate ae = Expressible_nat n -> fetch_decode_execute_loop (compile_aux ae) ds = OK (n :: ds)).
 Proof.
   intro ae.
-  induction ae as [ n' | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intros ds n H_ae.
+  induction ae as [ n' | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intros ds n H_ae.
   - rewrite -> fold_unfold_compile_aux_Literal.
     rewrite -> fold_unfold_fetch_decode_execute_loop_cons.
     unfold decode_execute.
@@ -1704,6 +1840,22 @@ Proof.
         reflexivity.
     + discriminate H_ae.
     + discriminate H_ae.
+  - rewrite -> fold_unfold_compile_aux_Times.
+    rewrite -> fetch_decode_execute_loop_concatenation_v1.
+    rewrite -> fold_unfold_evaluate_Times in H_ae.
+    case (evaluate ae1) as [ n1 | s1 ] eqn:H_ev_ae1.
+    case (evaluate ae2) as [ n2 | s2 ] eqn:H_ev_ae2.
+    + rewrite -> (IHae1 ds n1 eq_refl).
+      rewrite -> fetch_decode_execute_loop_concatenation_v1.
+      rewrite -> (IHae2 (n1 :: ds) n2 eq_refl).
+      rewrite -> fold_unfold_fetch_decode_execute_loop_cons.
+      unfold decode_execute.
+      rewrite -> fold_unfold_fetch_decode_execute_loop_nil.
+      injection H_ae as eq_mul_n1_n2_n.
+      rewrite -> eq_mul_n1_n2_n.
+      reflexivity.
+    + discriminate H_ae.
+    + discriminate H_ae.
 Qed.
 
 Lemma about_ae_KO :
@@ -1713,7 +1865,7 @@ Lemma about_ae_KO :
         evaluate ae = Expressible_msg s -> fetch_decode_execute_loop (compile_aux ae) ds = KO s).
 Proof.
   intro ae.
-  induction ae as [ n' | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intros ds s H_ae.
+  induction ae as [ n' | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intros ds s H_ae.
   - rewrite -> fold_unfold_evaluate_Literal in H_ae.
     discriminate H_ae.
   - rewrite -> fold_unfold_compile_aux_Plus.
@@ -1764,6 +1916,19 @@ Proof.
       rewrite -> (IHae1 ds s1 eq_refl).
       injection H_ae as eq_s1_s.
       rewrite -> eq_s1_s.
+      reflexivity.
+  - rewrite -> fold_unfold_compile_aux_Times.
+    rewrite -> fetch_decode_execute_loop_concatenation_v1.
+    rewrite -> fold_unfold_evaluate_Times in H_ae.
+    case (evaluate ae1) as [ n1 | s1 ] eqn:H_ev_ae1.
+    case (evaluate ae2) as [ n2 | s2 ] eqn:H_ev_ae2.
+    + discriminate H_ae.
+    + rewrite -> (about_ae_OK ae1 ds n1 H_ev_ae1).
+      rewrite -> fetch_decode_execute_loop_concatenation_v1.
+      rewrite -> (IHae2 (n1 :: ds) s H_ae).
+      reflexivity.
+    + Check (IHae1 ds s H_ae).
+      rewrite -> (IHae1 ds s H_ae).
       reflexivity.
 Qed.
 
