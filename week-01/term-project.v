@@ -2121,6 +2121,20 @@ Proof.
   discriminate H_absurd.
 Qed.
 
+Proposition Literal_0_is_conditionally_absorbing_for_Times_on_the_left :
+  forall ae : arithmetic_expression,
+  forall n : nat,
+  (evaluate ae = Expressible_nat n) ->
+    evaluate (Times (Literal 0) ae) = evaluate (Literal 0).
+  Proof.
+  intros ae n H_ae.
+  rewrite -> fold_unfold_evaluate_Times.
+  rewrite -> fold_unfold_evaluate_Literal.
+  rewrite -> H_ae.
+  rewrite -> Nat.mul_0_l.
+  reflexivity.
+ Qed.
+
 Proposition Literal_0_is_absorbing_for_Times_on_the_right :
   forall ae : arithmetic_expression,
     evaluate (Times ae (Literal 0)) = evaluate (Literal 0).
@@ -2144,6 +2158,20 @@ Proof.
   discriminate H_absurd.
 Qed.
 
+Proposition Literal_0_is_conditionally_absorbing_for_Times_on_the_right :
+  forall ae : arithmetic_expression,
+  forall n : nat,
+  (evaluate ae = Expressible_nat n) ->
+    evaluate (Times ae (Literal 0)) = evaluate (Literal 0).
+  Proof.
+  intros ae n H_ae.
+  rewrite -> fold_unfold_evaluate_Times.
+  rewrite -> fold_unfold_evaluate_Literal.
+  rewrite -> H_ae.
+  rewrite -> Nat.mul_0_r.
+  reflexivity.
+ Qed.
+
 Proposition Times_is_associative :
   forall ae1 ae2 ae3 : arithmetic_expression,
     evaluate (Times ae1 (Times ae2 ae3)) = evaluate (Times (Times ae1 ae2) ae3).
@@ -2159,3 +2187,20 @@ Proof.
     + reflexivity.
   - reflexivity.
 Qed.
+
+Proposition Times_is_commutative :
+  forall ae1 ae2 : arithmetic_expression,
+    evaluate (Times ae1 ae2) = evaluate (Times ae2 ae1).
+Proof.
+  intros ae1 ae2.
+  rewrite -> 2 fold_unfold_evaluate_Times.
+  case (evaluate ae1) as [n1 | s1].
+  + case (evaluate ae2) as [n2 | s2].
+    ++ rewrite -> Nat.mul_comm.
+       reflexivity.
+    ++ reflexivity.
+  + case (evaluate ae2) as [n2 | s2].
+    ++ reflexivity.
+    ++ (* Times is not commutative *)
+Abort.
+
