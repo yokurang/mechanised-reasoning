@@ -407,21 +407,6 @@ Definition binary_tree_flatten_alt (V : Type) (t : binary_tree V) : list V :=
 
 Compute (test_binary_tree_flatten binary_tree_flatten_alt).
 
-Lemma about_cons_and_list_append :
-  forall (V : Type)
-         (v : V)
-         (a1 a2 : list V),
-    v :: list_append V a1 a2 = list_append V (v :: a1) a2.
-Proof.
-  intros V v a1.
-  induction a1 as [ | a1 a1s' IHa1s'].
-  - intro a2.
-    rewrite -> fold_unfold_list_append_nil.
-    apply about_applying_list_append_to_a_singleton_list.
-  - intros a2.
-    
-Admitted.
-
 Property about_binary_tree_flatten_acc :
   forall (V : Type)
          (t : binary_tree V)
@@ -441,7 +426,8 @@ Proof.
   induction t as [ v | t1' IHt1' t2' IHt2'].
   - intros a1 a2.
     rewrite ->2 fold_unfold_binary_tree_flatten_acc_Leaf.
-    apply about_cons_and_list_append.
+    rewrite -> fold_unfold_list_append_cons.
+    reflexivity.
   - intros a1 a2.
     rewrite ->2 fold_unfold_binary_tree_flatten_acc_Node.
     rewrite -> (IHt2' a1 a2).
@@ -485,7 +471,20 @@ Theorem about_mirroring_and_flattening_v1 :
     binary_tree_flatten V (binary_tree_mirror V t) =
     list_reverse V (binary_tree_flatten V t).
 Proof.
-Abort.
+  intros V t.
+  induction t as [ v | t1' IHt1' t2' IHt2'].
+  - rewrite -> fold_unfold_binary_tree_mirror_Leaf.
+    rewrite -> fold_unfold_binary_tree_flatten_Leaf.
+    rewrite -> about_applying_list_reverse_to_a_singleton_list.
+    reflexivity.
+  - rewrite -> fold_unfold_binary_tree_mirror_Node.
+    rewrite -> fold_unfold_binary_tree_flatten_Node.
+    rewrite -> IHt1'.
+    rewrite -> IHt2'.
+    rewrite <- list_append_and_list_reverse_commute_with_each_other.
+    rewrite <- fold_unfold_binary_tree_flatten_Node.
+    reflexivity.
+Qed.
 
 (* ********** *)
 
@@ -514,13 +513,53 @@ Lemma about_mirroring_and_flattening_v2_aux :
   ...a suitable auxiliary lemma for about_mirroring_and_flattening_v2...
 *)
 
+Lemma about_list_append_and_list_reverse_acc :
+  forall (V : Type)
+         (a1s a2s acc : list V),
+    list_append V (list_reverse_acc V a1s acc) a2s =
+      list_reverse_acc V a1s (list_append V acc a2s).
+Proof.
+  Compute (let V := nat in
+           let a1s := (1 :: 2 :: 3 :: nil) in
+           let a2s := (4 :: 5 :: 6 :: nil) in
+           let acc := (10 :: 11 :: nil) in
+           list_append V (list_reverse_acc V a1s acc) a2s =
+             list_reverse_acc V a1s (list_append V acc a2s)).
+  intros V a1s.
+  induction a1s as [ | a1 a1s' IHa1s']; intros a2s acc.
+  - rewrite ->2 fold_unfold_list_reverse_acc_nil.
+    reflexivity.
+  - rewrite ->2 fold_unfold_list_reverse_acc_cons.
+    rewrite -> (IHa1s' a2s (a1 :: acc)).
+    rewrite -> fold_unfold_list_append_cons.
+    reflexivity.
+Qed.
+
 Theorem about_mirroring_and_flattening_v2 :
   forall (V : Type)
          (t : binary_tree V),
     binary_tree_flatten V (binary_tree_mirror V t) =
     list_reverse_alt V (binary_tree_flatten V t).
 Proof.
-Abort.
+  intros V t.
+  induction t as [ v | t1' IHt1' t2' IHt2'].
+  - rewrite -> fold_unfold_binary_tree_mirror_Leaf.
+    rewrite -> fold_unfold_binary_tree_flatten_Leaf.
+    unfold list_reverse_alt.
+    rewrite -> about_applying_list_reverse_acc_to_a_singleton_list.
+    reflexivity.
+  - rewrite -> fold_unfold_binary_tree_mirror_Node.
+    rewrite -> fold_unfold_binary_tree_flatten_Node.
+    rewrite -> IHt1'.
+    rewrite -> IHt2'.
+    unfold list_reverse_alt.
+    rewrite -> about_list_append_and_list_reverse_acc.
+    rewrite -> nil_is_left_neutral_for_list_append.
+    rewrite -> fold_unfold_binary_tree_flatten_Node.
+    rewrite -> list_append_and_list_reverse_acc_commute_with_each_other.
+    reflexivity.
+Qed.
+
 
 (* Of course you can also prove about_mirroring_and_flattening_v2
    as a corollary of about_mirroring_and_flattening_v1
