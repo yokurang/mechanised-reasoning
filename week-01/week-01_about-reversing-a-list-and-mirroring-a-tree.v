@@ -650,10 +650,6 @@ Proof.
   exact (fold_unfold_list_append_nil V vs).
 Qed.
       
-(*
-   f. Prove whether nil is neutral on the right of append.
-*)
-
 Proposition nil_is_neutral_on_the_right_of_list_append :
   forall (V : Type)
          (vs : list V),
@@ -667,7 +663,46 @@ Proof.
     reflexivity.
 Qed.
 
-Lemma about_list_append_and_list_reverse_acc_v2 :
+
+
+
+Proposition list_reverse_acc_distributes_over_list_append :
+  forall (V : Type)
+         (v1s v2s : list V),
+    list_reverse_acc V (list_append V v1s v2s) nil = list_append V (list_reverse_acc V v2s nil)
+    (list_reverse_acc V v1s nil).
+Proof.
+  Compute (let V := nat in
+           let v1s := 1 :: 2 :: nil in
+           let v2s := 3 :: 4 :: nil in
+           list_reverse V (list_append V v1s v2s) = list_append V (list_reverse V v2s) (list_reverse V v1s)).
+Proof.
+  intros V v1s v2s.
+  induction v1s as [ | v v1s' IHv1s'].
+  - rewrite -> (fold_unfold_list_append_nil V v2s).  
+    rewrite -> (fold_unfold_list_reverse_acc_nil V).
+    rewrite -> (nil_is_neutral_on_the_right_of_list_append V (list_reverse_acc V v2s nil)).
+    reflexivity.
+  - rewrite -> (fold_unfold_list_append_cons V v v1s' v2s).
+    rewrite -> (fold_unfold_list_reverse_acc_cons V v (list_append V v1s' v2s)).
+Admitted.
+(*     rewrite -> IHv1s'. *)
+(*     rewrite -> (fold_unfold_list_reverse_acc_cons V v v1s'). *)
+(*     Check (list_append_is_associative V (list_reverse_acc V v2s)(list_reverse_acc V v1s') (v :: nil)).  *)
+(*     rewrite -> (list_append_is_associative V (list_reverse_acc V v2s)(list_reverse_acc V v1s') (v :: nil)). *)
+(*     reflexivity. *)
+(* Qed.                 *)
+
+Proposition list_reverse_acc_distributes_over_list_append_v2 :
+  forall (V : Type)
+         (v1s v2s : list V),
+    list_reverse_acc V (list_append V v1s v2s) nil = list_append V (list_reverse_acc V v2s
+    (list_reverse_acc V v1s nil)) nil.
+Proof.
+Admitted.
+
+
+Lemma about_list_append_and_list_reverse_acc :
   forall (V : Type) (v1 v2 : list V),
     list_append V (list_reverse_acc V v2 nil) (list_reverse_acc V v1 nil) =
     list_append V (list_reverse_acc V v2 (list_reverse_acc V v1 nil)) nil.
@@ -678,17 +713,12 @@ Proof.
     rewrite -> fold_unfold_list_reverse_acc_nil.
     reflexivity.
   + intro v2.
-    rewrite -> fold_unfold_list_reverse_acc_cons.
-    Check about_list_reverse_acc.
-    rewrite <- (about_list_reverse_acc V 
-    rewrite -> about_list_reverse_acc.
-    rewrite -> about_list_append_and_list_reverse_acc.
-    rewrite -> IHv1s'.
-Admitted.
-    (* Proposition about_list_append : *)
-(*        list_append V (list_reverse_acc V v2 nil) (list_reverse_acc V v1 nil) = *)
-(*        list_append V (list_reverse_acc V v2 (list_reverse_acc V v1 nil)) nil *)
-
+    Check list_reverse_acc_distributes_over_list_append.
+    rewrite <- (list_reverse_acc_distributes_over_list_append V (v1' :: v1s') v2).
+    Check list_reverse_acc_distributes_over_list_append_v2.
+    rewrite <- (list_reverse_acc_distributes_over_list_append_v2 V (v1' :: v1s') v2).
+    reflexivity.
+Qed.
 
 Lemma about_mirroring_and_flattening_v3_aux : 
   forall (V : Type) (t : binary_tree V),
