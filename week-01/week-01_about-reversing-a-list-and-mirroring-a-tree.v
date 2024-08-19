@@ -577,20 +577,149 @@ Abort. (* Don't prove this theorem, you will do that just below. *)
 
 (* 3.b Prove Theorem about_mirroring_and_flattening_v3. *)
 
-Lemma about_mirroring_and_flattening_v3_aux :
-  forall (V : Type)
-         (t : binary_tree V)
-         (acc1 acc2 : list V),
-    list_append V (list_append V (list_reverse_acc V acc1 nil) (binary_tree_flatten_acc V (binary_tree_mirror V t) nil)) acc2 =
-      list_reverse_acc V (binary_tree_flatten_acc V t acc1) acc2.
+(* Lemma about_mirroring_and_flattening_v3_aux : *)
+(*   forall (V : Type) *)
+(*          (t : binary_tree V) *)
+(*          (acc1 acc2 : list V), *)
+(*     list_append V (list_append V (list_reverse_acc V acc1 nil) (binary_tree_flatten_acc V (binary_tree_mirror V t) nil)) acc2 = *)
+(*       list_reverse_acc V (binary_tree_flatten_acc V t acc1) acc2. *)
+(* Proof. *)
+(*   Compute (let V := nat in *)
+(*            let t := Node V (Leaf V 1) (Node V (Leaf V 2) (Leaf V 3)) in *)
+(*            let acc1 := (10 :: 11 :: nil) in *)
+(*            let acc2 := (20 :: 21 :: nil) in *)
+(*            list_append V (list_append V (list_reverse_acc V acc1 nil) (binary_tree_flatten_acc V (binary_tree_mirror V t) nil)) acc2 = *)
+(*              list_reverse_acc V (binary_tree_flatten_acc V t acc1) acc2). *)
+(* Admitted. *)
+
+Lemma eureka_binary_tree_flatten_acc_append :
+  forall (V : Type) (t : binary_tree V) (acc : list V),
+    binary_tree_flatten_acc V t acc =
+    list_append V (binary_tree_flatten_acc V t nil) acc.
 Proof.
-  Compute (let V := nat in
-           let t := Node V (Leaf V 1) (Node V (Leaf V 2) (Leaf V 3)) in
-           let acc1 := (10 :: 11 :: nil) in
-           let acc2 := (20 :: 21 :: nil) in
-           list_append V (list_append V (list_reverse_acc V acc1 nil) (binary_tree_flatten_acc V (binary_tree_mirror V t) nil)) acc2 =
-             list_reverse_acc V (binary_tree_flatten_acc V t acc1) acc2).
+  intros V t.
+  induction t as [ v | t1' IHt1' t2' IHt2'].
+  + intro acc. 
+    rewrite -> 2 fold_unfold_binary_tree_flatten_acc_Leaf.
+    rewrite -> fold_unfold_list_append_cons.
+    rewrite -> fold_unfold_list_append_nil.
+    reflexivity.
+  + intro acc.
+    rewrite -> 2 fold_unfold_binary_tree_flatten_acc_Node.
+    rewrite -> (IHt2' nil).
+    rewrite -> nil_is_right_neutral_for_list_append. 
+    rewrite -> (IHt1' (binary_tree_flatten_acc V t2' acc)). 
+    rewrite -> (IHt1' (binary_tree_flatten_acc V t2' nil)).
+    rewrite -> (IHt2' acc).
+    rewrite -> list_append_is_associative.
+    reflexivity.
+Qed.
+
+Lemma about_list_reverse_acc :
+  forall (V : Type)
+         (vs a : list V),
+    list_reverse_acc V vs a = list_append V (list_reverse_acc V vs nil) a.
+Proof.
+  intros V vs.
+  induction vs as [ | v vs' IHvs'].
+
+  - intro a.
+    rewrite -> (fold_unfold_list_reverse_acc_nil V a).
+    rewrite -> (fold_unfold_list_reverse_acc_nil V nil).
+    rewrite -> (fold_unfold_list_append_nil V a).
+    reflexivity.
+
+  - intro a.
+    rewrite -> (fold_unfold_list_reverse_acc_cons V v vs' a).
+    rewrite -> (fold_unfold_list_reverse_acc_cons V v vs' nil).
+    Check (IHvs' (v :: a)).
+    rewrite -> (IHvs' (v :: a)).
+    rewrite -> (IHvs' (v :: nil)).
+    rewrite <- (list_append_is_associative V (list_reverse_acc V vs' nil) (v :: nil) a).
+    rewrite -> (fold_unfold_list_append_cons V v nil a).
+    rewrite -> (fold_unfold_list_append_nil V a).
+    reflexivity.
+Qed.
+
+Proposition nil_is_neutral_on_the_left_of_list_append :
+  forall (V : Type)
+         (vs : list V),
+    list_append V nil vs = vs.
+Proof.
+  intros V vs.
+  exact (fold_unfold_list_append_nil V vs).
+Qed.
+      
+(*
+   f. Prove whether nil is neutral on the right of append.
+*)
+
+Proposition nil_is_neutral_on_the_right_of_list_append :
+  forall (V : Type)
+         (vs : list V),
+    list_append V vs nil = vs.
+Proof.
+  intros V vs.
+  induction vs as [ | v vs' IHvs'].
+  - exact (fold_unfold_list_append_nil V nil).
+  - rewrite -> (fold_unfold_list_append_cons V v vs' nil).
+    rewrite -> IHvs'.
+    reflexivity.
+Qed.
+
+Lemma about_list_append_and_list_reverse_acc_v2 :
+  forall (V : Type) (v1 v2 : list V),
+    list_append V (list_reverse_acc V v2 nil) (list_reverse_acc V v1 nil) =
+    list_append V (list_reverse_acc V v2 (list_reverse_acc V v1 nil)) nil.
+Proof.
+  intros V v1.
+  induction v1 as [ | v1' v1s' IHv1s'].
+  + intro v2.
+    rewrite -> fold_unfold_list_reverse_acc_nil.
+    reflexivity.
+  + intro v2.
+    rewrite -> fold_unfold_list_reverse_acc_cons.
+    Check about_list_reverse_acc.
+    rewrite <- (about_list_reverse_acc V 
+    rewrite -> about_list_reverse_acc.
+    rewrite -> about_list_append_and_list_reverse_acc.
+    rewrite -> IHv1s'.
 Admitted.
+    (* Proposition about_list_append : *)
+(*        list_append V (list_reverse_acc V v2 nil) (list_reverse_acc V v1 nil) = *)
+(*        list_append V (list_reverse_acc V v2 (list_reverse_acc V v1 nil)) nil *)
+
+
+Lemma about_mirroring_and_flattening_v3_aux : 
+  forall (V : Type) (t : binary_tree V),
+  binary_tree_flatten_acc V (binary_tree_mirror V t) nil =
+  list_reverse_acc V (binary_tree_flatten_acc V t nil) nil.
+Proof.
+  intros V t.
+  induction t as [v | t1' IHt1' t2' IHt2'].
+  + rewrite -> fold_unfold_binary_tree_mirror_Leaf.
+    rewrite -> fold_unfold_binary_tree_flatten_acc_Leaf.
+    rewrite -> fold_unfold_list_reverse_acc_cons.
+    rewrite -> fold_unfold_list_reverse_acc_nil.
+    reflexivity.
+  + rewrite -> fold_unfold_binary_tree_mirror_Node.
+    rewrite -> 2 fold_unfold_binary_tree_flatten_acc_Node.
+    Check eureka_binary_tree_flatten_acc_append.
+    rewrite -> IHt1'.
+    rewrite -> (eureka_binary_tree_flatten_acc_append V ((binary_tree_mirror V t2')
+) (list_reverse_acc V (binary_tree_flatten_acc V t1' nil) nil)).
+    rewrite -> (eureka_binary_tree_flatten_acc_append V t1' (binary_tree_flatten_acc V t2' nil)).
+    Check (about_list_reverse_acc).
+    rewrite -> (about_list_reverse_acc V (list_append V (binary_tree_flatten_acc V t1' nil) (binary_tree_flatten_acc V t2' nil)) nil).
+    Check list_append_and_list_reverse_acc_commute_with_each_other.
+    rewrite -> (list_append_and_list_reverse_acc_commute_with_each_other V
+    (binary_tree_flatten_acc V t1' nil) (binary_tree_flatten_acc V t2' nil) nil).
+    rewrite -> IHt2'.
+    Check nil_is_right_neutral_for_list_append.
+    Check (binary_tree_flatten_acc V t2' nil).
+    rewrite -> about_list_append_and_list_reverse_acc_v2.
+    reflexivity.
+Qed. 
 
 Theorem about_mirroring_and_flattening_v3 :
   forall (V : Type)
@@ -600,18 +729,11 @@ Theorem about_mirroring_and_flattening_v3 :
 Proof.
   intros V t.
   unfold binary_tree_flatten_alt, list_reverse_alt.
-  induction t as [ v | t1 IHt1 t2 IHt2].
-  - rewrite -> fold_unfold_binary_tree_mirror_Leaf.
-    rewrite -> fold_unfold_binary_tree_flatten_acc_Leaf.
-    rewrite -> about_applying_list_reverse_acc_to_a_singleton_list.
-    reflexivity.
-  - rewrite -> fold_unfold_binary_tree_mirror_Node.
-    rewrite -> fold_unfold_binary_tree_flatten_acc_Node.
-    rewrite -> IHt1.
-    rewrite -> fold_unfold_binary_tree_flatten_acc_Node.
-    rewrite <- about_mirroring_and_flattening_v3_aux.
-    simpl.
-Abort.
+  Check (about_mirroring_and_flattening_v3_aux).
+  Check (about_mirroring_and_flattening_v3_aux V t).
+  rewrite -> (about_mirroring_and_flattening_v3_aux V t).
+  reflexivity.
+Qed.
 
 (* Of course you can also prove about_mirroring_and_flattening_v3
    as a corollary of about_mirroring_and_flattening_v1 or of about_mirroring_and_flattening_v2
