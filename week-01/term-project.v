@@ -2021,33 +2021,7 @@ Proof.
   discriminate H_absurd.
 Qed.
 
-Proposition Plus_is_conditionally_commutative :
-  forall ae1 ae2,
-  forall n : nat,
-    ((forall n1 : nat,
-         evaluate ae1 = Expressible_nat n1) \/
-       (forall n2 : nat,
-           evaluate ae2 = Expressible_nat n2)) ->
-    evaluate (Plus ae1 ae2) = evaluate (Plus ae2 ae1).
-Proof.
-  intros ae1 ae2 n H_n1_nat_or_n2_nat.
-  destruct H_n1_nat_or_n2_nat as [H_n1_nat | H_n2_nat];
-    rewrite ->2 fold_unfold_evaluate_Plus.
-  - rewrite -> (H_n1_nat n). 
-    case (evaluate ae2) as [n2 | s2].
-    + rewrite -> Nat.add_comm.
-      reflexivity.
-    + reflexivity.
-  - rewrite -> (H_n2_nat n). 
-    case (evaluate ae1) as [n1 | s1].
-    + rewrite -> Nat.add_comm.
-      reflexivity.
-    + reflexivity.
-Qed.
-
-(* alan's version *)
-
-Proposition about_plus_is_conditionally_commutative :
+Proposition Plus_is_conditionally_commutative:
   forall ae1 ae2 : arithmetic_expression,
   forall n1 n2 : nat,
   (evaluate ae1 = Expressible_nat n1 \/ evaluate ae2 = Expressible_nat n2) ->
@@ -2055,14 +2029,14 @@ Proposition about_plus_is_conditionally_commutative :
 Proof.
   intros ae1 ae2 n1 n2 [H_ae1 | H_ae2].
   + rewrite -> 2 fold_unfold_evaluate_Plus.
-    destruct (evaluate ae2) as [m | s2].
+    destruct (evaluate ae2) as [m1 | s2].
     ++ rewrite -> H_ae1.
        rewrite -> Nat.add_comm.
        reflexivity.
     ++ rewrite -> H_ae1.
        reflexivity.
   + rewrite -> 2 fold_unfold_evaluate_Plus.
-    destruct (evaluate ae1) as [m | s1].
+    destruct (evaluate ae1) as [m1 | s1].
     ++ rewrite -> H_ae2.
        rewrite -> Nat.add_comm.
        reflexivity.
@@ -2070,7 +2044,10 @@ Proof.
        reflexivity.
 Qed.
 
-(* ((A -> C) /\ (B -> C)) <-> ((A \/ B -> C)) *)
+(* 
+Formulation of Proposition based on the following equivalence:
+  ((A -> C) /\ (B -> C)) <-> ((A \/ B -> C))
+*)
 
 Proposition Literal_1_is_neutral_for_Times_on_the_left :
   forall ae : arithmetic_expression,
@@ -2223,14 +2200,14 @@ Proposition Times_is_conditionally_commutative  :
 Proof.
 intros ae1 ae2 n1 n2 [H_ae1 | H_ae2].
 + rewrite -> 2 fold_unfold_evaluate_Times.
-  destruct (evaluate ae2) as [m | s2].
+  destruct (evaluate ae2) as [m2 | s2].
   ++ rewrite -> H_ae1.
      rewrite -> Nat.mul_comm.
      reflexivity.
   ++ rewrite -> H_ae1.
      reflexivity.
 + rewrite -> 2 fold_unfold_evaluate_Times.
-  destruct (evaluate ae1) as [m | s1].
+  destruct (evaluate ae1) as [m1 | s1].
   ++ rewrite -> H_ae2.
      rewrite -> Nat.mul_comm.
      reflexivity.
@@ -2247,13 +2224,13 @@ Proof.
   rewrite -> fold_unfold_evaluate_Times.
   rewrite -> 2 fold_unfold_evaluate_Plus.
   rewrite -> 2 fold_unfold_evaluate_Times.
-  case (evaluate ae1) as [n1 | s1] eqn:H1.
-  + case (evaluate ae2) as [n2 | s2] eqn:H2.
-    ++ case (evaluate ae3) as [n3 | s3] eqn:H3.
+  case (evaluate ae1) as [n1 | s1] eqn:Hae1.
+  + case (evaluate ae2) as [n2 | s2] eqn:Hae2.
+    ++ case (evaluate ae3) as [n3 | s3] eqn:Hae3.
        +++ rewrite -> Nat.mul_add_distr_r.
            reflexivity.
        +++ reflexivity.
-    ++ case (evaluate ae3) as [n3 | s3] eqn:H3.
+    ++ case (evaluate ae3) as [n3 | s3] eqn:Hae3.
        +++ reflexivity.
 +++ Abort. (* Expressible_msg s2 = Expressible_msg s3 *)
 
@@ -2279,11 +2256,11 @@ Proposition Times_is_conditionally_distributive_over_Plus_on_the_right :
     evaluate (Times (Plus ae1 ae2) ae3) =
     evaluate (Plus (Times ae1 ae3) (Times ae2 ae3)).
 Proof.
-  intros ae1 ae2 ae3 n1 n2 n3 [H1 [H2 H3]].
+  intros ae1 ae2 ae3 n1 n2 n3 [Hae1 [Hae2 Hae3]].
   rewrite -> fold_unfold_evaluate_Times.
   rewrite -> 2 fold_unfold_evaluate_Plus.
   rewrite -> 2 fold_unfold_evaluate_Times.
-  rewrite -> H1, H2, H3.
+  rewrite -> Hae1, Hae2, Hae3.
   rewrite -> Nat.mul_add_distr_r.
   reflexivity.
 Qed.
@@ -2297,12 +2274,14 @@ Proof.
   rewrite -> fold_unfold_evaluate_Times.
   rewrite -> 2 fold_unfold_evaluate_Plus.
   rewrite -> 2 fold_unfold_evaluate_Times.
-  case (evaluate ae1) as [n1 | s1] eqn:H1.
-  + case (evaluate ae2) as [n2 | s2] eqn:H2.
-    ++ case (evaluate ae3) as [n3 | s3] eqn:H3.
+  case (evaluate ae1) as [n1 | s1] eqn:Hae1.
+  + case (evaluate ae2) as [n2 | s2] eqn:Hae2.
+    ++ case (evaluate ae3) as [n3 | s3] eqn:Hae3.
        +++ rewrite -> Nat.mul_add_distr_l.
            reflexivity.
        +++ reflexivity.
     ++ reflexivity.
   + reflexivity.
 Qed.
+
+(* compiles !*)
