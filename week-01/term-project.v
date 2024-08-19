@@ -2237,7 +2237,72 @@ intros ae1 ae2 n1 n2 [H_ae1 | H_ae2].
   ++ rewrite -> H_ae2.
      reflexivity.
 Qed. 
-     
- 
 
+Proposition Times_distributive_over_Plus_on_the_right :
+  forall ae1 ae2 ae3 : arithmetic_expression,
+    evaluate (Times (Plus ae1 ae2) ae3) =
+    evaluate (Plus (Times ae1 ae3) (Times ae2 ae3)).
+Proof.
+  intros ae1 ae2 ae3.
+  rewrite -> fold_unfold_evaluate_Times.
+  rewrite -> 2 fold_unfold_evaluate_Plus.
+  rewrite -> 2 fold_unfold_evaluate_Times.
+  case (evaluate ae1) as [n1 | s1] eqn:H1.
+  + case (evaluate ae2) as [n2 | s2] eqn:H2.
+    ++ case (evaluate ae3) as [n3 | s3] eqn:H3.
+       +++ rewrite -> Nat.mul_add_distr_r.
+           reflexivity.
+       +++ reflexivity.
+    ++ case (evaluate ae3) as [n3 | s3] eqn:H3.
+       +++ reflexivity.
++++ Abort. (* Expressible_msg s2 = Expressible_msg s3 *)
 
+Proposition Times_is_not_distributive_over_Plus_on_the_right :
+  exists ae1 ae2 ae3 : arithmetic_expression,
+    evaluate (Times (Plus ae1 ae2) ae3) <>
+    evaluate (Plus (Times ae1 ae3) (Times ae2 ae3)).
+Proof.
+  exists (Literal 0). 
+  exists (Minus (Literal 0) (Literal 5)).
+  exists (Minus (Literal 2) (Literal 3)).
+  compute.
+  intro H_absurd.
+  discriminate H_absurd.
+Qed.
+
+Proposition Times_is_conditionally_distributive_over_Plus_on_the_right :
+  forall ae1 ae2 ae3 : arithmetic_expression,
+  forall n1 n2 n3 : nat,
+  (evaluate ae1 = Expressible_nat n1 /\ 
+   evaluate ae2 = Expressible_nat n2 /\ 
+   evaluate ae3 = Expressible_nat n3) ->
+    evaluate (Times (Plus ae1 ae2) ae3) =
+    evaluate (Plus (Times ae1 ae3) (Times ae2 ae3)).
+Proof.
+  intros ae1 ae2 ae3 n1 n2 n3 [H1 [H2 H3]].
+  rewrite -> fold_unfold_evaluate_Times.
+  rewrite -> 2 fold_unfold_evaluate_Plus.
+  rewrite -> 2 fold_unfold_evaluate_Times.
+  rewrite -> H1, H2, H3.
+  rewrite -> Nat.mul_add_distr_r.
+  reflexivity.
+Qed.
+
+Proposition Times_distributive_over_Plus_on_the_left :
+  forall ae1 ae2 ae3 : arithmetic_expression,
+    evaluate (Times ae1 (Plus ae2 ae3)) =
+    evaluate (Plus (Times ae1 ae2) (Times ae1 ae3)).
+Proof.
+  intros ae1 ae2 ae3.
+  rewrite -> fold_unfold_evaluate_Times.
+  rewrite -> 2 fold_unfold_evaluate_Plus.
+  rewrite -> 2 fold_unfold_evaluate_Times.
+  case (evaluate ae1) as [n1 | s1] eqn:H1.
+  + case (evaluate ae2) as [n2 | s2] eqn:H2.
+    ++ case (evaluate ae3) as [n3 | s3] eqn:H3.
+       +++ rewrite -> Nat.mul_add_distr_l.
+           reflexivity.
+       +++ reflexivity.
+    ++ reflexivity.
+  + reflexivity.
+Qed.
