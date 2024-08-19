@@ -22,6 +22,6 @@ For Times:
 If one of these properties doesn't hold,
 can you state a conditional property that holds?
 
-Questions from week-01_about-reversing-a-list-and-mirroring-a-tree
+~~Questions from week-01_about-reversing-a-list-and-mirroring-a-tree~~
 
 Report
