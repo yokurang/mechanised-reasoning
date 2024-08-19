@@ -136,7 +136,7 @@ Proof.
   rewrite -> fold_unfold_list_append_cons.
   rewrite -> fold_unfold_list_append_nil.
   reflexivity.
-Qed.  
+Qed.
 
 (* ***** *)
 
@@ -407,6 +407,21 @@ Definition binary_tree_flatten_alt (V : Type) (t : binary_tree V) : list V :=
 
 Compute (test_binary_tree_flatten binary_tree_flatten_alt).
 
+Lemma about_cons_and_list_append :
+  forall (V : Type)
+         (v : V)
+         (a1 a2 : list V),
+    v :: list_append V a1 a2 = list_append V (v :: a1) a2.
+Proof.
+  intros V v a1.
+  induction a1 as [ | a1 a1s' IHa1s'].
+  - intro a2.
+    rewrite -> fold_unfold_list_append_nil.
+    apply about_applying_list_append_to_a_singleton_list.
+  - intros a2.
+    
+Admitted.
+
 Property about_binary_tree_flatten_acc :
   forall (V : Type)
          (t : binary_tree V)
@@ -415,14 +430,24 @@ Property about_binary_tree_flatten_acc :
     list_append V (binary_tree_flatten_acc V t a1) a2.
 Proof.
   Compute (let V := nat in
-           let t := Node nat 
+           let t := Node nat
                          (Node nat (Leaf nat 1) (Leaf nat 2))
                          (Node nat (Leaf nat 3) (Leaf nat 4)) in
            let a1 := 10 :: 20 :: nil in
            let a2 := 30 :: 40 :: nil in
            binary_tree_flatten_acc V t (list_append V a1 a2) =
            list_append V (binary_tree_flatten_acc V t a1) a2).
-Admitted. (* Time permitting, prove this helpful property. *)
+  intros V t.
+  induction t as [ v | t1' IHt1' t2' IHt2'].
+  - intros a1 a2.
+    rewrite ->2 fold_unfold_binary_tree_flatten_acc_Leaf.
+    apply about_cons_and_list_append.
+  - intros a1 a2.
+    rewrite ->2 fold_unfold_binary_tree_flatten_acc_Node.
+    rewrite -> (IHt2' a1 a2).
+    rewrite -> (IHt1' (binary_tree_flatten_acc V t2' a1) a2).
+    reflexivity.
+Qed. (* Time permitting, prove this helpful property. *)
 
 (* ********** *)
 
