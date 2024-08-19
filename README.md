@@ -10,10 +10,10 @@ For Plus:
 
 For Times:
 - ~~Implement Times~~ (Report)
-- is (Literal 1) neutral on the left?
-- is (Literal 1) neutral on the right?
-- is (Literal 0) absorbing on the left?
-- is (Literal 0) absorbing on the right?
+- ~~is (Literal 1) neutral on the left?~~ (Report)
+- ~~is (Literal 1) neutral on the right?~~ (Report)
+- ~~is (Literal 0) absorbing on the left?~~ (Report)
+- ~~is (Literal 0) absorbing on the right?~~ (Report)
 - is Times associative?
 - is Times commutative?
 - does Times distribute on the right of Plus?

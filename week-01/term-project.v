@@ -2012,14 +2012,13 @@ Abort.
 
 Proposition Plus_is_not_commutative :
   exists ae1 ae2: arithmetic_expression,
-    evaluate ae1 <> evaluate ae2.
+    evaluate (Plus ae1 ae2) <> evaluate (Plus ae2 ae1).
 Proof.
   exists (Minus (Literal 1) (Literal 3)).
   exists (Minus (Literal 2) (Literal 3)).
-  rewrite ->2 fold_unfold_evaluate_Minus.
-  rewrite ->3 fold_unfold_evaluate_Literal.
   compute.
-  discriminate.
+  intro H_absurd.
+  discriminate H_absurd.
 Qed.
 
 Proposition Plus_is_conditionally_commutative :
@@ -2045,3 +2044,107 @@ Proof.
       reflexivity.
     + reflexivity.
 Qed.
+
+Proposition Literal_1_is_neutral_for_Times_on_the_left :
+  forall ae : arithmetic_expression,
+    evaluate (Times (Literal 1) ae) = evaluate ae.
+Proof.
+  intro ae.
+  rewrite -> fold_unfold_evaluate_Times.
+  rewrite -> fold_unfold_evaluate_Literal.
+  case (evaluate ae) as [n | s].
+  - rewrite -> (Nat.mul_1_l n).
+    reflexivity.
+  - reflexivity.
+Qed.
+
+Proposition Literal_1_is_neutral_for_Times_on_the_right :
+  forall ae : arithmetic_expression,
+    evaluate (Times ae (Literal 1)) = evaluate ae.
+Proof.
+  intro ae.
+  rewrite -> fold_unfold_evaluate_Times.
+  rewrite -> fold_unfold_evaluate_Literal.
+  case (evaluate ae) as [n | s].
+  - rewrite -> (Nat.mul_1_r n).
+    reflexivity.
+  - reflexivity.
+Qed.
+
+Proposition Literal_0_is_absorbing_for_Times_on_the_left :
+  forall ae : arithmetic_expression,
+    evaluate (Times (Literal 0) ae) = evaluate (Literal 0).
+Proof.
+  intro ae.
+  rewrite -> fold_unfold_evaluate_Times.
+  rewrite -> fold_unfold_evaluate_Literal.
+  case (evaluate ae) as [n | s].
+  - rewrite -> (Nat.mul_0_l n).
+    reflexivity.
+  - (* not absorbing on the left. *)
+Abort.
+
+Proposition Literal_0_is_not_absorbing_for_Times_on_the_left :
+  exists ae : arithmetic_expression,
+    evaluate (Times (Literal 0) ae) <> evaluate (Literal 0).
+Proof.
+  exists (Minus (Literal 1) (Literal 3)).
+  compute.
+  intro H_absurd.
+  discriminate H_absurd.
+Qed.
+
+Proposition Literal_0_is_absorbing_for_Times_on_the_right :
+  forall ae : arithmetic_expression,
+    evaluate (Times ae (Literal 0)) = evaluate (Literal 0).
+Proof.
+  intro ae.
+  rewrite -> fold_unfold_evaluate_Times.
+  rewrite -> fold_unfold_evaluate_Literal.
+  case (evaluate ae) as [n | s].
+  - rewrite -> (Nat.mul_0_r n).
+    reflexivity.
+  - (* not absorbing on the left. *)
+Abort.
+
+Proposition Literal_0_is_not_absorbing_for_Times_on_the_right :
+  exists ae : arithmetic_expression,
+    evaluate (Times ae (Literal 0)) <> evaluate (Literal 0).
+Proof.
+  exists (Minus (Literal 1) (Literal 3)).
+  compute.
+  intro H_absurd.
+  discriminate H_absurd.
+Qed.
+
+Proposition Times_is_associative :
+  forall ae1 ae2 ae3 : arithmetic_expression,
+    evaluate (Times ae1 (Times ae2 ae3)) = evaluate (Times (Times ae1 ae2) ae3).
+Proof.
+  intros ae1 ae2 ae3.
+  rewrite ->4 fold_unfold_evaluate_Times.
+  case (evaluate ae1) as [n1 | s1].
+  - case (evaluate ae2) as [n2 | s2].
+    + case (evaluate ae3) as [n3 | s3].
+      * rewrite -> Nat.mul_assoc.
+        reflexivity.
+      * reflexivity.
+    + reflexivity.
+  - reflexivity.
+Qed.
+
+Proposition Plus_is_commutative :
+  forall ae1 ae2 : arithmetic_expression,
+    evaluate (Plus ae1 ae2) = evaluate (Plus ae2 ae1).
+Proof.
+  intros ae1 ae2.
+  rewrite ->2 fold_unfold_evaluate_Plus.
+  case (evaluate ae1) as [n1 | s1].
+  - case (evaluate ae2) as [n2 | s2].
+    + rewrite -> Nat.add_comm.
+      reflexivity.
+    + reflexivity.
+  - case (evaluate ae2) as [n2 | s2].
+    + reflexivity.
+    + (* not commutative if messages are different.*)
+Abort.
