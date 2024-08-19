@@ -2204,3 +2204,40 @@ Proof.
     ++ (* Times is not commutative *)
 Abort.
 
+Proposition Times_is_not_commutative : 
+  exists ae1 ae2: arithmetic_expression,
+    evaluate (Times ae1 ae2) <> evaluate (Times ae2 ae1).
+Proof.
+  exists (Minus (Literal 1) (Literal 3)).
+  exists (Minus (Literal 2) (Literal 3)).
+  compute.
+  intro H_absurd.
+  discriminate H_absurd.
+Qed.
+
+Proposition Times_is_conditionally_commutative  :
+  forall ae1 ae2 : arithmetic_expression,
+  forall n1 n2 : nat,
+  (evaluate ae1 = Expressible_nat n1 \/ evaluate ae2 = Expressible_nat n2) ->
+  evaluate (Times ae1 ae2) = evaluate (Times ae2 ae1).
+Proof.
+intros ae1 ae2 n1 n2 [H_ae1 | H_ae2].
++ rewrite -> 2 fold_unfold_evaluate_Times.
+  destruct (evaluate ae2) as [m | s2].
+  ++ rewrite -> H_ae1.
+     rewrite -> Nat.mul_comm.
+     reflexivity.
+  ++ rewrite -> H_ae1.
+     reflexivity.
++ rewrite -> 2 fold_unfold_evaluate_Times.
+  destruct (evaluate ae1) as [m | s1].
+  ++ rewrite -> H_ae2.
+     rewrite -> Nat.mul_comm.
+     reflexivity.
+  ++ rewrite -> H_ae2.
+     reflexivity.
+Qed. 
+     
+ 
+
+
