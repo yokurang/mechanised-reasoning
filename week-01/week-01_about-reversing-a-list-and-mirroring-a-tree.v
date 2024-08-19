@@ -453,12 +453,10 @@ Theorem about_mirroring_and_flattening_v1 :
     binary_tree_flatten V (binary_tree_mirror V t) =
     list_reverse V (binary_tree_flatten V t).
 Proof.
-(*
    Compute (let V := nat in
-            let t := ...put a telling tree here... in
+            let t := Node V (Leaf V 1) (Node V (Leaf V 2) (Leaf V 3)) in
             binary_tree_flatten V (binary_tree_mirror V t) =
             list_reverse V (binary_tree_flatten V t)).
-*)
 Abort. (* Don't prove this theorem, you will do that just below. *)
 
 (* ***** *)
@@ -496,12 +494,10 @@ Theorem about_mirroring_and_flattening_v2 :
     binary_tree_flatten V (binary_tree_mirror V t) =
     list_reverse_alt V (binary_tree_flatten V t).
 Proof.
-(*
    Compute (let V := nat in
-            let t := ...put a telling tree here... in
+            let t := Node V (Leaf V 1) (Node V (Leaf V 2) (Leaf V 3)) in
             binary_tree_flatten V (binary_tree_mirror V t) =
             list_reverse_alt V (binary_tree_flatten V t)).
-*)
 Abort. (* Don't prove this theorem, you will do that just below. *)
 
 (* ***** *)
@@ -571,12 +567,10 @@ Theorem about_mirroring_and_flattening_v3 :
     binary_tree_flatten_alt V (binary_tree_mirror V t) =
     list_reverse_alt V (binary_tree_flatten_alt V t).
 Proof.
-(*
    Compute (let V := nat in
-            let t := ...put a telling tree here... in
+            let t := Node V (Leaf V 1) (Node V (Leaf V 2) (Leaf V 3)) in
             binary_tree_flatten_alt V (binary_tree_mirror V t) =
             list_reverse_alt V (binary_tree_flatten_alt V t)).
-*)
 Abort. (* Don't prove this theorem, you will do that just below. *)
 
 (* ***** *)
@@ -634,12 +628,10 @@ Theorem about_mirroring_and_flattening_v4 :
     binary_tree_flatten_alt V (binary_tree_mirror V t) =
     list_reverse V (binary_tree_flatten_alt V t).
 Proof.
-(*
    Compute (let V := nat in
-            let t := ...put a telling tree here... in
+            let t := Node V (Leaf V 1) (Node V (Leaf V 2) (Leaf V 3)) in
             binary_tree_flatten_alt V (binary_tree_mirror V t) =
             list_reverse V (binary_tree_flatten_alt V t)).
-*)
 Abort. (* Don't prove this theorem, you will do that just below. *)
 
 (* ***** *)
