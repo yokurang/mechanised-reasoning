@@ -646,18 +646,9 @@ Abort. (* Don't prove this theorem, you will do that just below. *)
 
 (* 4.b Prove Theorem about_mirroring_and_flattening_v4. *)
 
+(*
 Lemma about_mirroring_and_flattening_v4_aux :
-  forall (V : Type)
-         (t : binary_tree V)
-         (acc : list V),
-    list_reverse V (binary_tree_flatten_acc V t acc) =
-      list_reverse_acc V acc (binary_tree_flatten_acc V (binary_tree_mirror V t) nil).
-  Compute (let V := nat in
-           let t := (Node V (Leaf V 1) (Node V (Leaf V 2) (Leaf V 3))) in
-           let acc := (10 :: 11 :: nil) in
-           list_reverse_acc V acc (binary_tree_flatten_acc V (binary_tree_mirror V t) nil) =
-             list_reverse V (binary_tree_flatten_acc V t acc)).
-Admitted.
+*)
 
 Theorem about_mirroring_and_flattening_v4 :
   forall (V : Type)
@@ -667,6 +658,7 @@ Theorem about_mirroring_and_flattening_v4 :
 Proof.
   intros V t.
   unfold binary_tree_flatten_alt.
+
   induction t as [ v | t1 IHt1 t2 IHt2].
   - rewrite -> fold_unfold_binary_tree_mirror_Leaf.
     rewrite -> fold_unfold_binary_tree_flatten_acc_Leaf.
