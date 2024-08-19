@@ -14,7 +14,7 @@ For Times:
 - ~~is (Literal 1) neutral on the right?~~ (Report)
 - ~~is (Literal 0) absorbing on the left?~~ (Report)
 - ~~is (Literal 0) absorbing on the right?~~ (Report)
-- is Times associative?
+- ~~is Times associative?~~ (Report)
 - is Times commutative?
 - does Times distribute on the right of Plus?
 - does Times distribute on the left of Plus?

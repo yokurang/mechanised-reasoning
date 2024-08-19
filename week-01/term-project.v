@@ -2132,19 +2132,3 @@ Proof.
     + reflexivity.
   - reflexivity.
 Qed.
-
-Proposition Plus_is_commutative :
-  forall ae1 ae2 : arithmetic_expression,
-    evaluate (Plus ae1 ae2) = evaluate (Plus ae2 ae1).
-Proof.
-  intros ae1 ae2.
-  rewrite ->2 fold_unfold_evaluate_Plus.
-  case (evaluate ae1) as [n1 | s1].
-  - case (evaluate ae2) as [n2 | s2].
-    + rewrite -> Nat.add_comm.
-      reflexivity.
-    + reflexivity.
-  - case (evaluate ae2) as [n2 | s2].
-    + reflexivity.
-    + (* not commutative if messages are different.*)
-Abort.
