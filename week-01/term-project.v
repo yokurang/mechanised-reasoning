@@ -2045,6 +2045,33 @@ Proof.
     + reflexivity.
 Qed.
 
+(* alan's version *)
+
+Proposition about_plus_is_conditionally_commutative :
+  forall ae1 ae2 : arithmetic_expression,
+  forall n1 n2 : nat,
+  (evaluate ae1 = Expressible_nat n1 \/ evaluate ae2 = Expressible_nat n2) ->
+  evaluate (Plus ae1 ae2) = evaluate (Plus ae2 ae1).
+Proof.
+  intros ae1 ae2 n1 n2 [H_ae1 | H_ae2].
+  + rewrite -> 2 fold_unfold_evaluate_Plus.
+    destruct (evaluate ae2) as [m | s2].
+    ++ rewrite -> H_ae1.
+       rewrite -> Nat.add_comm.
+       reflexivity.
+    ++ rewrite -> H_ae1.
+       reflexivity.
+  + rewrite -> 2 fold_unfold_evaluate_Plus.
+    destruct (evaluate ae1) as [m | s1].
+    ++ rewrite -> H_ae2.
+       rewrite -> Nat.add_comm.
+       reflexivity.
+    ++ rewrite -> H_ae2.
+       reflexivity.
+Qed.
+
+(* ((A -> C) /\ (B -> C)) <-> ((A \/ B -> C)) *)
+
 Proposition Literal_1_is_neutral_for_Times_on_the_left :
   forall ae : arithmetic_expression,
     evaluate (Times (Literal 1) ae) = evaluate ae.
