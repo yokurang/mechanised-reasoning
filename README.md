@@ -25,5 +25,9 @@ If one of these properties doesn't hold,
 can you state a conditional property that holds?
 
 ~~Questions from week-01_about-reversing-a-list-and-mirroring-a-tree~~
-
-Report
+~~Q0~~
+~~Q1~~
+~~Q2~~
+~~Q3~~
+~~Q4~~
+~~Report~~
