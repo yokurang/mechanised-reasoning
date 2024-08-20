@@ -18,6 +18,8 @@ For Times:
 - ~~is Times commutative?~~ (Report)
 - ~~does Times distribute on the right of Plus?~~ (Report)
 - ~~does Times distribute on the left of Plus?~~ (Report)
+- ~~Is (Literal 0) absorbing for Times?~~ (Report)
+- ~~Is (Literal 1) neutral for Times?~~ (Report)
 
 If one of these properties doesn't hold,
 can you state a conditional property that holds?
