@@ -537,7 +537,7 @@ Abort. (* Don't prove this theorem, you will do that just below. *)
 
 (* 2.b Prove Theorem about_mirroring_and_flattening_v2. *)
 
-Lemma about_mirroring_and_flattening_v2_aux :
+Lemma eureka_about_mirroring_and_flattening_v2_aux :
   forall (V : Type)
          (a1s a2s prefix : list V),
     list_append V (list_reverse_acc V a1s prefix) a2s =
@@ -559,15 +559,13 @@ Proof.
     reflexivity.
 Qed.
 
-Theorem about_mirroring_and_flattening_v2 :
+Lemma about_mirroring_and_flattening_v2_aux:
   forall (V : Type)
          (t : binary_tree V),
     binary_tree_flatten V (binary_tree_mirror V t) =
-    list_reverse_alt V (binary_tree_flatten V t).
+    list_reverse_acc V (binary_tree_flatten V t) nil.
 Proof.
-  intros V t.
-  unfold list_reverse_alt.
-  induction t as [ v | t1 IHt1 t2 IHt2].
+    induction t as [ v | t1 IHt1 t2 IHt2].
   - rewrite -> fold_unfold_binary_tree_mirror_Leaf.
     rewrite -> fold_unfold_binary_tree_flatten_Leaf.
     Check about_applying_list_reverse_acc_to_a_singleton_list.
@@ -577,8 +575,8 @@ Proof.
     rewrite -> fold_unfold_binary_tree_flatten_Node.
     rewrite -> IHt1.
     rewrite -> IHt2.
-    Check about_mirroring_and_flattening_v2_aux.
-    rewrite -> (about_mirroring_and_flattening_v2_aux V (binary_tree_flatten V t2)
+    Check eureka_about_mirroring_and_flattening_v2_aux.
+    rewrite -> (eureka_about_mirroring_and_flattening_v2_aux V (binary_tree_flatten V t2)
     (list_reverse_acc V (binary_tree_flatten V t1) nil) nil).
     rewrite -> nil_is_left_neutral_for_list_append.
     rewrite -> fold_unfold_binary_tree_flatten_Node.
@@ -586,6 +584,18 @@ Proof.
     rewrite -> (list_append_and_list_reverse_acc_commute_with_each_other V (binary_tree_flatten V t1)
     (binary_tree_flatten V t2) nil).
     reflexivity.
+Qed.
+
+Theorem about_mirroring_and_flattening_v2 :
+  forall (V : Type)
+         (t : binary_tree V),
+    binary_tree_flatten V (binary_tree_mirror V t) =
+    list_reverse_alt V (binary_tree_flatten V t).
+Proof.
+  intros V t.
+  unfold list_reverse_alt.
+  rewrite -> about_mirroring_and_flattening_v2_aux.
+  reflexivity.
 Qed.
 
 
