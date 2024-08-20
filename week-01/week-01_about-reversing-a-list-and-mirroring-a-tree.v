@@ -445,6 +445,32 @@ Qed. (* Time permitting, prove this helpful property. *)
 
 (* ********** *)
 
+(* list_append: Concatenates two lists
+   Properties:
+   - nil is left and right neutral
+   - Associative
+   - Appending a singleton list is equivalent to cons *)
+
+(* list_reverse: Reverses a list (recursive implementation)
+   Properties:
+   - Reversing a singleton list returns the same list
+   - Reversing and appending commute *)
+
+(* list_reverse_alt: Reverses a list (tail-recursive implementation)
+   Uses an accumulator for efficiency
+   Equivalent to list_reverse in functionality *)
+
+(* binary_tree_mirror: Swaps left and right subtrees recursively
+   Properties:
+   - Mirroring a leaf returns the same leaf *)
+
+(* binary_tree_flatten: Converts a binary tree to a list (in-order traversal)
+   Uses list_append to combine results *)
+
+(* binary_tree_flatten_alt: Converts a binary tree to a list (tail-recursive)
+   Uses an accumulator for efficiency
+   Equivalent to binary_tree_flatten in functionality *)
+
 (* 1.a Explain the following theorem. *)
 
 Theorem about_mirroring_and_flattening_v1 :

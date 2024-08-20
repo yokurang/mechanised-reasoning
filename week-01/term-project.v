@@ -2027,21 +2027,15 @@ Proposition Plus_is_conditionally_commutative:
   (evaluate ae1 = Expressible_nat n1 \/ evaluate ae2 = Expressible_nat n2) ->
   evaluate (Plus ae1 ae2) = evaluate (Plus ae2 ae1).
 Proof.
-  intros ae1 ae2 n1 n2 [H_ae1 | H_ae2].
-  + rewrite -> 2 fold_unfold_evaluate_Plus.
-    destruct (evaluate ae2) as [m1 | s2].
-    ++ rewrite -> H_ae1.
-       rewrite -> Nat.add_comm.
-       reflexivity.
-    ++ rewrite -> H_ae1.
-       reflexivity.
-  + rewrite -> 2 fold_unfold_evaluate_Plus.
-    destruct (evaluate ae1) as [m1 | s1].
-    ++ rewrite -> H_ae2.
-       rewrite -> Nat.add_comm.
-       reflexivity.
-    ++ rewrite -> H_ae2.
-       reflexivity.
+  intros ae1 ae2 n1 n2 [H_ae1 | H_ae2]; rewrite ->2 fold_unfold_evaluate_Plus.
+  - destruct (evaluate ae2) as [m1 | s2]; rewrite -> H_ae1.
+    + rewrite -> Nat.add_comm.
+      reflexivity.
+    + reflexivity.
+  - destruct (evaluate ae1) as [m1 | s1]; rewrite -> H_ae2.
+    + rewrite -> Nat.add_comm.
+      reflexivity.
+    + reflexivity.
 Qed.
 
 (* 
