@@ -423,13 +423,11 @@ Proof.
            binary_tree_flatten_acc V t (list_append V a1 a2) =
            list_append V (binary_tree_flatten_acc V t a1) a2).
   intros V t.
-  induction t as [ v | t1 IHt1 t2 IHt2].
-  - intros a1 a2.
-    rewrite -> 2 fold_unfold_binary_tree_flatten_acc_Leaf.
+  induction t as [ v | t1 IHt1 t2 IHt2]; intros a1 a2.
+  - rewrite ->2 fold_unfold_binary_tree_flatten_acc_Leaf.
     rewrite -> fold_unfold_list_append_cons.
     reflexivity.
-  - intros a1 a2.
-    rewrite -> 2 fold_unfold_binary_tree_flatten_acc_Node.
+  - rewrite ->2 fold_unfold_binary_tree_flatten_acc_Node.
     rewrite -> (IHt2 a1 a2).
     rewrite -> (IHt1 (binary_tree_flatten_acc V t2 a1) a2).
     reflexivity.
@@ -633,25 +631,13 @@ Lemma eureka_binary_tree_flatten_acc_append :
     binary_tree_flatten_acc V t acc =
     list_append V (binary_tree_flatten_acc V t nil) acc.
 Proof.
-  intros V t.
-  induction t as [ v | t1' IHt1' t2' IHt2'].
-  + intro acc. 
-    rewrite -> 2 fold_unfold_binary_tree_flatten_acc_Leaf.
-    rewrite -> fold_unfold_list_append_cons.
-    rewrite -> fold_unfold_list_append_nil.
-    reflexivity.
-  + intro acc.
-    rewrite -> 2 fold_unfold_binary_tree_flatten_acc_Node.
-    rewrite -> (IHt1' (binary_tree_flatten_acc V t2' acc)). 
-    rewrite -> (IHt2' acc).
-    Check list_append_is_associative.
-    rewrite -> (list_append_is_associative V (binary_tree_flatten_acc V t1' nil)
-    (binary_tree_flatten_acc V t2' nil) acc).
-    rewrite -> (IHt1' (binary_tree_flatten_acc V t2' nil)).
-    reflexivity.
+  intros V t acc.
+  rewrite <- (about_binary_tree_flatten_acc V t nil acc).
+  rewrite -> nil_is_left_neutral_for_list_append.
+  reflexivity.
 Qed.
 
-Lemma about_mirroring_and_flattening_v3_aux : 
+Lemma about_mirroring_and_flattening_v3_aux :
   forall (V : Type) (t : binary_tree V) (acc : list V),
   binary_tree_flatten_acc V (binary_tree_mirror V t) acc =
   list_reverse_acc V (binary_tree_flatten_acc V t nil) acc.
@@ -665,7 +651,7 @@ Proof.
   induction t as [v | t1' IHt1' t2' IHt2'].
   + intro acc.
     rewrite -> fold_unfold_binary_tree_mirror_Leaf.
-    rewrite -> 2 fold_unfold_binary_tree_flatten_acc_Leaf.
+    rewrite ->2 fold_unfold_binary_tree_flatten_acc_Leaf.
     rewrite -> fold_unfold_list_reverse_acc_cons.
     rewrite -> fold_unfold_list_reverse_acc_nil.
     reflexivity.
@@ -675,13 +661,13 @@ Proof.
     rewrite -> (IHt1' acc).
     rewrite -> (IHt2' (list_reverse_acc V (binary_tree_flatten_acc V t1' nil) acc)).
     rewrite -> (eureka_binary_tree_flatten_acc_append V t2' nil).
-    rewrite -> (eureka_binary_tree_flatten_acc_append V t1' (list_append V (binary_tree_flatten_acc V t2' nil) nil)). 
+    rewrite -> (eureka_binary_tree_flatten_acc_append V t1' (list_append V (binary_tree_flatten_acc V t2' nil) nil)).
     Check list_append_and_list_reverse_acc_commute_with_each_other.
     rewrite -> (list_append_and_list_reverse_acc_commute_with_each_other V (binary_tree_flatten_acc V t1' nil)
     (list_append V (binary_tree_flatten_acc V t2' nil) nil) acc).
     reflexivity.
 Qed.
-    
+
 Theorem about_mirroring_and_flattening_v3 :
   forall (V : Type)
          (t : binary_tree V),
@@ -740,7 +726,7 @@ Abort. (* Don't prove this theorem, you will do that just below. *)
 Lemma about_mirroring_and_flattening_v4_aux :
 *)
 
-Lemma about_mirroring_and_flattening_v4_aux : 
+Lemma about_mirroring_and_flattening_v4_aux :
   forall (V : Type) (t : binary_tree V) (acc : list V),
   binary_tree_flatten_acc V (binary_tree_mirror V t) acc =
   list_append V (list_reverse V (binary_tree_flatten_acc V t nil)) acc.
@@ -777,7 +763,7 @@ Proof.
     (list_reverse V (binary_tree_flatten_acc V t1' nil)) acc).
      reflexivity.
 Qed.
-    
+
 Theorem about_mirroring_and_flattening_v4 :
   forall (V : Type)
          (t : binary_tree V),
@@ -797,7 +783,7 @@ Proof.
   rewrite -> (nil_is_right_neutral_for_list_append V (list_reverse V (binary_tree_flatten_acc V t nil))).
   reflexivity.
 Qed.
-  
+
 (* Of course you can also prove about_mirroring_and_flattening_v4
    as a corollary of about_mirroring_and_flattening_v1 or of about_mirroring_and_flattening_v2 or of about_mirroring_and_flattening_v3
    but that is not the point: the point is to make you reason
