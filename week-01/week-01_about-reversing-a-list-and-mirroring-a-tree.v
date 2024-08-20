@@ -423,13 +423,11 @@ Proof.
            binary_tree_flatten_acc V t (list_append V a1 a2) =
            list_append V (binary_tree_flatten_acc V t a1) a2).
   intros V t.
-  induction t as [ v | t1 IHt1 t2 IHt2].
-  - intros a1 a2.
-    rewrite -> 2 fold_unfold_binary_tree_flatten_acc_Leaf.
+  induction t as [ v | t1 IHt1 t2 IHt2]; intros a1 a2.
+  - rewrite -> 2 fold_unfold_binary_tree_flatten_acc_Leaf.
     rewrite -> fold_unfold_list_append_cons.
     reflexivity.
-  - intros a1 a2.
-    rewrite -> 2 fold_unfold_binary_tree_flatten_acc_Node.
+  - rewrite -> 2 fold_unfold_binary_tree_flatten_acc_Node.
     rewrite -> (IHt2 a1 a2).
     rewrite -> (IHt1 (binary_tree_flatten_acc V t2 a1) a2).
     reflexivity.
