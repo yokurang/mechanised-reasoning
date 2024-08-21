@@ -2021,22 +2021,34 @@ Proof.
   discriminate H_absurd.
 Qed.
 
-Proposition Plus_is_conditionally_commutative:
-  forall ae1 ae2 : arithmetic_expression,
-  forall n1 n2 : nat,
-  (evaluate ae1 = Expressible_nat n1 \/ evaluate ae2 = Expressible_nat n2) ->
-  evaluate (Plus ae1 ae2) = evaluate (Plus ae2 ae1).
+Proposition Plus_is_conditionally_commutative :
+  forall (ae1 ae2 : arithmetic_expression)
+         (n1 n2 : nat),
+         (evaluate ae1 = Expressible_nat n1 \/ evaluate ae2 = Expressible_nat n2) <->
+         evaluate (Plus ae1 ae2) = evaluate (Plus ae2 ae1).
 Proof.
-  intros ae1 ae2 n1 n2 [H_ae1 | H_ae2]; rewrite ->2 fold_unfold_evaluate_Plus.
-  - destruct (evaluate ae2) as [m1 | s2]; rewrite -> H_ae1.
-    + rewrite -> Nat.add_comm.
-      reflexivity.
-    + reflexivity.
-  - destruct (evaluate ae1) as [m1 | s1]; rewrite -> H_ae2.
-    + rewrite -> Nat.add_comm.
-      reflexivity.
-    + reflexivity.
-Qed.
+  intros ae1 ae2 n1 n2.
+  split.
+  + intros [H_ae1_expressible_nat | H_ae2_expressible_nat].
+    ++ rewrite ->2 fold_unfold_evaluate_Plus.
+       rewrite -> H_ae1_expressible_nat.
+       case (evaluate ae2) as [n2' | s2'].
+       +++ rewrite -> Nat.add_comm.
+           reflexivity.
+       +++ reflexivity.
+    ++ rewrite ->2 fold_unfold_evaluate_Plus.
+       rewrite -> H_ae2_expressible_nat.
+       case (evaluate ae1) as [n1' | s1'].
+       +++ rewrite -> Nat.add_comm.
+           reflexivity.
+       +++ reflexivity.
+  + intros H_comm.
+    rewrite ->2 fold_unfold_evaluate_Plus in H_comm.
+    case (evaluate ae1) as [n1' | s1'] eqn: H_ae1.
+    ++ left.
+       (*How to proceed from this?
+        Expressible_nat n1' = Expressible_nat n1*)
+Admitted.
 
 (* 
 Formulation of Proposition based on the following equivalence:
@@ -2093,12 +2105,27 @@ Proof.
 Qed.
 
 Proposition Literal_0_is_conditionally_absorbing_for_Times_on_the_left :
-  forall ae : arithmetic_expression,
-  forall n : nat,
-  (evaluate ae = Expressible_nat n) ->
-    evaluate (Times (Literal 0) ae) = evaluate (Literal 0).
+  forall (ae : arithmetic_expression)
+        (n : nat),
+        (evaluate ae = Expressible_nat n) <->
+        evaluate (Times (Literal 0) ae) = evaluate (Literal 0).
   Proof.
-  intros ae n H_ae.
+  intros ae n.
+  split.
+  + intros H_ae.
+    rewrite -> fold_unfold_evaluate_Times.
+    rewrite -> fold_unfold_evaluate_Literal.
+    rewrite -> H_ae.
+    rewrite -> Nat.mul_0_l.
+    reflexivity.
+  + intros H_absorb.
+    rewrite -> fold_unfold_evaluate_Times in H_absorb.
+    rewrite -> fold_unfold_evaluate_Literal in H_absorb.
+    case (evaluate ae) as [n' | s].
+    - rewrite -> Nat.mul_0_l in H_absorb.
+      rewrite -> H_absorb.
+      reflexivity.
+    - discriminate H_absorb.
   rewrite -> fold_unfold_evaluate_Times.
   rewrite -> fold_unfold_evaluate_Literal.
   rewrite -> H_ae.
