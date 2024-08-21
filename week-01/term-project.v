@@ -2032,7 +2032,7 @@ Proposition Plus_is_conditionally_commutative :
        (exists s : string,
            evaluate ae1 = Expressible_msg s /\ evaluate ae2 = Expressible_msg s))
     <->
-      evaluate (Plus ae1 ae2) = evaluate (Plus ae2 ae1).
+evaluate (Plus ae1 ae2) = evaluate (Plus ae2 ae1).
 Proof.
   intros ae1 ae2.
   split.
@@ -2134,14 +2134,14 @@ Proof.
 Qed.
 
 Proposition Literal_0_is_conditionally_absorbing_for_Times_on_the_left :
-  forall (ae : arithmetic_expression)
-        (n : nat),
-        (evaluate ae = Expressible_nat n) <->
-        evaluate (Times (Literal 0) ae) = evaluate (Literal 0).
+  forall (ae : arithmetic_expression),
+         (exists n, evaluate ae = Expressible_nat n)
+         <->
+         evaluate (Times (Literal 0) ae) = evaluate (Literal 0).
   Proof.
-  intros ae n.
+  intros ae.
   split.
-  + intros H_ae.
+  + intros [n H_ae].
     rewrite -> fold_unfold_evaluate_Times.
     rewrite -> fold_unfold_evaluate_Literal.
     rewrite -> H_ae.
@@ -2150,18 +2150,11 @@ Proposition Literal_0_is_conditionally_absorbing_for_Times_on_the_left :
   + intros H_absorb.
     rewrite -> fold_unfold_evaluate_Times in H_absorb.
     rewrite -> fold_unfold_evaluate_Literal in H_absorb.
-    case (evaluate ae) as [n' | s].
-    - rewrite -> Nat.mul_0_l in H_absorb.
-  Admitted.
- (*      rewrite -> H_absorb. *)
- (*      reflexivity. *)
- (*    - discriminate H_absorb. *)
- (*  rewrite -> fold_unfold_evaluate_Times. *)
- (*  rewrite -> fold_unfold_evaluate_Literal. *)
- (*  rewrite -> H_ae. *)
- (*  rewrite -> Nat.mul_0_l. *)
- (*  reflexivity. *)
- (* Qed. *)
+    case (evaluate ae) as [n | s].
+    ++ exists n.
+       reflexivity.
+    ++ discriminate H_absorb.
+Qed.
 
 Proposition Literal_0_is_absorbing_for_Times_on_the_right :
   forall ae : arithmetic_expression,
@@ -2188,17 +2181,25 @@ Qed.
 
 Proposition Literal_0_is_conditionally_absorbing_for_Times_on_the_right :
   forall ae : arithmetic_expression,
-  forall n : nat,
-  (evaluate ae = Expressible_nat n) ->
+  (exists n, evaluate ae = Expressible_nat n) <->
     evaluate (Times ae (Literal 0)) = evaluate (Literal 0).
   Proof.
-  intros ae n H_ae.
-  rewrite -> fold_unfold_evaluate_Times.
-  rewrite -> fold_unfold_evaluate_Literal.
-  rewrite -> H_ae.
-  rewrite -> Nat.mul_0_r.
-  reflexivity.
- Qed.
+  intros ae.
+  split.
+  + intros [n H_ae].
+    rewrite -> fold_unfold_evaluate_Times.
+    rewrite -> fold_unfold_evaluate_Literal.
+    rewrite -> H_ae.
+    rewrite -> Nat.mul_0_r.
+    reflexivity.
+  + intros H_absorb.
+    rewrite -> fold_unfold_evaluate_Times in H_absorb.
+    rewrite -> fold_unfold_evaluate_Literal in H_absorb.
+    case (evaluate ae) as [n | s].
+    ++ exists n.
+       reflexivity.
+    ++ discriminate H_absorb.
+Qed.
 
 Proposition Times_is_associative :
   forall ae1 ae2 ae3 : arithmetic_expression,
@@ -2325,9 +2326,9 @@ Proposition Times_is_not_distributive_over_Plus_on_the_right :
     evaluate (Times (Plus ae1 ae2) ae3) <>
     evaluate (Plus (Times ae1 ae3) (Times ae2 ae3)).
 Proof.
-  exists (Literal 0).
+  exists (Minus (Literal 5) (Literal 5)).
   exists (Minus (Literal 4) (Literal 5)).
-  exists (Minus (Literal 1) (Literal 3)).
+  exists (Minus (Literal 3) (Literal 5)).
   compute.
   intro H_absurd.
   discriminate H_absurd.
@@ -2335,19 +2336,71 @@ Qed.
 
 Proposition Times_is_conditionally_distributive_over_Plus_on_the_right :
   forall ae1 ae2 ae3 : arithmetic_expression,
-  forall n1 n2 n3 : nat,
-  (evaluate ae2 = Expressible_nat n2 \/
-   evaluate ae3 = Expressible_nat n3) ->
+  (exists n : nat, evaluate ae2 = Expressible_nat n)
+  \/
+  (exists n : nat, evaluate ae3 = Expressible_nat n)
+  \/ 
+  (exists s : string,
+    evaluate ae2 = Expressible_msg s
+    /\
+    evaluate ae3 = Expressible_msg s) <->
     evaluate (Times (Plus ae1 ae2) ae3) =
     evaluate (Plus (Times ae1 ae3) (Times ae2 ae3)).
 Proof.
-  intros ae1 ae2 ae3 n1 n2 n3 [Hae1 [Hae2 Hae3]].
-  rewrite -> fold_unfold_evaluate_Times.
-  rewrite -> 2 fold_unfold_evaluate_Plus.
-  rewrite -> 2 fold_unfold_evaluate_Times.
-  rewrite -> Hae1, Hae2, Hae3.
-  rewrite -> Nat.mul_add_distr_r.
-  reflexivity.
+  intros ae1 ae2 ae3.
+  split.
+  + intros [[n2 H_n2] | [[n3 H_n3] | [s [H_s2 H_s3]]]].
+    ++ rewrite -> fold_unfold_evaluate_Times.
+       rewrite -> 2 fold_unfold_evaluate_Plus.
+       rewrite -> 2 fold_unfold_evaluate_Times.
+       rewrite -> H_n2.
+       case (evaluate ae1) as [n1 | s1] eqn:Hae1.
+       case (evaluate ae3) as [n3 | s3] eqn:Hae3.
+       +++ rewrite -> Nat.mul_add_distr_r.
+           reflexivity.
+       +++ reflexivity.
+       +++ reflexivity.
+    ++ rewrite -> fold_unfold_evaluate_Times.
+       rewrite -> 2 fold_unfold_evaluate_Plus.
+       rewrite -> 2 fold_unfold_evaluate_Times.
+       rewrite -> H_n3.
+       case (evaluate ae1) as [n1 | s1] eqn:Hae1.
+       case (evaluate ae2) as [n2 | s2] eqn:Hae2.
+       +++ rewrite -> Nat.mul_add_distr_r.
+           reflexivity.
+       +++ reflexivity.
+       +++ reflexivity.
+    ++ rewrite -> fold_unfold_evaluate_Times.
+       rewrite -> 2 fold_unfold_evaluate_Plus.
+       rewrite -> 2 fold_unfold_evaluate_Times.
+       rewrite -> H_s3.
+       rewrite -> H_s2.
+       case (evaluate ae1) as [n1 | s1] eqn:Hae1.
+       +++ reflexivity.
+       +++ reflexivity.
+  + case (evaluate ae2) as [n2 | s2] eqn:Hae2.
+    case (evaluate ae3) as [n3 | s3] eqn:Hae3.
+    ++ intros _.
+       left.
+       exists n2.
+       reflexivity.
+    ++ intros _.
+       left.
+       exists n2.
+       reflexivity.
+    ++ intros H_eq_s1_s2.
+       right. right.
+       exists s2.
+       reflexivity.
+
+
+  (* intros ae1 ae2 ae3 n1 n2 n3 [Hae1 [Hae2 Hae3]]. *)
+  (* rewrite -> fold_unfold_evaluate_Times. *)
+  (* rewrite -> 2 fold_unfold_evaluate_Plus. *)
+  (* rewrite -> 2 fold_unfold_evaluate_Times. *)
+  (* rewrite -> Hae1, Hae2, Hae3. *)
+  (* rewrite -> Nat.mul_add_distr_r. *)
+  (* reflexivity. *)
 Qed.
 
 Proposition Times_distributive_over_Plus_on_the_left :
