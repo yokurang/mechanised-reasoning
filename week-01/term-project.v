@@ -2022,34 +2022,63 @@ Proof.
 Qed.
 
 Proposition Plus_is_conditionally_commutative :
-  forall (ae1 ae2 : arithmetic_expression)
-         (n1 n2 : nat),
-         (evaluate ae1 = Expressible_nat n1 \/ evaluate ae2 = Expressible_nat n2) <->
-         evaluate (Plus ae1 ae2) = evaluate (Plus ae2 ae1).
+  forall ae1 ae2 : arithmetic_expression,
+    ((exists n : nat,
+         evaluate ae1 = Expressible_nat n)
+     \/
+       (exists n : nat,
+           evaluate ae2 = Expressible_nat n)
+     \/
+       (exists s : string,
+           evaluate ae1 = Expressible_msg s /\ evaluate ae2 = Expressible_msg s))
+    <->
+      evaluate (Plus ae1 ae2) = evaluate (Plus ae2 ae1).
 Proof.
-  intros ae1 ae2 n1 n2.
+  intros ae1 ae2.
   split.
-  + intros [H_ae1_expressible_nat | H_ae2_expressible_nat].
-    ++ rewrite ->2 fold_unfold_evaluate_Plus.
-       rewrite -> H_ae1_expressible_nat.
-       case (evaluate ae2) as [n2' | s2'].
-       +++ rewrite -> Nat.add_comm.
-           reflexivity.
-       +++ reflexivity.
-    ++ rewrite ->2 fold_unfold_evaluate_Plus.
-       rewrite -> H_ae2_expressible_nat.
-       case (evaluate ae1) as [n1' | s1'].
-       +++ rewrite -> Nat.add_comm.
-           reflexivity.
-       +++ reflexivity.
-  + intros H_comm.
-    rewrite ->2 fold_unfold_evaluate_Plus in H_comm.
-    case (evaluate ae1) as [n1' | s1'] eqn: H_ae1.
-    ++ left.
-       (*How to proceed from this?
-        Expressible_nat n1' = Expressible_nat n1*)
-Admitted.
-
+  - intros [[n1 H_n1] | [[n2 H_n2] | [s [H_s1 H_s2]]]].
+    + rewrite ->2 fold_unfold_evaluate_Plus.
+      rewrite -> H_n1.
+      case (evaluate ae2) as [n2 | s2]. 
+      * rewrite -> (Nat.add_comm n2 n1).
+        reflexivity.
+      * reflexivity.
+    + rewrite ->2 fold_unfold_evaluate_Plus.
+      rewrite -> H_n2.
+      case (evaluate ae1) as [n1 | s1].
+      * rewrite -> (Nat.add_comm n2 n1).
+        reflexivity.
+      * reflexivity.
+    + rewrite ->2 fold_unfold_evaluate_Plus.
+      rewrite -> H_s1.
+      rewrite -> H_s2.
+      reflexivity.
+  - rewrite ->2 fold_unfold_evaluate_Plus;
+      case (evaluate ae1) as [n1 | s1] eqn:H_ae1;
+      case (evaluate ae2) as [n2 | s2] eqn:H_ae2.
+    + intros _.
+      left.
+      exists n1.
+      reflexivity.
+    + intros _.
+      left.
+      exists n1.
+      reflexivity.
+    + intros _.
+      right.
+      left.
+      exists n2.
+      reflexivity.
+    + (* This is the missing statement *)
+      intros H_eq_s1_s2.
+      right.
+      right.
+      exists s1.
+      split.
+      * reflexivity.
+      * exact (eq_sym H_eq_s1_s2).
+Qed.      
+      
 (* 
 Formulation of Proposition based on the following equivalence:
   ((A -> C) /\ (B -> C)) <-> ((A \/ B -> C))
