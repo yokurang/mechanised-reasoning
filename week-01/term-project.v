@@ -2232,7 +2232,7 @@ Proof.
     ++ (* Times is not commutative *)
 Abort.
 
-Proposition Times_is_not_commutative : 
+Proposition Times_is_not_commutative :
   exists ae1 ae2: arithmetic_expression,
     evaluate (Times ae1 ae2) <> evaluate (Times ae2 ae1).
 Proof.
@@ -2243,28 +2243,63 @@ Proof.
   discriminate H_absurd.
 Qed.
 
+Compute (
+    let ae1 := Literal 1 in
+    let ae1 := Minus (Literal 0) (Literal 3) in
+    let ae2 := Minus (Literal 0) (Literal 1) in
+    evaluate (Times ae1 ae2) = evaluate (Times ae2 ae1)).
+
 Proposition Times_is_conditionally_commutative  :
-  forall ae1 ae2 : arithmetic_expression,
-  forall n1 n2 : nat,
-  (evaluate ae1 = Expressible_nat n1 \/ evaluate ae2 = Expressible_nat n2) ->
-  evaluate (Times ae1 ae2) = evaluate (Times ae2 ae1).
+  forall (ae1 ae2 : arithmetic_expression),
+    (exists n : nat,
+        evaluate ae1 = Expressible_nat n) \/
+      (exists n : nat,
+          evaluate ae2 = Expressible_nat n) \/
+      (exists s : string,
+          evaluate ae1 = Expressible_msg s /\
+            evaluate ae2 = Expressible_msg s) <->
+      evaluate (Times ae1 ae2) = evaluate (Times ae2 ae1).
 Proof.
-intros ae1 ae2 n1 n2 [H_ae1 | H_ae2].
-+ rewrite -> 2 fold_unfold_evaluate_Times.
-  destruct (evaluate ae2) as [m2 | s2].
-  ++ rewrite -> H_ae1.
-     rewrite -> Nat.mul_comm.
-     reflexivity.
-  ++ rewrite -> H_ae1.
-     reflexivity.
-+ rewrite -> 2 fold_unfold_evaluate_Times.
-  destruct (evaluate ae1) as [m1 | s1].
-  ++ rewrite -> H_ae2.
-     rewrite -> Nat.mul_comm.
-     reflexivity.
-  ++ rewrite -> H_ae2.
-     reflexivity.
-Qed. 
+  intros ae1 ae2.
+  split.
+  - intros [[ n1 H_ae1_n ] | [ [ n2 H_ae2_n ] | [ s [ H_ae1_s H_ae2_s ]]]].
+    + rewrite ->2 fold_unfold_evaluate_Times.
+      case (evaluate ae2) as [ n2 | s2 ].
+      * rewrite -> H_ae1_n.
+        rewrite -> Nat.mul_comm.
+        reflexivity.
+      * rewrite -> H_ae1_n.
+        reflexivity.
+    + rewrite ->2 fold_unfold_evaluate_Times.
+      case (evaluate ae1) as [ n1 | s1 ].
+      * rewrite -> H_ae2_n.
+        rewrite -> Nat.mul_comm.
+        reflexivity.
+      * rewrite -> H_ae2_n.
+        reflexivity.
+    +  rewrite ->2 fold_unfold_evaluate_Times.
+       rewrite -> H_ae1_s.
+       rewrite -> H_ae2_s.
+       reflexivity.
+  - intro H_eq_ev.
+    rewrite ->2 fold_unfold_evaluate_Times in H_eq_ev.
+    case (evaluate ae1) as [ n1 |s1 ]; case (evaluate ae2) as [ n2 | s2].
+    + left.
+      exists n1.
+      reflexivity.
+    + left.
+      exists n1.
+      reflexivity.
+    + right; left.
+      exists n2.
+      reflexivity.
+    + right; right.
+      exists s1.
+      split.
+      * reflexivity.
+      * rewrite -> H_eq_ev.
+        reflexivity.
+Qed.
 
 Proposition Times_distributive_over_Plus_on_the_right :
   forall ae1 ae2 ae3 : arithmetic_expression,
@@ -2290,7 +2325,7 @@ Proposition Times_is_not_distributive_over_Plus_on_the_right :
     evaluate (Times (Plus ae1 ae2) ae3) <>
     evaluate (Plus (Times ae1 ae3) (Times ae2 ae3)).
 Proof.
-  exists (Literal 0). 
+  exists (Literal 0).
   exists (Minus (Literal 4) (Literal 5)).
   exists (Minus (Literal 1) (Literal 3)).
   compute.
@@ -2301,7 +2336,7 @@ Qed.
 Proposition Times_is_conditionally_distributive_over_Plus_on_the_right :
   forall ae1 ae2 ae3 : arithmetic_expression,
   forall n1 n2 n3 : nat,
-  (evaluate ae2 = Expressible_nat n2 \/ 
+  (evaluate ae2 = Expressible_nat n2 \/
    evaluate ae3 = Expressible_nat n3) ->
     evaluate (Times (Plus ae1 ae2) ae3) =
     evaluate (Plus (Times ae1 ae3) (Times ae2 ae3)).
