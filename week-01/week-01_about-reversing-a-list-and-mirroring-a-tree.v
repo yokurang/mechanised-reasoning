@@ -761,20 +761,20 @@ Proof.
     rewrite ->2 fold_unfold_binary_tree_flatten_acc_Node.
     rewrite -> (IHt1' acc).
     rewrite -> (IHt2' (list_append V (list_reverse V (binary_tree_flatten_acc V t1' nil)) acc)).
-    Check (about_binary_tree_flatten_acc).
     rewrite <- (fold_unfold_list_append_nil V nil) at 1.
-    rewrite -> about_binary_tree_flatten_acc.
-    rewrite -> list_append_is_associative.
-    rewrite <- list_append_and_list_reverse_commute_with_each_other.
-    
-    rewrite <- (fold_unfold_list_append_nil V nil) at 4.
-    rewrite -> about_binary_tree_flatten_acc.
-    rewrite -> about_binary_tree_flatten_acc.
     Check (about_binary_tree_flatten_acc).
-    rewrite -> 2 nil_is_right_neutral_for_list_append.
+    rewrite -> (about_binary_tree_flatten_acc V t2' nil nil).
+    Check (list_append_is_associative).
+    rewrite -> (list_append_is_associative V
+    (list_reverse V (list_append V (binary_tree_flatten_acc V t2' nil) nil))
+    (list_reverse V (binary_tree_flatten_acc V t1' nil)) acc).
+    Check (list_append_and_list_reverse_commute_with_each_other).
+    rewrite <- (list_append_and_list_reverse_commute_with_each_other V
+    (binary_tree_flatten_acc V t1' nil)
+    (list_append V (binary_tree_flatten_acc V t2' nil) nil)).
+    rewrite -> (nil_is_right_neutral_for_list_append V (binary_tree_flatten_acc V t2' nil)).
     Check (about_binary_tree_flatten_acc).
     rewrite <- (about_binary_tree_flatten_acc V t1' nil (binary_tree_flatten_acc V t2' nil)).
-    rewrite -> nil_is_left_neutral_for_list_append.
     reflexivity.
 Qed.
 
