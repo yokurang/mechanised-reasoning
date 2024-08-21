@@ -44,19 +44,19 @@ Require Import Arith Bool List.
 Fixpoint eqb_list (V : Type) (eqb_V : V -> V -> bool) (v1s v2s : list V) : bool :=
   match v1s with
     nil =>
-    match v2s with
-      nil =>
-      true
-    | v2 :: v2s' =>
-      false
-    end
+      match v2s with
+        nil =>
+          true
+      | v2 :: v2s' =>
+          false
+      end
   | v1 :: v1s' =>
-    match v2s with
-      nil =>
-      false
-    | v2 :: v2s' =>
-      eqb_V v1 v2 && eqb_list V eqb_V v1s' v2s'
-    end
+      match v2s with
+        nil =>
+          false
+      | v2 :: v2s' =>
+          eqb_V v1 v2 && eqb_list V eqb_V v1s' v2s'
+      end
   end.
 
 Definition test_list_append (candidate : forall V : Type, list V -> list V -> list V) : bool :=
@@ -66,21 +66,21 @@ Definition test_list_append (candidate : forall V : Type, list V -> list V -> li
      (candidate nat nil nil)
      nil)
   &&
-  (eqb_list
-     nat
-     Nat.eqb
-     (candidate nat (1 :: 2 :: nil) (3 :: 4 :: nil))
-     (1 :: 2 :: 3 :: 4 :: nil))
-  (* etc. *)
-  .
+    (eqb_list
+       nat
+       Nat.eqb
+       (candidate nat (1 :: 2 :: nil) (3 :: 4 :: nil))
+       (1 :: 2 :: 3 :: 4 :: nil))
+(* etc. *)
+.
 
 Fixpoint list_append (V : Type) (v1s v2s : list V) : list V :=
   match v1s with
     nil =>
-    v2s
+      v2s
   | v1 :: v1s' =>
-    v1 :: list_append V v1s' v2s
-end.
+      v1 :: list_append V v1s' v2s
+  end.
 
 Compute (test_list_append list_append).
 
@@ -88,7 +88,7 @@ Lemma fold_unfold_list_append_nil :
   forall (V : Type)
          (v2s : list V),
     list_append V nil v2s =
-    v2s.
+      v2s.
 Proof.
   fold_unfold_tactic list_append.
 Qed.
@@ -98,7 +98,7 @@ Lemma fold_unfold_list_append_cons :
          (v1 : V)
          (v1s' v2s : list V),
     list_append V (v1 :: v1s') v2s =
-    v1 :: list_append V v1s' v2s.
+      v1 :: list_append V v1s' v2s.
 Proof.
   fold_unfold_tactic list_append.
 Qed.
@@ -122,7 +122,7 @@ Property list_append_is_associative :
          (v1s v2s v3s : list V),
     list_append V v1s (list_append V v2s v3s)
     =
-    list_append V (list_append V v1s v2s) v3s.
+      list_append V (list_append V v1s v2s) v3s.
 Proof.
 Admitted. (* was proved in the FPP/LPP midterm project *)
 
@@ -147,20 +147,20 @@ Definition test_list_reverse (candidate : forall V : Type, list V -> list V) : b
      (candidate nat nil)
      nil)
   &&
-  (eqb_list
-     nat
-     Nat.eqb
-     (candidate nat (1 :: 2 :: nil))
-     (2 :: 1 :: nil))
-  (* etc. *)
-  .
+    (eqb_list
+       nat
+       Nat.eqb
+       (candidate nat (1 :: 2 :: nil))
+       (2 :: 1 :: nil))
+(* etc. *)
+.
 
 Fixpoint list_reverse (V : Type) (vs : list V) : list V :=
   match vs with
     nil =>
-    nil
+      nil
   | v :: vs' =>
-    list_append V (list_reverse V vs') (v :: nil)
+      list_append V (list_reverse V vs') (v :: nil)
   end.
 
 Compute (test_list_reverse list_reverse).
@@ -168,7 +168,7 @@ Compute (test_list_reverse list_reverse).
 Lemma fold_unfold_list_reverse_nil :
   forall (V : Type),
     list_reverse V nil =
-    nil.
+      nil.
 Proof.
   fold_unfold_tactic list_reverse.
 Qed.
@@ -178,7 +178,7 @@ Lemma fold_unfold_list_reverse_cons :
          (v : V)
          (vs' : list V),
     list_reverse V (v :: vs') =
-    list_append V (list_reverse V vs') (v :: nil).
+      list_append V (list_reverse V vs') (v :: nil).
 Proof.
   fold_unfold_tactic list_reverse.
 Qed.
@@ -200,7 +200,7 @@ Property list_append_and_list_reverse_commute_with_each_other :
          (v1s v2s : list V),
     list_reverse V (list_append V v1s v2s)
     =
-    list_append V (list_reverse V v2s) (list_reverse V v1s).
+      list_append V (list_reverse V v2s) (list_reverse V v1s).
 Proof.
 Admitted. (* was proved in the FPP/LPP midterm project *)
 
@@ -209,16 +209,16 @@ Admitted. (* was proved in the FPP/LPP midterm project *)
 Fixpoint list_reverse_acc (V : Type) (v1s a : list V) : list V :=
   match v1s with
     nil =>
-    a
+      a
   | v1 :: v1s' =>
-    list_reverse_acc V v1s' (v1 :: a)
+      list_reverse_acc V v1s' (v1 :: a)
   end.
 
 Lemma fold_unfold_list_reverse_acc_nil :
   forall (V : Type)
          (a : list V),
     list_reverse_acc V nil a =
-    a.
+      a.
 Proof.
   fold_unfold_tactic list_reverse_acc.
 Qed.
@@ -228,7 +228,7 @@ Lemma fold_unfold_list_reverse_acc_cons :
          (v1 : V)
          (v1s' a : list V),
     list_reverse_acc V (v1 :: v1s') a =
-    list_reverse_acc V v1s' (v1 :: a).
+      list_reverse_acc V v1s' (v1 :: a).
 Proof.
   fold_unfold_tactic list_reverse_acc.
 Qed.
@@ -255,7 +255,7 @@ Property list_append_and_list_reverse_acc_commute_with_each_other :
          (v1s v2s a : list V),
     list_reverse_acc V (list_append V v1s v2s) a
     =
-    list_reverse_acc V v2s (list_reverse_acc V v1s a).
+      list_reverse_acc V v2s (list_reverse_acc V v1s a).
 Proof.
 Admitted. (* was proved in the FPP/LPP midterm project *)
 
@@ -275,19 +275,19 @@ Inductive binary_tree (V : Type) : Type :=
 Fixpoint eqb_binary_tree (V : Type) (eqb_V : V -> V -> bool) (t1 t2 : binary_tree V) : bool :=
   match t1 with
     Leaf _ v1 =>
-    match t2 with
-      Leaf _ v2 =>
-      eqb_V v1 v2
-    | Node _ t21 t22 =>
-      false
-    end
+      match t2 with
+        Leaf _ v2 =>
+          eqb_V v1 v2
+      | Node _ t21 t22 =>
+          false
+      end
   | Node _ t11 t12 =>
-    match t2 with
-      Leaf _ v2 =>
-      false
-    | Node _ t21 t22 =>
-      eqb_binary_tree V eqb_V t11 t21 && eqb_binary_tree V eqb_V t12 t22
-    end
+      match t2 with
+        Leaf _ v2 =>
+          false
+      | Node _ t21 t22 =>
+          eqb_binary_tree V eqb_V t11 t21 && eqb_binary_tree V eqb_V t12 t22
+      end
   end.
 
 (* ***** *)
@@ -300,15 +300,15 @@ Definition test_binary_tree_mirror (candidate : forall V : Type, binary_tree V -
         nat
         (Node nat (Leaf nat 1) (Leaf nat 2)))
      (Node nat (Leaf nat 2) (Leaf nat 1)))
-  (* etc. *)
-  .
+(* etc. *)
+.
 
 Fixpoint binary_tree_mirror (V : Type) (t : binary_tree V) : binary_tree V :=
   match t with
     Leaf _ v =>
-    Leaf V v
+      Leaf V v
   | Node _ t1 t2 =>
-    Node V (binary_tree_mirror V t2) (binary_tree_mirror V t1)
+      Node V (binary_tree_mirror V t2) (binary_tree_mirror V t1)
   end.
 
 Compute (test_binary_tree_mirror binary_tree_mirror).
@@ -317,7 +317,7 @@ Lemma fold_unfold_binary_tree_mirror_Leaf :
   forall (V : Type)
          (v : V),
     binary_tree_mirror V (Leaf V v) =
-    Leaf V v.
+      Leaf V v.
 Proof.
   fold_unfold_tactic binary_tree_mirror.
 Qed.
@@ -326,7 +326,7 @@ Lemma fold_unfold_binary_tree_mirror_Node :
   forall (V : Type)
          (t1 t2 : binary_tree V),
     binary_tree_mirror V (Node V t1 t2) =
-    Node V (binary_tree_mirror V t2) (binary_tree_mirror V t1).
+      Node V (binary_tree_mirror V t2) (binary_tree_mirror V t1).
 Proof.
   fold_unfold_tactic binary_tree_mirror.
 Qed.
@@ -341,15 +341,15 @@ Definition test_binary_tree_flatten (candidate : forall V : Type, binary_tree V 
         nat
         (Node nat (Leaf nat 1) (Leaf nat 2)))
      (1 :: 2 :: nil))
-  (* etc. *)
-  .
+(* etc. *)
+.
 
 Fixpoint binary_tree_flatten (V : Type) (t : binary_tree V) : list V :=
   match t with
     Leaf _ v =>
-    v :: nil
+      v :: nil
   | Node _ t1 t2 =>
-    list_append V (binary_tree_flatten V t1) (binary_tree_flatten V t2)
+      list_append V (binary_tree_flatten V t1) (binary_tree_flatten V t2)
   end.
 
 Compute (test_binary_tree_flatten binary_tree_flatten).
@@ -358,7 +358,7 @@ Lemma fold_unfold_binary_tree_flatten_Leaf :
   forall (V : Type)
          (v : V),
     binary_tree_flatten V (Leaf V v) =
-    v :: nil.
+      v :: nil.
 Proof.
   fold_unfold_tactic binary_tree_flatten.
 Qed.
@@ -367,7 +367,7 @@ Lemma fold_unfold_binary_tree_flatten_Node :
   forall (V : Type)
          (t1 t2 : binary_tree V),
     binary_tree_flatten V (Node V t1 t2) =
-    list_append V (binary_tree_flatten V t1) (binary_tree_flatten V t2).
+      list_append V (binary_tree_flatten V t1) (binary_tree_flatten V t2).
 Proof.
   fold_unfold_tactic binary_tree_flatten.
 Qed.
@@ -377,9 +377,9 @@ Qed.
 Fixpoint binary_tree_flatten_acc (V : Type) (t : binary_tree V) (a : list V) : list V :=
   match t with
     Leaf _ v =>
-    v :: a
+      v :: a
   | Node _ t1 t2 =>
-    binary_tree_flatten_acc V t1 (binary_tree_flatten_acc V t2 a)
+      binary_tree_flatten_acc V t1 (binary_tree_flatten_acc V t2 a)
   end.
 
 Lemma fold_unfold_binary_tree_flatten_acc_Leaf :
@@ -387,7 +387,7 @@ Lemma fold_unfold_binary_tree_flatten_acc_Leaf :
          (v : V)
          (a : list V),
     binary_tree_flatten_acc V (Leaf V v) a =
-    v :: a.
+      v :: a.
 Proof.
   fold_unfold_tactic binary_tree_flatten_acc.
 Qed.
@@ -397,7 +397,7 @@ Lemma fold_unfold_binary_tree_flatten_acc_Node :
          (t1 t2 : binary_tree V)
          (a : list V),
     binary_tree_flatten_acc V (Node V t1 t2) a =
-    binary_tree_flatten_acc V t1 (binary_tree_flatten_acc V t2 a).
+      binary_tree_flatten_acc V t1 (binary_tree_flatten_acc V t2 a).
 Proof.
   fold_unfold_tactic binary_tree_flatten.
 Qed.
@@ -412,16 +412,24 @@ Property about_binary_tree_flatten_acc :
          (t : binary_tree V)
          (a1 a2 : list V),
     binary_tree_flatten_acc V t (list_append V a1 a2) =
-    list_append V (binary_tree_flatten_acc V t a1) a2.
+      list_append V (binary_tree_flatten_acc V t a1) a2.
 Proof.
   Compute (let V := nat in
            let t := Node nat
-                         (Node nat (Leaf nat 1) (Leaf nat 2))
-                         (Node nat (Leaf nat 3) (Leaf nat 4)) in
+                      (Node nat (Leaf nat 1) (Leaf nat 2))
+                      (Node nat (Leaf nat 3) (Leaf nat 4)) in
            let a1 := 10 :: 20 :: nil in
            let a2 := 30 :: 40 :: nil in
            binary_tree_flatten_acc V t (list_append V a1 a2) =
-           list_append V (binary_tree_flatten_acc V t a1) a2).
+             list_append V (binary_tree_flatten_acc V t a1) a2).
+  Compute (let V := nat in
+           let t := Node nat
+                      (Leaf nat 1)
+                      (Node nat (Leaf nat 2) (Leaf nat 3)) in
+           let a1 := 10 :: 20 :: nil in
+           let a2 := 30 :: nil in
+           binary_tree_flatten_acc V t (list_append V a1 a2) =
+             list_append V (binary_tree_flatten_acc V t a1) a2).
   intros V t.
   induction t as [ v | t1 IHt1 t2 IHt2]; intros a1 a2.
   - rewrite ->2 fold_unfold_binary_tree_flatten_acc_Leaf.
@@ -475,12 +483,12 @@ Theorem about_mirroring_and_flattening_v1 :
   forall (V : Type)
          (t : binary_tree V),
     binary_tree_flatten V (binary_tree_mirror V t) =
-    list_reverse V (binary_tree_flatten V t).
+      list_reverse V (binary_tree_flatten V t).
 Proof.
-   Compute (let V := nat in
-            let t := Node V (Leaf V 1) (Node V (Leaf V 2) (Leaf V 3)) in
-            binary_tree_flatten V (binary_tree_mirror V t) =
-            list_reverse V (binary_tree_flatten V t)).
+  Compute (let V := nat in
+           let t := Node V (Leaf V 1) (Node V (Leaf V 2) (Leaf V 3)) in
+           binary_tree_flatten V (binary_tree_mirror V t) =
+             list_reverse V (binary_tree_flatten V t)).
 Abort. (* Don't prove this theorem, you will do that just below. *)
 
 (* ***** *)
@@ -491,7 +499,7 @@ Theorem about_mirroring_and_flattening_v1 :
   forall (V : Type)
          (t : binary_tree V),
     binary_tree_flatten V (binary_tree_mirror V t) =
-    list_reverse V (binary_tree_flatten V t).
+      list_reverse V (binary_tree_flatten V t).
 Proof.
   intros V t.
   induction t as [ v | t1 IHt1 t2 IHt2].
@@ -505,7 +513,7 @@ Proof.
     rewrite -> IHt2.
     Check list_append_and_list_reverse_commute_with_each_other.
     rewrite <- (list_append_and_list_reverse_commute_with_each_other V (binary_tree_flatten V t1)
-    (binary_tree_flatten V t2)).
+                  (binary_tree_flatten V t2)).
     rewrite <- fold_unfold_binary_tree_flatten_Node.
     reflexivity.
 Qed.
@@ -518,12 +526,12 @@ Theorem about_mirroring_and_flattening_v2 :
   forall (V : Type)
          (t : binary_tree V),
     binary_tree_flatten V (binary_tree_mirror V t) =
-    list_reverse_alt V (binary_tree_flatten V t).
+      list_reverse_alt V (binary_tree_flatten V t).
 Proof.
-   Compute (let V := nat in
-            let t := Node V (Leaf V 1) (Node V (Leaf V 2) (Leaf V 3)) in
-            binary_tree_flatten V (binary_tree_mirror V t) =
-            list_reverse_alt V (binary_tree_flatten V t)).
+  Compute (let V := nat in
+           let t := Node V (Leaf V 1) (Node V (Leaf V 2) (Leaf V 3)) in
+           binary_tree_flatten V (binary_tree_mirror V t) =
+             list_reverse_alt V (binary_tree_flatten V t)).
 Abort. (* Don't prove this theorem, you will do that just below. *)
 
 (* This theorem states that for any binary tree:
@@ -531,7 +539,7 @@ Abort. (* Don't prove this theorem, you will do that just below. *)
    2. It's equivalent to flattening the original tree and then reversing it
 
    This theorem holds for any type V and any binary tree t of that type.
-*)
+ *)
 
 (* ***** *)
 
@@ -563,9 +571,9 @@ Lemma about_mirroring_and_flattening_v2_aux:
   forall (V : Type)
          (t : binary_tree V),
     binary_tree_flatten V (binary_tree_mirror V t) =
-    list_reverse_acc V (binary_tree_flatten V t) nil.
+      list_reverse_acc V (binary_tree_flatten V t) nil.
 Proof.
-    induction t as [ v | t1 IHt1 t2 IHt2].
+  induction t as [ v | t1 IHt1 t2 IHt2].
   - rewrite -> fold_unfold_binary_tree_mirror_Leaf.
     rewrite -> fold_unfold_binary_tree_flatten_Leaf.
     Check about_applying_list_reverse_acc_to_a_singleton_list.
@@ -577,12 +585,12 @@ Proof.
     rewrite -> IHt2.
     Check eureka_about_mirroring_and_flattening_v2_aux.
     rewrite -> (eureka_about_mirroring_and_flattening_v2_aux V (binary_tree_flatten V t2)
-    (list_reverse_acc V (binary_tree_flatten V t1) nil) nil).
+                  (list_reverse_acc V (binary_tree_flatten V t1) nil) nil).
     rewrite -> nil_is_left_neutral_for_list_append.
     rewrite -> fold_unfold_binary_tree_flatten_Node.
     Check list_append_and_list_reverse_acc_commute_with_each_other.
     rewrite -> (list_append_and_list_reverse_acc_commute_with_each_other V (binary_tree_flatten V t1)
-    (binary_tree_flatten V t2) nil).
+                  (binary_tree_flatten V t2) nil).
     reflexivity.
 Qed.
 
@@ -590,7 +598,7 @@ Theorem about_mirroring_and_flattening_v2 :
   forall (V : Type)
          (t : binary_tree V),
     binary_tree_flatten V (binary_tree_mirror V t) =
-    list_reverse_alt V (binary_tree_flatten V t).
+      list_reverse_alt V (binary_tree_flatten V t).
 Proof.
   intros V t.
   unfold list_reverse_alt.
@@ -613,10 +621,10 @@ Theorem about_mirroring_and_flattening_v3 :
     binary_tree_flatten_alt V (binary_tree_mirror V t) =
       list_reverse_alt V (binary_tree_flatten_alt V t).
 Proof.
-   Compute (let V := nat in
-            let t := Node V (Leaf V 1) (Node V (Leaf V 2) (Leaf V 3)) in
-            binary_tree_flatten_alt V (binary_tree_mirror V t) =
-            list_reverse_alt V (binary_tree_flatten_alt V t)).
+  Compute (let V := nat in
+           let t := Node V (Leaf V 1) (Node V (Leaf V 2) (Leaf V 3)) in
+           binary_tree_flatten_alt V (binary_tree_mirror V t) =
+             list_reverse_alt V (binary_tree_flatten_alt V t)).
 Abort. (* Don't prove this theorem, you will do that just below. *)
 
 (* Theorem about_mirroring_and_flattening_v3 states that:
@@ -629,7 +637,7 @@ Abort. (* Don't prove this theorem, you will do that just below. *)
 
    Note that v2 uses list_append and list_reverse_acc, while v3 uses their alternative versions
    (binary_tree_flatten_alt and list_reverse_alt).
-*)
+ *)
 
 (* ***** *)
 
@@ -647,12 +655,12 @@ Proof.
   rewrite -> nil_is_left_neutral_for_list_append.
   reflexivity.
 Qed.
-*)
+ *)
 
 Lemma about_mirroring_and_flattening_v3_aux :
   forall (V : Type) (t : binary_tree V) (acc : list V),
-  binary_tree_flatten_acc V (binary_tree_mirror V t) acc =
-  list_reverse_acc V (binary_tree_flatten_acc V t nil) acc.
+    binary_tree_flatten_acc V (binary_tree_mirror V t) acc =
+      list_reverse_acc V (binary_tree_flatten_acc V t nil) acc.
 Proof.
   intros V t.
   induction t as [v | t1' IHt1' t2' IHt2']; intro acc.
@@ -678,12 +686,12 @@ Theorem about_mirroring_and_flattening_v3 :
   forall (V : Type)
          (t : binary_tree V),
     binary_tree_flatten_alt V (binary_tree_mirror V t) =
-    list_reverse_alt V (binary_tree_flatten_alt V t).
+      list_reverse_alt V (binary_tree_flatten_alt V t).
 Proof.
   Compute (let V := nat in
-    let t := Node V (Leaf V 1) (Node V (Leaf V 2) (Leaf V 3)) in
-    binary_tree_flatten_alt V (binary_tree_mirror V t) =
-    list_reverse_alt V (binary_tree_flatten_alt V t)).
+           let t := Node V (Leaf V 1) (Node V (Leaf V 2) (Leaf V 3)) in
+           binary_tree_flatten_alt V (binary_tree_mirror V t) =
+             list_reverse_alt V (binary_tree_flatten_alt V t)).
   intros V t.
   unfold binary_tree_flatten_alt, list_reverse_alt.
   Check (about_mirroring_and_flattening_v3_aux).
@@ -704,12 +712,12 @@ Theorem about_mirroring_and_flattening_v4 :
   forall (V : Type)
          (t : binary_tree V),
     binary_tree_flatten_alt V (binary_tree_mirror V t) =
-    list_reverse V (binary_tree_flatten_alt V t).
+      list_reverse V (binary_tree_flatten_alt V t).
 Proof.
-   Compute (let V := nat in
-            let t := Node V (Leaf V 1) (Node V (Leaf V 2) (Leaf V 3)) in
-            binary_tree_flatten_alt V (binary_tree_mirror V t) =
-            list_reverse V (binary_tree_flatten_alt V t)).
+  Compute (let V := nat in
+           let t := Node V (Leaf V 1) (Node V (Leaf V 2) (Leaf V 3)) in
+           binary_tree_flatten_alt V (binary_tree_mirror V t) =
+             list_reverse V (binary_tree_flatten_alt V t)).
 Abort. (* Don't prove this theorem, you will do that just below. *)
 
 (* Theorem about_mirroring_and_flattening_v4 states that:
@@ -722,7 +730,7 @@ Abort. (* Don't prove this theorem, you will do that just below. *)
 
    In connection to about_mirroring_and_flattening_v3, v4 is almost identical to v3,
    except that v4 uses the standard list_reverse function, while v3 uses list_reverse_alt.
-*)
+ *)
 
 (* ***** *)
 
@@ -730,12 +738,12 @@ Abort. (* Don't prove this theorem, you will do that just below. *)
 
 (*
 Lemma about_mirroring_and_flattening_v4_aux :
-*)
+ *)
 
 Lemma about_mirroring_and_flattening_v4_aux :
   forall (V : Type) (t : binary_tree V) (acc : list V),
-  binary_tree_flatten_acc V (binary_tree_mirror V t) acc =
-  list_append V (list_reverse V (binary_tree_flatten_acc V t nil)) acc.
+    binary_tree_flatten_acc V (binary_tree_mirror V t) acc =
+      list_append V (list_reverse V (binary_tree_flatten_acc V t nil)) acc.
 Proof.
   Compute (let V := nat in
            let t := Node V (Leaf V 1) (Node V (Leaf V 2) (Leaf V 3)) in
@@ -762,12 +770,12 @@ Theorem about_mirroring_and_flattening_v4 :
   forall (V : Type)
          (t : binary_tree V),
     binary_tree_flatten_alt V (binary_tree_mirror V t) =
-    list_reverse V (binary_tree_flatten_alt V t).
+      list_reverse V (binary_tree_flatten_alt V t).
 Proof.
   Compute (let V := nat in
-       let t := Node V (Leaf V 1) (Node V (Leaf V 2) (Leaf V 3)) in
-       binary_tree_flatten_alt V (binary_tree_mirror V t) =
-       list_reverse V (binary_tree_flatten_alt V t)).
+           let t := Node V (Leaf V 1) (Node V (Leaf V 2) (Leaf V 3)) in
+           binary_tree_flatten_alt V (binary_tree_mirror V t) =
+             list_reverse V (binary_tree_flatten_alt V t)).
   intros V t.
   unfold binary_tree_flatten_alt.
   Check about_mirroring_and_flattening_v4_aux.
