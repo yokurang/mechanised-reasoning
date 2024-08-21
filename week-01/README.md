@@ -8,6 +8,8 @@ TODO: Submission 1:
 ~~Proposition Literal_0_is_conditionally_absorbing_for_Times_on_the_right :~~ (Report)
 ~~Proposition Times_is_conditionally_commutative  :~~ (Report)
 
+[x] Proof
+[ ] Report
 Proposition Times_is_conditionally_distributive_over_Plus_on_the_right :
   forall ae1 ae2 ae3 : arithmetic_expression,
   forall n1 n2 n3 : nat,
