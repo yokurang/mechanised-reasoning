@@ -2021,18 +2021,18 @@ Proof.
   discriminate H_absurd.
 Qed.
 
-Proposition Plus_is_conditionally_commutative:
-  forall ae1 ae2 : arithmetic_expression,
-  forall n1 n2 : nat,
-  (evaluate ae1 = Expressible_nat n1 \/ evaluate ae2 = Expressible_nat n2) ->
-  evaluate (Plus ae1 ae2) = evaluate (Plus ae2 ae1).
+Proposition Plus_is_conditionally_commutative :
+  forall (ae1 ae2 : arithmetic_expression)
+         (n1 n2 : nat),
+    (evaluate ae1 = Expressible_nat n1 \/ evaluate ae2 = Expressible_nat n2) ->
+    evaluate (Plus ae1 ae2) = evaluate (Plus ae2 ae1).
 Proof.
   intros ae1 ae2 n1 n2 [H_ae1 | H_ae2]; rewrite ->2 fold_unfold_evaluate_Plus.
-  - destruct (evaluate ae2) as [m1 | s2]; rewrite -> H_ae1.
+  - destruct (evaluate ae2) as [ae_n2 | ae_s2]; rewrite -> H_ae1.
     + rewrite -> Nat.add_comm.
       reflexivity.
     + reflexivity.
-  - destruct (evaluate ae1) as [m1 | s1]; rewrite -> H_ae2.
+  - destruct (evaluate ae1) as [ae_n1 | ae_s1]; rewrite -> H_ae2.
     + rewrite -> Nat.add_comm.
       reflexivity.
     + reflexivity.
