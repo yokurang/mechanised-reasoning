@@ -2069,8 +2069,7 @@ Proof.
       left.
       exists n2.
       reflexivity.
-    + (* This is the missing statement *)
-      intros H_eq_s1_s2.
+    + intros H_eq_s1_s2.
       right.
       right.
       exists s1.
@@ -2336,16 +2335,16 @@ Qed.
 
 Proposition Times_is_conditionally_distributive_over_Plus_on_the_right :
   forall ae1 ae2 ae3 : arithmetic_expression,
-  (exists n : nat, evaluate ae2 = Expressible_nat n)
-  \/
-  (exists n : nat, evaluate ae3 = Expressible_nat n)
-  \/ 
-  (exists s : string,
-    evaluate ae2 = Expressible_msg s
-    /\
-    evaluate ae3 = Expressible_msg s) <->
-    evaluate (Times (Plus ae1 ae2) ae3) =
-    evaluate (Plus (Times ae1 ae3) (Times ae2 ae3)).
+    (exists n : nat, evaluate ae2 = Expressible_nat n)
+    \/
+      (exists n : nat, evaluate ae3 = Expressible_nat n)
+    \/ 
+      (exists s : string,
+          evaluate ae2 = Expressible_msg s
+          /\
+            evaluate ae3 = Expressible_msg s) <->
+      evaluate (Times (Plus ae1 ae2) ae3) =
+        evaluate (Plus (Times ae1 ae3) (Times ae2 ae3)).
 Proof.
   intros ae1 ae2 ae3.
   split.

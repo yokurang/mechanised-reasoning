@@ -49,38 +49,8 @@ it is not really needed
 
 -----
 
-S2.4
-
-"In particular, Plus is not commutative if the error message from the first
-evaluate is different from the latter evaluate."
-What is meant is indeed crucial, but how it is stated is very confusing.
-Choose a uniform way to describe how evaluation is carried out
-and use it uniformly throughout, as in Intro to CS.
-
-Regarding the logic of the narrative:
-
-"In particular, Plus is not commutative if the error message from the first
-evaluate is different from the latter evaluate. We can capture this property in the
-following Proposition:"
-
-Actually, you don't capture this property since there is nothing in this property about any error messages,
-and there is no explanation mentioning error messages, nor in the subsequent conditional proposition.
-(That is why it is a learning experience to (re)state this property as an equivalence, as suggested in my comments about your .v file.)
-
-S2.5
-
-The conclusion is more about the messengers than about the message.
-
------
-
 S3
 
-3.1
-
-Ditto: mention observational equivalence, and provide some perspective.
-Maybe it wasn't, like, obvious, that Plus is not commutative,
-but it is even less obvious that Times distribute over Plus in one direction
-but not in the other.  All of that warrants elaboration and reflection
 
 3.4
 
