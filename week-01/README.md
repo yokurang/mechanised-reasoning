@@ -68,6 +68,7 @@ week-01_about-reversing-a-list-and-mirroring-a-tree.v
 
 -----
 
+[x]
 Lemma about_mirroring_and_flattening_v2_aux :
   forall (V : Type)
          (a1s a2s prefix : list V),
@@ -86,6 +87,7 @@ Why don't you stick to a1s, a2s, and a3s, in a logical order.
 
 -----
 
+[x]
 Theorem about_mirroring_and_flattening_v2 :
   forall (V : Type)
          (t : binary_tree V),
