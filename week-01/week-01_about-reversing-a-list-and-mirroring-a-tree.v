@@ -540,7 +540,7 @@ Abort. (* Don't prove this theorem, you will do that just below. *)
 Lemma eureka_about_mirroring_and_flattening_v2_aux :
   forall (V : Type)
          (a1s a2s a3s : list V),
-    list_append V (list_reverse_acc V a1s prefix) a2s =
+    list_append V (list_reverse_acc V a1s a3s) a2s =
       list_reverse_acc V a1s (list_append V a3s a2s).
 Proof.
   Compute (let V := nat in
