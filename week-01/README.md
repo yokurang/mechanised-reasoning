@@ -81,7 +81,7 @@ OK
 
 ----------
 
-week-01_about-reversing-a-list-and-mirroring-a-tree.v
+## week-01_about-reversing-a-list-and-mirroring-a-tree.v
 
 -----
 
@@ -131,21 +131,9 @@ it is not really needed
 
 ----------
 
-ASSIGNMENT_ONE_MR_ALAN_VIBILAN_YOUNG.pdf
+## ASSIGNMENT_ONE_MR_ALAN_VIBILAN_YOUNG.pdf
 
 -----
-
-S2.3
-
-The analysis is very good: there should be a similar on in S2.2.
-
-"This associativity property is crucial for reasoning about more complex arithmetic expres-
-sions. It allows us to regroup Plus operations without changing the overall meaning or
-result of the expression, providing flexibility in how we construct and evaluate arithmetic
-expressions in our language."
-
-It all sounds good, but what does "regroup" mean and what do you mean by flexibility?
-This paragraph needs to be rewritten.
 
 S2.4
 
