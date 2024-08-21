@@ -4,22 +4,22 @@ TODO: Submission 1:
 
 -----
 
-Proposition Literal_0_is_conditionally_absorbing_for_Times_on_the_left :
+~~Proposition Literal_0_is_conditionally_absorbing_for_Times_on_the_left :~~
 
 same: could you state this proposition as an equivalence,
 not as an implication?
 
-Proposition Literal_0_is_not_absorbing_for_Times_on_the_right :
-Proposition Literal_0_is_conditionally_absorbing_for_Times_on_the_right :
+~~Proposition Literal_0_is_not_absorbing_for_Times_on_the_right :~~
+~~Proposition Literal_0_is_conditionally_absorbing_for_Times_on_the_right :~~
 
 ditto
 
-Proposition Times_is_associative :
+~~Proposition Times_is_associative :~~
 
 good
 
-Proposition Times_is_not_commutative :
-Proposition Times_is_conditionally_commutative  :
+~~Proposition Times_is_not_commutative :~~
+~~Proposition Times_is_conditionally_commutative  :~~
 
 ditto
 
