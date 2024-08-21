@@ -103,13 +103,6 @@ REWRITE
 the rest of the section reflects what is in the .v file,
 and should be revised based on my comments on the said .v file.
 
----
-
-4.8
-
-That's not the point of the mini-project:
-the point is to rebuild your familiarity with reasoning about accumulator-based functions.
-
 ------
 
 S5
