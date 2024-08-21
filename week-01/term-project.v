@@ -2039,7 +2039,7 @@ Proof.
   - intros [[n1 H_n1] | [[n2 H_n2] | [s [H_s1 H_s2]]]].
     + rewrite ->2 fold_unfold_evaluate_Plus.
       rewrite -> H_n1.
-      case (evaluate ae2) as [n2 | s2]. 
+      case (evaluate ae2) as [n2 | s2].
       * rewrite -> (Nat.add_comm n2 n1).
         reflexivity.
       * reflexivity.
@@ -2077,9 +2077,9 @@ Proof.
       split.
       * reflexivity.
       * exact (eq_sym H_eq_s1_s2).
-Qed.      
-      
-(* 
+Qed.
+
+(*
 Formulation of Proposition based on the following equivalence:
   ((A -> C) /\ (B -> C)) <-> ((A \/ B -> C))
 *)

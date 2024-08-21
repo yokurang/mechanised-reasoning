@@ -3,31 +3,6 @@ TODO: Submission 1:
 ## term-project.v
 
 -----
-Proposition Plus_is_conditionally_commutative:
-  forall ae1 ae2 : arithmetic_expression,
-  forall n1 n2 : nat,
-
-should be
-
-Proposition Plus_is_conditionally_commutative :
-  forall (ae1 ae2 : arithmetic_expression)
-         (n1 n2 : nat),
-
-(with an extra space before ":", with only one forall, and with a standard indentation).
-
-Also,
-
-  destruct (evaluate ae2) as [m1 | s2]
-doesn't make sense logically.
--> Made changes to make it more logical. Most likely a typo.
-
------
-
-Still about Proposition Plus_is_conditionally_commutative,
-could you make the implication an equivalence?
-(Consider this question a challenge.)
-
------
 
 Proposition Literal_0_is_conditionally_absorbing_for_Times_on_the_left :
 
@@ -75,54 +50,8 @@ and while you are at it, why don't you state it as an equivalence?
 
 -----
 
-Proposition Times_distributive_over_Plus_on_the_left :
-
-OK
-
-----------
-
 ## week-01_about-reversing-a-list-and-mirroring-a-tree.v
 
------
-
-[x]
-Lemma about_mirroring_and_flattening_v2_aux :
-  forall (V : Type)
-         (a1s a2s prefix : list V),
-    list_append V (list_reverse_acc V a1s prefix) a2s =
-      list_reverse_acc V a1s (list_append V prefix a2s).
-Proof.
-  Compute (let V := nat in
-           let a1s := (1 :: 2 :: 3 :: nil) in
-           let a2s := (4 :: 5 :: 6 :: nil) in
-           let prefix := (10 :: 11 :: nil) in
-           list_append V (list_reverse_acc V a1s prefix) a2s =
-             list_reverse_acc V a1s (list_append V prefix a2s)).
-
-The name "prefix" is confusing.
-Why don't you stick to a1s, a2s, and a3s, in a logical order.
-
------
-
-[x]
-Theorem about_mirroring_and_flattening_v2 :
-  forall (V : Type)
-         (t : binary_tree V),
-    binary_tree_flatten V (binary_tree_mirror V t) =
-    list_reverse_alt V (binary_tree_flatten V t).
-Proof.
-  intros V t.
-  unfold list_reverse_alt.
-  induction t as [ v | t1 IHt1 t2 IHt2].
-
-No because of
-  https://delimited-continuation.github.io/CS3234/2023-2024_Sem2/week-05_structuring-programs-structuring-proofs.html
-
-It is possible to state one auxiliary lemma that is proved by induction,
-and that is such that the theorem is a simple corollary of this lemma.
-You have done it for _v3, you can do it too for _v2.
-
------
 
 Lemma eureka_binary_tree_flatten_acc_append :
 
