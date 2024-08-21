@@ -158,60 +158,8 @@ if both operands produce the same error, then Times commute.
 
 S4
 
-4.1
 
-"some interesting properties"
--> [no value judgment is needed]
-"some properties"
-
-4.2
-
-"is the same as"
--> [for accuracy]
-"yields the same result as"
-
-"This theorem is intuitive but let’s test this statement with the usefully provided Compute statement."
-If you have made similar tests on your own, that would be a good thing to mention in the report.
-
-The rest is fine.
-
-4.3
-
-"Appending a singleton is cons:"
--> [cringe]
-"Appending a singleton list to another list is equivalent to adding the element of the singleton list in front of the second list:"
-
-"a recursive, non-tail-recursive implementation" is a bit heavy handed.
-
----
-
-"* Reversing a singleton: reverse [v] = [v]"
-But that's not the base case.  The empty list is the base case.
-
-And the next item is not an inductive step.
-
-This explanation is not consistent with what is in the .v file.
-
----
-
-Ditto for list_reverse_alt / list_reverse_acc.
-
-(And for consistency, write list_reverse_acc, not reverse_acc; ditto for reverse and list_reverse.)
-
----
-
-"binary_tree_flatten converts a binary tree to a list via in-order traversal."
-
-Are you sure about that?
-(The payloads are in the leaves, not in the nodes.)
-
----
-
-"binary_tree_flatten_alt is a tail-recursive tree flattening using an accumulator."
-
-Wow, this report has been written at full speed: binary_tree_flatten_acc is not tail-recursive.
-
----
+REWRITE
 
 the rest of the section reflects what is in the .v file,
 and should be revised based on my comments on the said .v file.
@@ -231,17 +179,3 @@ OK, but what is "Type-Checked Program Analysis"?
 
 ----------
 
-Overall, this handin contains many good things but also many things that need improvement,
-to create a baseline for the next handins and projects:
-
-* go to the end of your thoughts;
-
-* be consistent in your reflections;
-
-* less is more: your narrative doesn't need to be torrential (but it needs to be thought-out).
-
-Care to revise and resubmit?
-
-Thanks for attending MR,
-
--- Olivier
