@@ -3,9 +3,20 @@ TODO: Submission 1:
 ## term-project.v
 
 -----
+Proposition Plus_is_conditionally_commutative:
+  forall ae1 ae2 : arithmetic_expression,
+  forall n1 n2 : nat,
 
+should be
+
+Proposition Plus_is_conditionally_commutative :
+  forall (ae1 ae2 : arithmetic_expression)
+         (n1 n2 : nat),
+
+(with an extra space before ":", with only one forall, and with a standard indentation).
 
 Also,
+
   destruct (evaluate ae2) as [m1 | s2]
 doesn't make sense logically.
 -> Made changes to make it more logical. Most likely a typo.
@@ -61,6 +72,12 @@ If ae3 evaluates to a nat, then the property holds.
 
 So the conditional property should be restated,
 and while you are at it, why don't you state it as an equivalence?
+
+-----
+
+Proposition Times_distributive_over_Plus_on_the_left :
+
+OK
 
 ----------
 

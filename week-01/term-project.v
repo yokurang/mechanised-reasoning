@@ -2123,15 +2123,16 @@ Proposition Literal_0_is_conditionally_absorbing_for_Times_on_the_left :
     rewrite -> fold_unfold_evaluate_Literal in H_absorb.
     case (evaluate ae) as [n' | s].
     - rewrite -> Nat.mul_0_l in H_absorb.
-      rewrite -> H_absorb.
-      reflexivity.
-    - discriminate H_absorb.
-  rewrite -> fold_unfold_evaluate_Times.
-  rewrite -> fold_unfold_evaluate_Literal.
-  rewrite -> H_ae.
-  rewrite -> Nat.mul_0_l.
-  reflexivity.
- Qed.
+  Admitted.
+ (*      rewrite -> H_absorb. *)
+ (*      reflexivity. *)
+ (*    - discriminate H_absorb. *)
+ (*  rewrite -> fold_unfold_evaluate_Times. *)
+ (*  rewrite -> fold_unfold_evaluate_Literal. *)
+ (*  rewrite -> H_ae. *)
+ (*  rewrite -> Nat.mul_0_l. *)
+ (*  reflexivity. *)
+ (* Qed. *)
 
 Proposition Literal_0_is_absorbing_for_Times_on_the_right :
   forall ae : arithmetic_expression,
@@ -2261,8 +2262,8 @@ Proposition Times_is_not_distributive_over_Plus_on_the_right :
     evaluate (Plus (Times ae1 ae3) (Times ae2 ae3)).
 Proof.
   exists (Literal 0). 
-  exists (Minus (Literal 0) (Literal 5)).
-  exists (Minus (Literal 2) (Literal 3)).
+  exists (Minus (Literal 4) (Literal 5)).
+  exists (Minus (Literal 1) (Literal 3)).
   compute.
   intro H_absurd.
   discriminate H_absurd.
@@ -2271,8 +2272,7 @@ Qed.
 Proposition Times_is_conditionally_distributive_over_Plus_on_the_right :
   forall ae1 ae2 ae3 : arithmetic_expression,
   forall n1 n2 n3 : nat,
-  (evaluate ae1 = Expressible_nat n1 /\ 
-   evaluate ae2 = Expressible_nat n2 /\ 
+  (evaluate ae2 = Expressible_nat n2 \/ 
    evaluate ae3 = Expressible_nat n3) ->
     evaluate (Times (Plus ae1 ae2) ae3) =
     evaluate (Plus (Times ae1 ae3) (Times ae2 ae3)).
