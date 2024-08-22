@@ -643,17 +643,6 @@ Abort. (* Don't prove this theorem, you will do that just below. *)
 
 (* 3.b Prove Theorem about_mirroring_and_flattening_v3. *)
 
-(* Lemma eureka_binary_tree_flatten_acc_append : *)
-(*   forall (V : Type) (t : binary_tree V) (acc : list V), *)
-(*     binary_tree_flatten_acc V t acc = *)
-(*     list_append V (binary_tree_flatten_acc V t nil) acc. *)
-(* Proof. *)
-(*   intros V t acc. *)
-(*   rewrite <- (about_binary_tree_flatten_acc V t nil acc). *)
-(*   rewrite -> nil_is_left_neutral_for_list_append. *)
-(*   reflexivity. *)
-(* Qed. *)
-
 Lemma about_mirroring_and_flattening_v3_aux :
   forall (V : Type) (t : binary_tree V) (acc : list V),
     binary_tree_flatten_acc V (binary_tree_mirror V t) acc =
@@ -761,6 +750,7 @@ Proof.
     rewrite ->2 fold_unfold_binary_tree_flatten_acc_Node.
     rewrite -> (IHt1' acc).
     rewrite -> (IHt2' (list_append V (list_reverse V (binary_tree_flatten_acc V t1' nil)) acc)).
+    Check (about_binary_tree_flatten_acc).
     rewrite <- (fold_unfold_list_append_nil V nil) at 1.
     Check (about_binary_tree_flatten_acc).
     rewrite -> (about_binary_tree_flatten_acc V t2' nil nil).
