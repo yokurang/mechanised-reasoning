@@ -2165,7 +2165,7 @@ Proof.
   case (evaluate ae) as [n | s].
   - rewrite -> (Nat.mul_0_r n).
     reflexivity.
-  - (* not absorbing on the left. *)
+  - (* not absorbing on the right. *)
 Abort.
 
 Proposition Literal_0_is_not_absorbing_for_Times_on_the_right :
