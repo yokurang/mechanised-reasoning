@@ -6,11 +6,7 @@
 (* ********** *)
 
 Ltac fold_unfold_tactic name := intros; unfold name; fold name; reflexivity.
-<<<<<<< HEAD
 
-=======
-  
->>>>>>> de47143b98190348457dc9ca8c051d08608cb6f5
 Require Import Arith Bool List String Ascii.
 
 (* caution: only use natural numbers up to 5000 -- caveat emptor *)
@@ -41,7 +37,6 @@ Inductive expressible_value : Type :=
   Expressible_nat : nat -> expressible_value
 | Expressible_msg : string -> expressible_value.
 
-<<<<<<< HEAD
 Fixpoint evaluate (ae : arithmetic_expression) : expressible_value :=
   match ae with
   | Literal n =>
@@ -137,12 +132,6 @@ Definition expressible_value_eqb (ev1 ev2 : expressible_value) : bool :=
           String.eqb s1 s2
       end
   end.
-=======
-(*
-Fixpoint evaluate (ae : arithmetic_expression) : expressible_value :=
-  ...
-*)
->>>>>>> de47143b98190348457dc9ca8c051d08608cb6f5
 
 (* ********** *)
 
@@ -187,7 +176,6 @@ Definition refactor (ae : arithmetic_expression) : arithmetic_expression :=
 (* Task 1: What does refactor do?
    Capture your observations into a unit-test function. *)
 
-<<<<<<< HEAD
 Compute (let ae := Literal 2 in
          refactor ae).
 (* If the arithmetic expression is a Literal, the Literal 0 is added to it on the right. This does not change the result as 0 is neutral on the right for addition *)
@@ -224,7 +212,6 @@ Compute (let ae1 := Literal 1 in
 
 (* ********** *)
 
-
 (* Task 2: Prove that refactoring preserves evaluation. *)
 
 (*
@@ -259,17 +246,10 @@ Lemma refactoring_preserves_evaluation_aux :
 Proof.
 Admitted.
 
-=======
-(* ********** *)
-
-(* Task 2: Prove that refactoring preserves evaluation. *)
-
->>>>>>> de47143b98190348457dc9ca8c051d08608cb6f5
 Theorem refactoring_preserves_evaluation :
   forall ae : arithmetic_expression,
     evaluate ae = evaluate (refactor ae).
 Proof.
-<<<<<<< HEAD
   intro ae.
   unfold refactor.
   Check (refactoring_preserves_evaluation_aux ae (Literal 0)).
@@ -283,9 +263,6 @@ Proof.
     rewrite <- (eq_sym (H1 s (eq_refl (Expressible_msg s)))).
     reflexivity.
 Qed.
-=======
-Abort.
->>>>>>> de47143b98190348457dc9ca8c051d08608cb6f5
 
 (* ********** *)
 
@@ -311,15 +288,18 @@ Fixpoint super_refactor (ae : arithmetic_expression) : arithmetic_expression :=
 (* Task 3: What does super_refactor do?
    Capture your observations into a unit-test function. *)
 
-<<<<<<< HEAD
 Compute (let ae := Minus
                      (Minus (Literal 2) (Literal 1))
                      (Minus (Literal 4) (Literal 3)) in
          super_refactor ae).
 
-=======
->>>>>>> de47143b98190348457dc9ca8c051d08608cb6f5
 (* Task 4: Prove that super-refactoring preserves evaluation. *)
+
+Theorem super_refactoring_preserves_evaluation :
+  forall ae : arithmetic_expression,
+    evaluate ae = evaluate (super_refactor ae).
+Proof.
+Abort.
 
 (* ********** *)
 
