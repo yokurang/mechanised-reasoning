@@ -2333,14 +2333,34 @@ Proof.
   discriminate H_absurd.
 Qed.
 
+(*
+Proposition Times_is_conditionally_distributive_over_Plus_on_the_right :
+  forall (ae1 ae2 ae3 : arithmetic_expression)
+         (n1 n2 n3 : nat),
+    (evaluate ae1 = Expressible_nat n1 /\ 
+       evaluate ae2 = Expressible_nat n2 /\ 
+       evaluate ae3 = Expressible_nat n3) ->
+    evaluate (Times (Plus ae1 ae2) ae3) =
+      evaluate (Plus (Times ae1 ae3) (Times ae2 ae3)).
+Proof.
+  intros ae1 ae2 ae3 n1 n2 n3 [Hae1 [Hae2 Hae3]].
+  rewrite -> fold_unfold_evaluate_Times.
+  rewrite -> 2 fold_unfold_evaluate_Plus.
+  rewrite -> 2 fold_unfold_evaluate_Times.
+  rewrite -> Hae1, Hae2, Hae3.
+  rewrite -> Nat.mul_add_distr_r.
+  reflexivity.
+Qed.
+ *)
+
 Proposition Times_is_conditionally_distributive_over_Plus_on_the_right :
   forall ae1 ae2 ae3 : arithmetic_expression,
     (exists n : nat, evaluate ae2 = Expressible_nat n)
     \/
       (exists n : nat, evaluate ae3 = Expressible_nat n)
-    \/ 
+    \/
       (exists s : string,
-       (* either the error messages of 
+       (* either the error messages of
        ae2 and ae3 are the same *)
        (evaluate ae2 = Expressible_msg s
        /\
@@ -2410,7 +2430,7 @@ Proof.
        +++ intros _.
            left.
            exists n2.
-           reflexivity. 
+           reflexivity.
        +++ case (evaluate ae3) as [n3 | s3] eqn:H_ae3.
            ++++ right. left.
                 exists n3.
@@ -2420,6 +2440,109 @@ Proof.
            exists s1.
            right.
            reflexivity.
+Qed.
+
+Proposition Times_distributes_over_Plus_on_the_right_conditionally' :
+  forall (ae1 ae2 ae3 : arithmetic_expression),
+    (exists s : string,
+        evaluate ae1 = Expressible_msg s)
+    \/
+    (exists n : nat,
+        evaluate ae2 = Expressible_nat n)
+    \/
+    (exists n : nat,
+        evaluate ae3 = Expressible_nat n)
+    \/
+    (exists s : string,
+        evaluate ae2 = Expressible_msg s
+        /\
+        evaluate ae3 = Expressible_msg s)
+    <->
+    evaluate (Times (Plus ae1 ae2) ae3) =
+    evaluate (Plus (Times ae1 ae3) (Times ae2 ae3)).
+Proof.
+  intros ae1 ae2 ae3.
+  rewrite -> fold_unfold_evaluate_Times.
+  rewrite -> 2 fold_unfold_evaluate_Plus.
+  rewrite -> 2 fold_unfold_evaluate_Times.
+  split.
+  - intros [[s H_ae1_s] | [[n2 H_ae2_n] | [[n3 H_ae3_n] | [s [H_ae2_s H_ae3_s]]]]].
+    rewrite -> H_ae1_s.
+    + reflexivity.
+    + case (evaluate ae1) as [n1' | s1'];
+        case (evaluate ae2) as [n2' | s2'];
+        case (evaluate ae3) as [n3' | s3'].
+      * rewrite -> Nat.mul_add_distr_r.
+        reflexivity.
+      * reflexivity.
+      * reflexivity.
+      * discriminate H_ae2_n.
+      * reflexivity.
+      * reflexivity.
+      * reflexivity.
+      * reflexivity.
+    + case (evaluate ae1) as [n1' | s1'];
+        case (evaluate ae2) as [n2' | s2'];
+        case (evaluate ae3) as [n3' | s3'].
+      * rewrite -> Nat.mul_add_distr_r.
+        reflexivity.
+      * reflexivity.
+      * reflexivity.
+      * discriminate H_ae3_n.
+      * reflexivity.
+      * reflexivity.
+      * reflexivity.
+      * reflexivity.
+    + case (evaluate ae1) as [n1' | s1'];
+        case (evaluate ae2) as [n2' | s2'];
+        case (evaluate ae3) as [n3' | s3'].
+      * rewrite -> Nat.mul_add_distr_r.
+        reflexivity.
+      * reflexivity.
+      * reflexivity.
+      * rewrite -> H_ae2_s, H_ae3_s.
+        reflexivity.
+      * reflexivity.
+      * reflexivity.
+      * reflexivity.
+      * reflexivity.
+  -  case (evaluate ae1) as [n1 | s1] eqn:H_ae1;
+       case (evaluate ae2) as [n2 | s2] eqn:H_ae2;
+       case (evaluate ae3) as [n3 | s3] eqn:H_ae3.
+    + intros _.
+      right. left.
+      exists n2.
+      reflexivity.
+    + intros _.
+      right. left.
+      exists n2.
+      reflexivity.
+    + intros _.
+      right. right. left.
+      exists n3.
+      reflexivity.
+    + intro H_s2_s3.
+      right. right. right.
+      exists s3.
+      split.
+      * exact H_s2_s3.
+      * reflexivity.
+    + intros _.
+      left.
+      exists s1.
+      reflexivity.
+    + intros _.
+      left.
+      exists s1.
+      reflexivity.
+    + intros _.
+      left.
+      exists s1.
+      reflexivity.
+    + intros _.
+      left.
+      exists s1.
+      reflexivity.
 Qed.
 
 Proposition Times_distributive_over_Plus_on_the_left :
