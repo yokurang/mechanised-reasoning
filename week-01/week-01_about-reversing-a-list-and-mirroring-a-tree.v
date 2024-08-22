@@ -1,7 +1,7 @@
 (* week-01_about-reversing-a-list-and-mirroring-a-tree.v *)
 (* MR 2024 - YSC4217 2024-2024, Sem1 *)
 (* Olivier Danvy <danvy@yale-nus.edu.sg> *)
-(* Version of Thu 15 Aug 2024 *)
+(* Version of Thu 22 Aug 2024 *)
 
 (* ********** *)
 
