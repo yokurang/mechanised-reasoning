@@ -269,7 +269,7 @@ Qed.
 Fixpoint super_refactor (ae : arithmetic_expression) : arithmetic_expression :=
   match ae with
   | Literal n =>
-    Literal n
+    Literal n 
   | Plus ae1 ae2 =>
     super_refactor_aux ae1 (super_refactor ae2)
   | Minus ae1 ae2 =>
@@ -285,6 +285,59 @@ Fixpoint super_refactor (ae : arithmetic_expression) : arithmetic_expression :=
       Plus (Minus (super_refactor ae1) (super_refactor ae2)) a
     end.
 
+(* ***** *)
+
+Lemma fold_unfold_super_refactor_Literal :
+  forall (n : nat),
+    super_refactor (Literal n) =
+      (Literal n).
+Proof.
+  fold_unfold_tactic super_refactor.
+Qed.
+
+Lemma fold_unfold_super_refactor_Plus :
+  forall ae1 ae2 : arithmetic_expression,
+    super_refactor (Plus ae1 ae2) =
+    super_refactor_aux ae1 (super_refactor ae2).
+Proof.
+  fold_unfold_tactic refactor_aux.
+Qed.
+
+Lemma fold_unfold_super_refactor_Minus :
+  forall ae1 ae2 : arithmetic_expression,
+    super_refactor (Minus ae1 ae2) =
+    Minus (super_refactor ae1) (super_refactor ae2).
+Proof.
+  fold_unfold_tactic refactor_aux.
+Qed.
+
+Lemma fold_unfold_super_refactor_aux_Literal :
+  forall (n : nat)
+         (a : arithmetic_expression),
+    super_refactor_aux (Literal n) a =
+      Plus (Literal n) a.
+Proof.
+  fold_unfold_tactic super_refactor_aux.
+Qed.
+
+Lemma fold_unfold_super_refactor_aux_Plus :
+  forall (ae1 ae2 a : arithmetic_expression),
+    super_refactor_aux (Plus ae1 ae2) a =
+      super_refactor_aux ae1 (super_refactor_aux ae2 a).
+Proof.
+  fold_unfold_tactic super_refactor_aux.
+Qed.
+
+Lemma fold_unfold_super_refactor_aux_Minus :
+  forall (ae1 ae2 a : arithmetic_expression),
+    super_refactor_aux (Minus ae1 ae2) a =
+      Plus (Minus (super_refactor ae1) (super_refactor ae2)) a.
+Proof.
+  fold_unfold_tactic super_refactor_aux.
+Qed.
+
+(* ***** *)
+
 (* Task 3: What does super_refactor do?
    Capture your observations into a unit-test function. *)
 
@@ -299,6 +352,9 @@ Theorem super_refactoring_preserves_evaluation :
   forall ae : arithmetic_expression,
     evaluate ae = evaluate (super_refactor ae).
 Proof.
+  intro ae.
+  rewrite -> fold_unfold_s
+  unfold super_refactor.
 Abort.
 
 (* ********** *)
