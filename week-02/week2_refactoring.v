@@ -244,7 +244,14 @@ Lemma refactoring_preserves_evaluation_aux :
             evaluate a = Expressible_nat n2 ->
             evaluate (refactor_aux ae a) = Expressible_nat (n1 + n2)).
 Proof.
-Admitted.
+  intros ae a.
+  split.
+  - intros s1 H_ae.
+    induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
+    + rewrite -> fold_unfold_evaluate_Literal in H_ae.
+      discriminate H_ae.
+    + rewrite -> fold_unfold_refactor_aux_Plus.
+Admitted.      
 
 Theorem refactoring_preserves_evaluation :
   forall ae : arithmetic_expression,
@@ -348,14 +355,117 @@ Compute (let ae := Minus
 
 (* Task 4: Prove that super-refactoring preserves evaluation. *)
 
-Theorem super_refactoring_preserves_evaluation :
+Lemma super_refactoring_preserves_evaluation_aux :
   forall ae : arithmetic_expression,
-    evaluate ae = evaluate (super_refactor ae).
+    (evaluate (super_refactor ae) = evaluate ae)
+    /\
+      (forall a : arithmetic_expression,
+          (evaluate (super_refactor_aux ae a) = evaluate (Plus ae a))).
 Proof.
   intro ae.
-  rewrite -> fold_unfold_s
-  unfold super_refactor.
-Abort.
+  induction ae as [ n
+                  | ae1 [IHae1 IHae1_aux] ae2 [IHae2 IHae2_aux]
+                  | ae1 [IHae1 IHae1_aux] ae2 [IHae2 IHae2_aux] ]; split.
+  - rewrite -> fold_unfold_super_refactor_Literal.
+    reflexivity.
+  - intro a.
+    rewrite -> fold_unfold_super_refactor_aux_Literal.
+    reflexivity.
+  - rewrite -> fold_unfold_super_refactor_Plus.
+    Check (IHae1_aux (super_refactor ae2)).
+    rewrite -> (IHae1_aux (super_refactor ae2)).
+    rewrite -> fold_unfold_evaluate_Plus.
+    case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
+    + rewrite -> IHae2.
+      case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
+      * rewrite -> fold_unfold_evaluate_Plus.
+        rewrite -> E_ae1, E_ae2.
+        reflexivity.
+      * rewrite -> fold_unfold_evaluate_Plus.
+        rewrite -> E_ae1, E_ae2.
+        reflexivity.
+    + case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
+      * rewrite -> fold_unfold_evaluate_Plus.
+        rewrite -> E_ae1.
+        reflexivity.
+      * rewrite -> fold_unfold_evaluate_Plus.
+        rewrite -> E_ae1.
+        reflexivity.
+  - intro a.
+    rewrite -> fold_unfold_super_refactor_aux_Plus.
+    rewrite -> (IHae1_aux (super_refactor_aux ae2 a)).
+    rewrite -> fold_unfold_evaluate_Plus.
+    case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
+    + rewrite -> (IHae2_aux a).
+      case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
+      * rewrite -> fold_unfold_evaluate_Plus.
+        rewrite -> E_ae2.
+        case (evaluate a) as [n | s] eqn:E_a.
+        -- rewrite ->2 fold_unfold_evaluate_Plus.
+           rewrite -> E_ae1.
+           rewrite -> E_ae2.
+           rewrite -> E_a.
+           rewrite -> Nat.add_assoc. (* Key aha! moment, mention in report *)
+           reflexivity.
+        -- rewrite ->2 fold_unfold_evaluate_Plus.
+           rewrite -> E_ae1.
+           rewrite -> E_ae2.
+           rewrite -> E_a.
+           reflexivity.
+      * rewrite -> fold_unfold_evaluate_Plus.
+        rewrite -> E_ae2.
+        case (evaluate a) as [n | s] eqn:E_a.
+        -- rewrite ->2 fold_unfold_evaluate_Plus.
+           rewrite -> E_ae1.
+           rewrite -> E_ae2.
+           reflexivity.
+        -- rewrite ->2 fold_unfold_evaluate_Plus.
+           rewrite -> E_ae1.
+           rewrite -> E_ae2.
+           reflexivity.
+    + rewrite ->2 fold_unfold_evaluate_Plus.
+      rewrite -> E_ae1.
+      reflexivity.
+  - rewrite -> fold_unfold_super_refactor_Minus.
+    rewrite -> fold_unfold_evaluate_Minus.
+    case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
+    + rewrite -> IHae2, IHae1.
+      case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
+      * rewrite -> fold_unfold_evaluate_Minus.
+        rewrite -> E_ae1, E_ae2.
+        reflexivity.
+      * rewrite -> fold_unfold_evaluate_Minus.
+        rewrite -> E_ae1, E_ae2.
+        reflexivity.
+    + case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
+      * rewrite -> fold_unfold_evaluate_Minus.
+        rewrite -> E_ae1, IHae1.
+        reflexivity.
+      * rewrite -> fold_unfold_evaluate_Minus.
+        rewrite -> E_ae1, IHae1.
+        reflexivity.
+  - intro a.
+    rewrite -> fold_unfold_super_refactor_aux_Minus.
+    rewrite ->2 fold_unfold_evaluate_Plus.
+    rewrite ->2 fold_unfold_evaluate_Minus.
+    rewrite -> IHae1, IHae2.
+    case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
+    + case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
+      * reflexivity.
+      * reflexivity.
+    + reflexivity.
+Qed.
+
+Theorem super_refactoring_preserves_evaluation :
+  forall ae : arithmetic_expression,
+    evaluate (super_refactor ae) = evaluate ae.
+Proof.
+  intro ae.
+  Check (super_refactoring_preserves_evaluation_aux ae).
+  destruct (super_refactoring_preserves_evaluation_aux ae) as [ H_sr H_sr_aux ].
+  exact H_sr.
+Qed.
+    
 
 (* ********** *)
 
