@@ -807,6 +807,30 @@ Proof.
   destruct (super_refactoring_preserves_evaluation_aux ae) as [ H_sr H_sr_aux ].
   exact H_sr.
 Qed.
+
+Proposition equivalence_of_the_two_lemmas_super_refactor :
+  forall ae : arithmetic_expression,
+    (forall s : string,
+        evaluate ae = Expressible_msg s ->
+        forall a : arithmetic_expression,
+          evaluate (super_refactor_aux ae a) = Expressible_msg s)
+    /\
+    (forall (n : nat)
+            (s : string),
+        evaluate ae = Expressible_nat n ->
+        forall a : arithmetic_expression,
+          evaluate a = Expressible_msg s ->
+          evaluate (super_refactor_aux ae a) = Expressible_msg s)
+    /\
+    (forall n1 n2 : nat,
+        evaluate ae = Expressible_nat n1 ->
+        forall a : arithmetic_expression,
+          evaluate a = Expressible_nat n2 ->
+          evaluate (super_refactor_aux ae a) = Expressible_nat (n1 + n2))
+    <->
+    forall a : arithmetic_expression,
+      evaluate (super_refactor_aux ae a) = evaluate (Plus ae a).
+
     
 (* ********** *)
 
