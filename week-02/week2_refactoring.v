@@ -50,7 +50,7 @@ Fixpoint evaluate (ae : arithmetic_expression) : expressible_value :=
           | Expressible_msg s2 =>
               Expressible_msg s2
           | Expressible_nat n2 =>
-              Expressible_nat (n1 + n2)
+Expressible_nat (n1 + n2)
           end
       end
   | Minus ae1 ae2 =>
@@ -191,27 +191,32 @@ Definition refactor (ae : arithmetic_expression) : arithmetic_expression :=
 
 Compute (let ae := Literal 2 in
          refactor ae).
-(* If the arithmetic expression is a Literal, the Literal 0 is added to it on the right. This does not change the result as 0 is neutral on the right for addition *)
+(* If the arithmetic expression is a Literal, the Literal 0 is added to it on the right.
+   This does not change the result as 0 is neutral on the right for addition *)
 
 Compute (let ae := Plus (Literal 2) (Literal 1) in
          refactor ae).
-(* If the arithmetic expression is a Plus, the Literal 0 is added to right of the second subexpression. This does not change the result as 0 is neutral on the right for addition *)
+(* If the arithmetic expression is a Plus, the Literal 0 is added to right of the second subexpression. 
+   This does not change the result as 0 is neutral on the right for addition *)
 
 Compute (let ae := Minus (Literal 2) (Literal 1) in
          refactor ae).
-(* If the arithmetic expression is a Minus, the Literal 0 is added on the right to the overall expression and both of its subexpressions. This does not change the result as 0 is neutral on the right for addition *)
+(* If the arithmetic expression is a Minus, the Literal 0 is added on the right to the overall expression and both of its subexpressions.
+   This does not change the result as 0 is neutral on the right for addition *)
 
 Compute (let ae := Plus
                      (Plus (Literal 1) (Literal 2))
                      (Plus (Literal 3) (Literal 4)) in
          refactor ae).
-(* When there are many Plus nodes, we can see a pattern in the tree that is being produced. Instead of a balanced tree, we get a tree that is "flattened" by associating to the right. *)
+(* When there are many Plus nodes, we can see a pattern in the tree that is being produced
+   Instead of a balanced tree, we get a tree that is "flattened" by associating to the right. *)
 
 Compute (let ae := Minus
                      (Minus (Literal 1) (Literal 2))
                      (Minus (Literal 3) (Literal 4)) in
          refactor ae).
-(* When there are many Minus nodes, we see a similar pattern in the resulting tree but in th eopposite direction. The tree is not fully flattened but associates to the left with Plus with 0. *)
+(* When there are many Minus nodes, we see a similar pattern in the resulting tree but in the opposite direction.
+   The tree is not fully flattened but associates to the left with Plus with 0. *)
 
 Compute (let ae1 := Literal 1 in
          let ae2 := Plus (ae1) (ae1) in
@@ -273,27 +278,6 @@ Proof.
     + reflexivity.
 Qed.
 
-Lemma refactoring_preserves_evaluation_aux_alt :
-  forall ae a : arithmetic_expression,
-    (forall s1 : string,
-        evaluate ae = Expressible_msg s1 ->
-        evaluate (refactor_aux ae a) = Expressible_msg s1)
-    /\
-      (forall n1 : nat,
-          evaluate ae = Expressible_nat n1 ->
-          forall s2 : string,
-            evaluate a = Expressible_msg s2 ->
-            evaluate (refactor_aux ae a) = Expressible_msg s2)
-    /\
-      (forall n1 : nat,
-          evaluate ae = Expressible_nat n1 ->
-          forall n2 : nat,
-            evaluate a = Expressible_nat n2 ->
-            evaluate (refactor_aux ae a) = Expressible_nat (n1 + n2)).
-Proof.
-  intros ae a.
-Admitted.
-
 Theorem refactoring_preserves_evaluation :
   forall ae : arithmetic_expression,
     evaluate (refactor ae) = evaluate ae.
@@ -304,6 +288,97 @@ Proof.
   rewrite -> Literal_0_is_neutral_for_Plus_on_the_right.
   reflexivity.
 Qed.
+
+Proposition equivalence_of_the_two_lemmas :
+    forall ae : arithmetic_expression,
+      (forall s : string,
+          evaluate ae = Expressible_msg s ->
+          forall a : arithmetic_expression,
+            evaluate (refactor_aux ae a) = Expressible_msg s)
+      /\
+      (forall (n : nat)
+              (s : string),
+          evaluate ae = Expressible_nat n ->
+          forall a : arithmetic_expression,
+            evaluate a = Expressible_msg s ->
+            evaluate (refactor_aux ae a) = Expressible_msg s)
+      /\
+      (forall n1 n2 : nat,
+          evaluate ae = Expressible_nat n1 ->
+          forall a : arithmetic_expression,
+            evaluate a = Expressible_nat n2 ->
+            evaluate (refactor_aux ae a) = Expressible_nat (n1 + n2))
+      <->
+      forall a : arithmetic_expression,
+        evaluate (refactor_aux ae a) = evaluate (Plus ae a).
+Proof.
+  intro ae.
+  split.
+  + intros _.
+      induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ];
+    intro a.
+  - rewrite -> fold_unfold_refactor_aux_Literal.
+    reflexivity.
+  - rewrite -> fold_unfold_refactor_aux_Plus.
+    rewrite -> (IHae1 (refactor_aux ae2 a)).
+    rewrite -> fold_unfold_evaluate_Plus.
+    rewrite -> (IHae2 a).
+    case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
+    ++ rewrite ->3 fold_unfold_evaluate_Plus.
+      rewrite -> E_ae1.
+      case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
+      * case (evaluate a) as [n | s] eqn:E_a.
+        -- rewrite -> Nat.add_assoc.
+           reflexivity.
+        -- reflexivity.
+      * reflexivity.
+    ++ rewrite ->2 fold_unfold_evaluate_Plus.
+      rewrite -> E_ae1.
+      reflexivity.
+  - rewrite -> fold_unfold_refactor_aux_Minus.
+    rewrite ->2 fold_unfold_evaluate_Plus.
+    rewrite ->2 fold_unfold_evaluate_Minus.
+    rewrite -> IHae1, IHae2.
+    rewrite ->2 fold_unfold_evaluate_Plus.
+    case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
+    ++ case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
+      * rewrite -> fold_unfold_evaluate_Literal.
+        rewrite ->2 Nat.add_0_r.
+        reflexivity.
+      * rewrite -> fold_unfold_evaluate_Literal.
+        reflexivity.
+    ++ reflexivity.
+  + induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
+    ++ intros H_refactor.
+       split.
+       * intro s.
+         - intro H_absurd.
+           discriminate H_absurd.
+       * split.
+         - intros _ s_msg _ ae H_ae.
+           case (evaluate ae) as [n_ae | s_ae] eqn:E_ae.
+           -- discriminate H_ae.
+           -- rewrite -> (H_refactor ae).
+              rewrite -> fold_unfold_evaluate_Plus.
+              rewrite -> fold_unfold_evaluate_Literal.
+              rewrite -> E_ae.
+              rewrite -> H_ae.
+              reflexivity.
+         - intros n1 n2 H_literal ae H_ae.
+           case (evaluate ae) as [n_ae | s_ae] eqn:E_ae.
+           -- rewrite -> fold_unfold_refactor_aux_Literal.
+              rewrite -> fold_unfold_evaluate_Plus.
+              rewrite -> H_literal.
+              rewrite -> E_ae.
+              injection H_ae.
+              intro H_eq_n_ae_n2.
+              rewrite -> H_eq_n_ae_n2.
+              reflexivity.
+           -- discriminate H_ae.
+    ++ intro H_refactor.
+       split.
+       * intros s H_plus.
+         
 
 (* ********** *)
 
