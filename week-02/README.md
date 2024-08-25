@@ -37,3 +37,14 @@ Happy MR,
 [ ]
 P.S.: Would it make sense for refactoring to be idempotent?
 If so, is that the case here?
+
+Report
+[] Introduction
+[] Task 1: What does refactor do?
+[] Task 2: Prove that refactoring preserves evaluation
+[] Task 2b: Equivalence of the two lemmas ind vs case (No need to go through induction in depth, go through case in depth),
+    explain why they differ and why cases is a much shorter proof
+[] Task 3: What does super_refactor do?
+[] Task 4: Prove that super-refactoring preserves evaluation
+[] Task 4b: equivalence_of_the_two_lemmas_super_refactor
+[] Conclusion

@@ -290,33 +290,33 @@ Proof.
 Qed.
 
 Proposition equivalence_of_the_two_lemmas :
-    forall ae : arithmetic_expression,
-      (forall s : string,
-          evaluate ae = Expressible_msg s ->
-          forall a : arithmetic_expression,
-            evaluate (refactor_aux ae a) = Expressible_msg s)
-      /\
+  forall ae : arithmetic_expression,
+    (forall s : string,
+        evaluate ae = Expressible_msg s ->
+        forall a : arithmetic_expression,
+          evaluate (refactor_aux ae a) = Expressible_msg s)
+    /\
       (forall (n : nat)
               (s : string),
           evaluate ae = Expressible_nat n ->
           forall a : arithmetic_expression,
             evaluate a = Expressible_msg s ->
             evaluate (refactor_aux ae a) = Expressible_msg s)
-      /\
+    /\
       (forall n1 n2 : nat,
           evaluate ae = Expressible_nat n1 ->
           forall a : arithmetic_expression,
             evaluate a = Expressible_nat n2 ->
             evaluate (refactor_aux ae a) = Expressible_nat (n1 + n2))
-      <->
+    <->
       forall a : arithmetic_expression,
         evaluate (refactor_aux ae a) = evaluate (Plus ae a).
 Proof.
   intro ae.
   split.
   + intros _.
-      induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ];
-    intro a.
+    induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ];
+      intro a.
   - rewrite -> fold_unfold_refactor_aux_Literal.
     reflexivity.
   - rewrite -> fold_unfold_refactor_aux_Plus.
@@ -325,16 +325,16 @@ Proof.
     rewrite -> (IHae2 a).
     case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
     ++ rewrite ->3 fold_unfold_evaluate_Plus.
-      rewrite -> E_ae1.
-      case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
-      * case (evaluate a) as [n | s] eqn:E_a.
-        -- rewrite -> Nat.add_assoc.
-           reflexivity.
-        -- reflexivity.
-      * reflexivity.
-    ++ rewrite ->2 fold_unfold_evaluate_Plus.
-      rewrite -> E_ae1.
-      reflexivity.
+       rewrite -> E_ae1.
+       case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
+    * case (evaluate a) as [n | s] eqn:E_a.
+      -- rewrite -> Nat.add_assoc.
+         reflexivity.
+      -- reflexivity.
+    * reflexivity.
+      ++ rewrite ->2 fold_unfold_evaluate_Plus.
+         rewrite -> E_ae1.
+         reflexivity.
   - rewrite -> fold_unfold_refactor_aux_Minus.
     rewrite ->2 fold_unfold_evaluate_Plus.
     rewrite ->2 fold_unfold_evaluate_Minus.
@@ -342,318 +342,417 @@ Proof.
     rewrite ->2 fold_unfold_evaluate_Plus.
     case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
     ++ case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
-      * rewrite -> fold_unfold_evaluate_Literal.
-        rewrite ->2 Nat.add_0_r.
-        reflexivity.
-      * rewrite -> fold_unfold_evaluate_Literal.
-        reflexivity.
-    ++ reflexivity.
-  + induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
-    ++ intros H_refactor.
-       split.
-       * intro s.
-         - intro H_absurd.
+    * rewrite -> fold_unfold_evaluate_Literal.
+      rewrite ->2 Nat.add_0_r.
+      reflexivity.
+    * rewrite -> fold_unfold_evaluate_Literal.
+      reflexivity.
+      ++ reflexivity.
+    + induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
+      ++ intros H_refactor.
+         split.
+      * intro s.
+  - intro H_absurd.
+    discriminate H_absurd.
+    * split.
+  - intros _ s_msg _ ae H_ae.
+    case (evaluate ae) as [n_ae | s_ae] eqn:E_ae.
+    -- discriminate H_ae.
+    -- rewrite -> (H_refactor ae).
+       rewrite -> fold_unfold_evaluate_Plus.
+       rewrite -> fold_unfold_evaluate_Literal.
+       rewrite -> E_ae.
+       rewrite -> H_ae.
+       reflexivity.
+  - intros n1 n2 H_literal ae H_ae.
+    case (evaluate ae) as [n_ae | s_ae] eqn:E_ae.
+    -- rewrite -> fold_unfold_refactor_aux_Literal.
+       rewrite -> fold_unfold_evaluate_Plus.
+       rewrite -> H_literal.
+       rewrite -> E_ae.
+       injection H_ae.
+       intro H_eq_n_ae_n2.
+       rewrite -> H_eq_n_ae_n2.
+       reflexivity.
+    -- discriminate H_ae.
+       ++ intro H_refactor.
+          split.
+    * intros s H_plus.
+      destruct IHae1 as [IH1_ae1 [IH2_ae1 IH3_ae1]].
+      destruct IHae2 as [IH1_ae2 [IH2_ae2 IH3_ae2]].
+  - intro ae.
+    rewrite -> (refactoring_preserves_evaluation_aux ae2 ae).
+    reflexivity.
+  - intro ae.
+    rewrite -> (refactoring_preserves_evaluation_aux ae1 ae).
+    reflexivity.
+  - intro ae.
+    case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
+    case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
+    case (evaluate ae) as [n_ae | s_ae] eqn:E_ae.
+    -- rewrite -> fold_unfold_evaluate_Plus in H_plus.
+       rewrite -> E_ae2 in H_plus.
+       rewrite -> E_ae1 in H_plus.
+       discriminate H_plus.
+    -- rewrite -> fold_unfold_evaluate_Plus in H_plus.
+       rewrite -> E_ae2 in H_plus.
+       rewrite -> E_ae1 in H_plus.
+       discriminate H_plus.
+    -- rewrite -> fold_unfold_evaluate_Plus in H_plus.
+       rewrite -> E_ae2 in H_plus.
+       rewrite -> E_ae1 in H_plus.
+       rewrite -> (H_refactor ae).
+       rewrite -> 2 fold_unfold_evaluate_Plus.
+       rewrite -> E_ae2.
+       rewrite -> E_ae1.
+       rewrite -> H_plus.
+       reflexivity.
+    -- rewrite -> fold_unfold_evaluate_Plus in H_plus.
+       rewrite -> E_ae1 in H_plus.
+       rewrite -> (H_refactor ae).
+       rewrite -> 2 fold_unfold_evaluate_Plus.
+       rewrite -> E_ae1.
+       rewrite -> H_plus.
+       reflexivity.
+    * split.
+      ** intros n s H_plus.
+         destruct IHae1 as [IH1_ae1 [IH2_ae1 IH3_ae1]].
+         destruct IHae2 as [IH1_ae2 [IH2_ae2 IH3_ae2]].
+  - intro ae.
+    rewrite -> (refactoring_preserves_evaluation_aux ae2 ae).
+    reflexivity.
+  - intro ae.
+    rewrite -> (refactoring_preserves_evaluation_aux ae1 ae).
+    reflexivity.
+  - intro ae.
+    case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
+    case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
+    case (evaluate ae) as [n_ae | s_ae] eqn:E_ae.
+    -- intro H_absurd.
+       discriminate H_absurd.
+    -- intro H_true.
+       rewrite -> (H_refactor ae).
+       rewrite -> 2 fold_unfold_evaluate_Plus.
+       rewrite -> E_ae2.
+       rewrite -> E_ae1.
+       rewrite -> E_ae.
+       exact (H_true).
+    -- intros _.
+       rewrite -> fold_unfold_evaluate_Plus in H_plus.
+       rewrite -> E_ae2 in H_plus.
+       rewrite -> E_ae1 in H_plus.
+       discriminate H_plus.
+    -- intros _.
+       rewrite -> fold_unfold_evaluate_Plus in H_plus.
+       rewrite -> E_ae1 in H_plus.
+       discriminate H_plus.
+       ** intros n1 n2 H_plus.
+          destruct IHae1 as [IH1_ae1 [IH2_ae1 IH3_ae1]].
+          destruct IHae2 as [IH1_ae2 [IH2_ae2 IH3_ae2]].
+  - intro ae.
+    rewrite -> (refactoring_preserves_evaluation_aux ae2 ae).
+    reflexivity.
+  - intro ae.
+    rewrite -> (refactoring_preserves_evaluation_aux ae1 ae).
+    reflexivity.
+  - intro ae.
+    case (evaluate ae1) as [n_ae1 | s_ae1] eqn:E_ae1.
+    case (evaluate ae2) as [n_ae2 | s_ae2] eqn:E_ae2.
+    case (evaluate ae) as [n_ae | s_ae] eqn:E_ae.
+    -- intro H_exp_n_ae_eq_exp_n2.
+       rewrite -> fold_unfold_evaluate_Plus in H_plus.
+       rewrite -> E_ae2 in H_plus.
+       rewrite -> E_ae1 in H_plus.
+       rewrite -> (H_refactor ae).
+       rewrite -> 2 fold_unfold_evaluate_Plus.
+       rewrite -> E_ae2.
+       rewrite -> E_ae1.
+       rewrite -> E_ae.
+       injection H_exp_n_ae_eq_exp_n2.
+       intro H_n_ae_eq_n2.
+       injection H_plus.
+       intro H_n_ae1_plus_n_ae2_eq_n1.
+       rewrite -> H_n_ae_eq_n2.
+       rewrite -> H_n_ae1_plus_n_ae2_eq_n1.
+       reflexivity.
+    -- intro H_absurd.
+       discriminate H_absurd.
+    -- intro H_ae.
+       rewrite -> fold_unfold_evaluate_Plus in H_plus.
+       rewrite -> E_ae2 in H_plus.
+       rewrite -> E_ae1 in H_plus.
+       discriminate H_plus.
+    -- intro H_ae.
+       rewrite -> fold_unfold_evaluate_Plus in H_plus.
+       rewrite -> E_ae1 in H_plus.
+       discriminate H_plus.
+       ++ intro H_refactor.
+          split.
+    * intros s H_minus.
+      destruct IHae1 as [IH1_ae1 [IH2_ae1 IH3_ae1]].
+      destruct IHae2 as [IH1_ae2 [IH2_ae2 IH3_ae2]].
+  - intro ae.
+    rewrite -> (refactoring_preserves_evaluation_aux ae2 ae).
+    reflexivity.
+  - intro ae.
+    rewrite -> (refactoring_preserves_evaluation_aux ae1 ae).
+    reflexivity.
+  - intro ae.
+    case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
+    case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
+    case (evaluate ae) as [n_ae | s_ae] eqn:E_ae.
+    -- rewrite -> (H_refactor ae).
+       rewrite -> fold_unfold_evaluate_Plus.
+       rewrite -> fold_unfold_evaluate_Minus.
+       rewrite -> E_ae.
+       rewrite -> E_ae2.
+       rewrite -> E_ae1.
+       case (n1 <? n2) eqn:E_lt.
+       --- rewrite -> fold_unfold_evaluate_Minus in H_minus.
+           rewrite -> E_ae2 in H_minus.
+           rewrite -> E_ae1 in H_minus.
+           case (n1 <? n2) eqn:E_lt_minus.
+           ---- exact (H_minus).
+           ---- discriminate E_lt.
+       --- rewrite -> fold_unfold_evaluate_Minus in H_minus.
+           rewrite -> E_ae2 in H_minus.
+           rewrite -> E_ae1 in H_minus.
+           case (n1 <? n2) eqn:E_lt_minus.
+           ---- discriminate E_lt.
+           ---- discriminate H_minus.
+    -- rewrite -> (H_refactor ae).
+       rewrite -> fold_unfold_evaluate_Plus.
+       rewrite -> fold_unfold_evaluate_Minus.
+       rewrite -> E_ae.
+       rewrite -> E_ae2.
+       rewrite -> E_ae1.
+       case (n1 <? n2) eqn:E_lt.
+       --- rewrite -> fold_unfold_evaluate_Minus in H_minus.
+           rewrite -> E_ae2 in H_minus.
+           rewrite -> E_ae1 in H_minus.
+           case (n1 <? n2) eqn:E_lt_minus.
+           ---- exact (H_minus).
+           ---- discriminate E_lt.
+       --- rewrite -> fold_unfold_evaluate_Minus in H_minus.
+           rewrite -> E_ae2 in H_minus.
+           rewrite -> E_ae1 in H_minus.
+           case (n1 <? n2) eqn:E_lt_minus.
+           ---- discriminate E_lt.
+           ---- discriminate H_minus.
+    -- rewrite -> fold_unfold_evaluate_Minus in H_minus.
+       rewrite -> E_ae2 in H_minus.
+       rewrite -> E_ae1 in H_minus.
+       rewrite -> (H_refactor ae).
+       rewrite -> fold_unfold_evaluate_Plus.
+       rewrite -> fold_unfold_evaluate_Minus.
+       rewrite -> E_ae2.
+       rewrite -> E_ae1.
+       exact (H_minus).
+    -- rewrite -> fold_unfold_evaluate_Minus in H_minus.
+       rewrite -> E_ae1 in H_minus.
+       rewrite -> (H_refactor ae).
+       rewrite -> fold_unfold_evaluate_Plus.
+       rewrite -> fold_unfold_evaluate_Minus.
+       rewrite -> E_ae1.
+       exact (H_minus).
+    * split.
+      intros n s H_minus.
+      destruct IHae1 as [IH1_ae1 [IH2_ae1 IH3_ae1]].
+      destruct IHae2 as [IH1_ae2 [IH2_ae2 IH3_ae2]].
+  - intro ae.
+    rewrite -> (refactoring_preserves_evaluation_aux ae2 ae).
+    reflexivity.
+  - intro ae.
+    rewrite -> (refactoring_preserves_evaluation_aux ae1 ae).
+    reflexivity.
+  - intro ae.
+    case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
+    case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
+    case (evaluate ae) as [n_ae | s_ae] eqn:E_ae.
+    -- rewrite -> (H_refactor ae).
+       rewrite -> fold_unfold_evaluate_Plus.
+       rewrite -> fold_unfold_evaluate_Minus.
+       rewrite -> E_ae.
+       rewrite -> E_ae2.
+       rewrite -> E_ae1.
+       case (n1 <? n2) eqn:E_lt.
+       --- rewrite -> fold_unfold_evaluate_Minus in H_minus.
+           rewrite -> E_ae2 in H_minus.
+           rewrite -> E_ae1 in H_minus.
+           case (n1 <? n2) eqn:E_lt_minus.
+           ---- intro H_absurd.
+                discriminate H_absurd.
+           ---- discriminate E_lt.
+       --- rewrite -> fold_unfold_evaluate_Minus in H_minus.
+           rewrite -> E_ae2 in H_minus.
+           rewrite -> E_ae1 in H_minus.
+           case (n1 <? n2) eqn:E_lt_minus.
+           ---- discriminate E_lt.
+           ---- intro H_absurd.
+                discriminate H_absurd.
+    -- rewrite -> (H_refactor ae).
+       rewrite -> fold_unfold_evaluate_Plus.
+       rewrite -> fold_unfold_evaluate_Minus.
+       rewrite -> E_ae.
+       rewrite -> E_ae2.
+       rewrite -> E_ae1.
+       case (n1 <? n2) eqn:E_lt.
+       --- rewrite -> fold_unfold_evaluate_Minus in H_minus.
+           rewrite -> E_ae2 in H_minus.
+           rewrite -> E_ae1 in H_minus.
+           case (n1 <? n2) eqn:E_lt_minus.
+           ---- discriminate H_minus.
+           ---- discriminate E_lt.
+       --- intro H_true.
+           exact (H_true).
+    -- intros _.
+       rewrite -> fold_unfold_evaluate_Minus in H_minus.
+       rewrite -> E_ae2 in H_minus.
+       rewrite -> E_ae1 in H_minus.
+       discriminate H_minus.
+    -- intros _.
+       rewrite -> fold_unfold_evaluate_Minus in H_minus.
+       rewrite -> E_ae1 in H_minus.
+       discriminate H_minus.
+  - intros n1 n2 H_minus.
+    destruct IHae1 as [IH1_ae1 [IH2_ae1 IH3_ae1]].
+    destruct IHae2 as [IH1_ae2 [IH2_ae2 IH3_ae2]].
+    -- intro ae.
+       rewrite -> (refactoring_preserves_evaluation_aux ae2 ae).
+       reflexivity.
+    -- intro ae.
+       rewrite -> (refactoring_preserves_evaluation_aux ae1 ae).
+       reflexivity.
+    -- intro ae.
+       case (evaluate ae1) as [n_ae1 | s_ae1] eqn:E_ae1.
+       case (evaluate ae2) as [n_ae2 | s_ae2] eqn:E_ae2.
+       case (evaluate ae) as [n_ae | s_ae] eqn:E_ae.
+       --- intros H_exp_n_ae_eq_exp_n2.
+           rewrite -> fold_unfold_evaluate_Minus in H_minus.
+           rewrite -> E_ae2 in H_minus.
+           rewrite -> E_ae1 in H_minus.
+           rewrite -> (H_refactor ae).
+           rewrite -> fold_unfold_evaluate_Plus.
+           rewrite -> fold_unfold_evaluate_Minus.
+           rewrite -> E_ae2.
+           rewrite -> E_ae1.
+           rewrite -> E_ae.
+           injection H_exp_n_ae_eq_exp_n2.
+           intro H_n_ae_eq_n2.
+           rewrite -> H_n_ae_eq_n2.
+           rewrite -> H_minus.
+           reflexivity.
+       --- intro H_absurd.
            discriminate H_absurd.
-       * split.
-         - intros _ s_msg _ ae H_ae.
-           case (evaluate ae) as [n_ae | s_ae] eqn:E_ae.
-           -- discriminate H_ae.
-           -- rewrite -> (H_refactor ae).
-              rewrite -> fold_unfold_evaluate_Plus.
-              rewrite -> fold_unfold_evaluate_Literal.
-              rewrite -> E_ae.
-              rewrite -> H_ae.
-              reflexivity.
-         - intros n1 n2 H_literal ae H_ae.
-           case (evaluate ae) as [n_ae | s_ae] eqn:E_ae.
-           -- rewrite -> fold_unfold_refactor_aux_Literal.
-              rewrite -> fold_unfold_evaluate_Plus.
-              rewrite -> H_literal.
-              rewrite -> E_ae.
-              injection H_ae.
-              intro H_eq_n_ae_n2.
-              rewrite -> H_eq_n_ae_n2.
-              reflexivity.
-           -- discriminate H_ae.
-    ++ intro H_refactor.
-       split.
-       * intros s H_plus.
-         destruct IHae1 as [IH1_ae1 [IH2_ae1 IH3_ae1]].
-         destruct IHae2 as [IH1_ae2 [IH2_ae2 IH3_ae2]].
-         - intro ae.
-           rewrite -> (refactoring_preserves_evaluation_aux ae2 ae).
-           reflexivity.
-         - intro ae.
-           rewrite -> (refactoring_preserves_evaluation_aux ae1 ae).
-           reflexivity.
-         - intro ae.
-           case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
-           case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
-           case (evaluate ae) as [n_ae | s_ae] eqn:E_ae.
-           -- rewrite -> fold_unfold_evaluate_Plus in H_plus.
-              rewrite -> E_ae2 in H_plus.
-              rewrite -> E_ae1 in H_plus.
-              discriminate H_plus.
-           -- rewrite -> fold_unfold_evaluate_Plus in H_plus.
-              rewrite -> E_ae2 in H_plus.
-              rewrite -> E_ae1 in H_plus.
-              discriminate H_plus.
-           -- rewrite -> fold_unfold_evaluate_Plus in H_plus.
-              rewrite -> E_ae2 in H_plus.
-              rewrite -> E_ae1 in H_plus.
-              rewrite -> (H_refactor ae).
-              rewrite -> 2 fold_unfold_evaluate_Plus.
-              rewrite -> E_ae2.
-              rewrite -> E_ae1.
-              rewrite -> H_plus.
-              reflexivity.
-           -- rewrite -> fold_unfold_evaluate_Plus in H_plus.
-              rewrite -> E_ae1 in H_plus.
-              rewrite -> (H_refactor ae).
-              rewrite -> 2 fold_unfold_evaluate_Plus.
-              rewrite -> E_ae1.
-              rewrite -> H_plus.
-              reflexivity.
-       * split.
-         ** intros n s H_plus.
-            destruct IHae1 as [IH1_ae1 [IH2_ae1 IH3_ae1]].
-            destruct IHae2 as [IH1_ae2 [IH2_ae2 IH3_ae2]].
-         - intro ae.
-           rewrite -> (refactoring_preserves_evaluation_aux ae2 ae).
-           reflexivity.
-         - intro ae.
-           rewrite -> (refactoring_preserves_evaluation_aux ae1 ae).
-           reflexivity.
-         - intro ae.
-           case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
-           case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
-           case (evaluate ae) as [n_ae | s_ae] eqn:E_ae.
-           -- intro H_absurd.
-              discriminate H_absurd.
-           -- intro H_true.
-              rewrite -> (H_refactor ae).
-              rewrite -> 2 fold_unfold_evaluate_Plus.
-              rewrite -> E_ae2.
-              rewrite -> E_ae1.
-              rewrite -> E_ae.
-              exact (H_true).
-           -- intros _.
-              rewrite -> fold_unfold_evaluate_Plus in H_plus.
-              rewrite -> E_ae2 in H_plus.
-              rewrite -> E_ae1 in H_plus.
-              discriminate H_plus.
-           -- intros _.
-              rewrite -> fold_unfold_evaluate_Plus in H_plus.
-              rewrite -> E_ae1 in H_plus.
-              discriminate H_plus.
-         ** intros n1 n2 H_plus.
-            destruct IHae1 as [IH1_ae1 [IH2_ae1 IH3_ae1]].
-            destruct IHae2 as [IH1_ae2 [IH2_ae2 IH3_ae2]].
-         - intro ae.
-           rewrite -> (refactoring_preserves_evaluation_aux ae2 ae).
-           reflexivity.
-         - intro ae.
-           rewrite -> (refactoring_preserves_evaluation_aux ae1 ae).
-           reflexivity.
-         - intro ae.
-           case (evaluate ae1) as [n_ae1 | s_ae1] eqn:E_ae1.
-           case (evaluate ae2) as [n_ae2 | s_ae2] eqn:E_ae2.
-           case (evaluate ae) as [n_ae | s_ae] eqn:E_ae.
-           -- intro H_exp_n_ae_eq_exp_n2.
-              rewrite -> fold_unfold_evaluate_Plus in H_plus.
-              rewrite -> E_ae2 in H_plus.
-              rewrite -> E_ae1 in H_plus.
-              rewrite -> (H_refactor ae).
-              rewrite -> 2 fold_unfold_evaluate_Plus.
-              rewrite -> E_ae2.
-              rewrite -> E_ae1.
-              rewrite -> E_ae.
-              injection H_exp_n_ae_eq_exp_n2.
-              intro H_n_ae_eq_n2.
-              injection H_plus.
-              intro H_n_ae1_plus_n_ae2_eq_n1.
-              rewrite -> H_n_ae_eq_n2.
-              rewrite -> H_n_ae1_plus_n_ae2_eq_n1.
-              reflexivity.
-           -- intro H_absurd.
-              discriminate H_absurd.
-           -- intro H_ae.
-              rewrite -> fold_unfold_evaluate_Plus in H_plus.
-              rewrite -> E_ae2 in H_plus.
-              rewrite -> E_ae1 in H_plus.
-              discriminate H_plus.
-           -- intro H_ae.
-              rewrite -> fold_unfold_evaluate_Plus in H_plus.
-              rewrite -> E_ae1 in H_plus.
-              discriminate H_plus.
-    ++ intro H_refactor.
-       split.
-       * intros s H_minus.
-         destruct IHae1 as [IH1_ae1 [IH2_ae1 IH3_ae1]].
-         destruct IHae2 as [IH1_ae2 [IH2_ae2 IH3_ae2]].
-         - intro ae.
-           rewrite -> (refactoring_preserves_evaluation_aux ae2 ae).
-           reflexivity.
-         - intro ae.
-           rewrite -> (refactoring_preserves_evaluation_aux ae1 ae).
-           reflexivity.
-         - intro ae.
-           case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
-           case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
-           case (evaluate ae) as [n_ae | s_ae] eqn:E_ae.
-           -- rewrite -> (H_refactor ae).
-              rewrite -> fold_unfold_evaluate_Plus.
-              rewrite -> fold_unfold_evaluate_Minus.
-              rewrite -> E_ae.
-              rewrite -> E_ae2.
-              rewrite -> E_ae1.
-              case (n1 <? n2) eqn:E_lt.
-              --- rewrite -> fold_unfold_evaluate_Minus in H_minus.
-                  rewrite -> E_ae2 in H_minus.
-                  rewrite -> E_ae1 in H_minus.
-                  case (n1 <? n2) eqn:E_lt_minus.
-                  ---- exact (H_minus).
-                  ---- discriminate E_lt.
-              --- rewrite -> fold_unfold_evaluate_Minus in H_minus.
-                  rewrite -> E_ae2 in H_minus.
-                  rewrite -> E_ae1 in H_minus.
-                  case (n1 <? n2) eqn:E_lt_minus.
-                  ---- discriminate E_lt.
-                  ---- discriminate H_minus.
-           -- rewrite -> (H_refactor ae).
-              rewrite -> fold_unfold_evaluate_Plus.
-              rewrite -> fold_unfold_evaluate_Minus.
-              rewrite -> E_ae.
-              rewrite -> E_ae2.
-              rewrite -> E_ae1.
-              case (n1 <? n2) eqn:E_lt.
-              --- rewrite -> fold_unfold_evaluate_Minus in H_minus.
-                  rewrite -> E_ae2 in H_minus.
-                  rewrite -> E_ae1 in H_minus.
-                  case (n1 <? n2) eqn:E_lt_minus.
-                  ---- exact (H_minus).
-                  ---- discriminate E_lt.
-              --- rewrite -> fold_unfold_evaluate_Minus in H_minus.
-                  rewrite -> E_ae2 in H_minus.
-                  rewrite -> E_ae1 in H_minus.
-                  case (n1 <? n2) eqn:E_lt_minus.
-                  ---- discriminate E_lt.
-                  ---- discriminate H_minus.
-           -- rewrite -> fold_unfold_evaluate_Minus in H_minus.
-              rewrite -> E_ae2 in H_minus.
-              rewrite -> E_ae1 in H_minus.
-              rewrite -> (H_refactor ae).
-              rewrite -> fold_unfold_evaluate_Plus.
-              rewrite -> fold_unfold_evaluate_Minus.
-              rewrite -> E_ae2.
-              rewrite -> E_ae1.
-              exact (H_minus).
-           -- rewrite -> fold_unfold_evaluate_Minus in H_minus.
-              rewrite -> E_ae1 in H_minus.
-              rewrite -> (H_refactor ae).
-              rewrite -> fold_unfold_evaluate_Plus.
-              rewrite -> fold_unfold_evaluate_Minus.
-              rewrite -> E_ae1.
-              exact (H_minus).
-       * split.
-         intros n s H_minus.
-         destruct IHae1 as [IH1_ae1 [IH2_ae1 IH3_ae1]].
-         destruct IHae2 as [IH1_ae2 [IH2_ae2 IH3_ae2]].
-         - intro ae.
-           rewrite -> (refactoring_preserves_evaluation_aux ae2 ae).
-           reflexivity.
-         - intro ae.
-           rewrite -> (refactoring_preserves_evaluation_aux ae1 ae).
-           reflexivity.
-         - intro ae.
-           case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
-           case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
-           case (evaluate ae) as [n_ae | s_ae] eqn:E_ae.
-           -- rewrite -> (H_refactor ae).
-              rewrite -> fold_unfold_evaluate_Plus.
-              rewrite -> fold_unfold_evaluate_Minus.
-              rewrite -> E_ae.
-              rewrite -> E_ae2.
-              rewrite -> E_ae1.
-              case (n1 <? n2) eqn:E_lt.
-              --- rewrite -> fold_unfold_evaluate_Minus in H_minus.
-                  rewrite -> E_ae2 in H_minus.
-                  rewrite -> E_ae1 in H_minus.
-                  case (n1 <? n2) eqn:E_lt_minus.
-                  ---- intro H_absurd.
-                       discriminate H_absurd.
-                  ---- discriminate E_lt.
-              --- rewrite -> fold_unfold_evaluate_Minus in H_minus.
-                  rewrite -> E_ae2 in H_minus.
-                  rewrite -> E_ae1 in H_minus.
-                  case (n1 <? n2) eqn:E_lt_minus.
-                  ---- discriminate E_lt.
-                  ---- intro H_absurd.
-                       discriminate H_absurd.
-           -- rewrite -> (H_refactor ae).
-              rewrite -> fold_unfold_evaluate_Plus.
-              rewrite -> fold_unfold_evaluate_Minus.
-              rewrite -> E_ae.
-              rewrite -> E_ae2.
-              rewrite -> E_ae1.
-              case (n1 <? n2) eqn:E_lt.
-              --- rewrite -> fold_unfold_evaluate_Minus in H_minus.
-                  rewrite -> E_ae2 in H_minus.
-                  rewrite -> E_ae1 in H_minus.
-                  case (n1 <? n2) eqn:E_lt_minus.
-                  ---- discriminate H_minus.
-                  ---- discriminate E_lt.
-              --- intro H_true.
-                  exact (H_true).
-           -- intros _.
-              rewrite -> fold_unfold_evaluate_Minus in H_minus.
-                  rewrite -> E_ae2 in H_minus.
-                  rewrite -> E_ae1 in H_minus.
-                  discriminate H_minus.
-           -- intros _.
-              rewrite -> fold_unfold_evaluate_Minus in H_minus.
-                  rewrite -> E_ae1 in H_minus.
-                  discriminate H_minus.
-         - intros n1 n2 H_minus.
-           destruct IHae1 as [IH1_ae1 [IH2_ae1 IH3_ae1]].
-           destruct IHae2 as [IH1_ae2 [IH2_ae2 IH3_ae2]].
-           -- intro ae.
-              rewrite -> (refactoring_preserves_evaluation_aux ae2 ae).
-              reflexivity.
-           -- intro ae.
-              rewrite -> (refactoring_preserves_evaluation_aux ae1 ae).
-              reflexivity.
-           -- intro ae.
-              case (evaluate ae1) as [n_ae1 | s_ae1] eqn:E_ae1.
-              case (evaluate ae2) as [n_ae2 | s_ae2] eqn:E_ae2.
-              case (evaluate ae) as [n_ae | s_ae] eqn:E_ae.
-              --- intros H_exp_n_ae_eq_exp_n2.
-                  rewrite -> fold_unfold_evaluate_Minus in H_minus.
-                  rewrite -> E_ae2 in H_minus.
-                  rewrite -> E_ae1 in H_minus.
-                  rewrite -> (H_refactor ae).
-                  rewrite -> fold_unfold_evaluate_Plus.
-                  rewrite -> fold_unfold_evaluate_Minus.
-                  rewrite -> E_ae2.
-                  rewrite -> E_ae1.
-                  rewrite -> E_ae.
-                  injection H_exp_n_ae_eq_exp_n2.
-                  intro H_n_ae_eq_n2.
-                  rewrite -> H_n_ae_eq_n2.
-                  rewrite -> H_minus.
-                  reflexivity.
-              --- intro H_absurd.
-                  discriminate H_absurd.
-              --- intro H_ae.
-                  rewrite -> fold_unfold_evaluate_Minus in H_minus.
-                  rewrite -> E_ae2 in H_minus.
-                  rewrite -> E_ae1 in H_minus.
-                  discriminate H_minus.
-              --- intro H_ae.
-                  rewrite -> fold_unfold_evaluate_Minus in H_minus.
-                  rewrite -> E_ae1 in H_minus.
-                  discriminate H_minus.
+       --- intro H_ae.
+           rewrite -> fold_unfold_evaluate_Minus in H_minus.
+           rewrite -> E_ae2 in H_minus.
+           rewrite -> E_ae1 in H_minus.
+           discriminate H_minus.
+       --- intro H_ae.
+           rewrite -> fold_unfold_evaluate_Minus in H_minus.
+           rewrite -> E_ae1 in H_minus.
+           discriminate H_minus.
 Qed. 
+
+Proposition equivalence_of_the_two_lemmas_case :
+  forall ae : arithmetic_expression,
+    (forall s : string,
+        evaluate ae = Expressible_msg s ->
+        forall a : arithmetic_expression,
+          evaluate (refactor_aux ae a) = Expressible_msg s)
+    /\
+      (forall (n : nat)
+              (s : string),
+          evaluate ae = Expressible_nat n ->
+          forall a : arithmetic_expression,
+            evaluate a = Expressible_msg s ->
+            evaluate (refactor_aux ae a) = Expressible_msg s)
+    /\
+      (forall n1 n2 : nat,
+          evaluate ae = Expressible_nat n1 ->
+          forall a : arithmetic_expression,
+            evaluate a = Expressible_nat n2 ->
+            evaluate (refactor_aux ae a) = Expressible_nat (n1 + n2))
+    <->
+      forall a : arithmetic_expression,
+        evaluate (refactor_aux ae a) = evaluate (Plus ae a).
+Proof.
+  intro ae.
+  split.
+  - case ae as [ n | ae1 ae2 | ae1 ae2 ];
+      intros _;
+      intro a.
+    + rewrite -> fold_unfold_refactor_aux_Literal.
+      reflexivity.
+    + Check (refactoring_preserves_evaluation_aux (Plus ae1 ae2) a).
+      rewrite -> (refactoring_preserves_evaluation_aux (Plus ae1 ae2) a).
+      reflexivity.
+    + Check (refactoring_preserves_evaluation_aux (Minus ae1 ae2) a).
+      rewrite -> (refactoring_preserves_evaluation_aux (Minus ae1 ae2) a).
+      reflexivity.
+  - case ae as [ n | ae1 ae2 | ae1 ae2 ].
+    + intro H_ae.
+      split.
+      * intros s E_n_eq_s a.
+        rewrite -> fold_unfold_refactor_aux_Literal.
+        rewrite -> fold_unfold_evaluate_Plus.
+        rewrite -> E_n_eq_s.
+        reflexivity.
+      * split.
+        -- intros n' s E_n_eq_n' ae E_ae_eq_s.
+           rewrite -> fold_unfold_refactor_aux_Literal.
+           rewrite -> fold_unfold_evaluate_Plus.
+           rewrite -> E_n_eq_n'.
+           rewrite -> E_ae_eq_s.
+           reflexivity.
+        -- intros n1 n2 E_n_eq_n1 ae E_ae_eq_n2.
+           rewrite -> fold_unfold_refactor_aux_Literal.
+           rewrite -> fold_unfold_evaluate_Plus.
+           rewrite -> E_n_eq_n1.
+           rewrite -> E_ae_eq_n2.
+           reflexivity.
+    + intro H_ae.
+      split.
+      * intros s E_n_eq_s a.
+        rewrite -> H_ae.
+        rewrite -> fold_unfold_evaluate_Plus.
+        rewrite -> E_n_eq_s.
+        reflexivity.
+      * split.
+        -- intros n' s E_n_eq_n' ae E_ae_eq_s.
+           rewrite -> H_ae.
+           rewrite -> fold_unfold_evaluate_Plus.
+           rewrite -> E_n_eq_n'.
+           rewrite -> E_ae_eq_s.
+           reflexivity.
+        -- intros n1 n2 E_n_eq_n1 ae E_ae_eq_n2.
+           rewrite -> H_ae.
+           rewrite -> fold_unfold_evaluate_Plus.
+           rewrite -> E_n_eq_n1.
+           rewrite -> E_ae_eq_n2.
+           reflexivity.
+    + intro H_ae.
+      split.
+      * intros s E_n_eq_s a.
+        rewrite -> H_ae.
+        rewrite -> fold_unfold_evaluate_Plus.
+        rewrite -> E_n_eq_s.
+        reflexivity.
+      * split.
+        -- intros n' s E_n_eq_n' ae E_ae_eq_s.
+           rewrite -> H_ae.
+           rewrite -> fold_unfold_evaluate_Plus.
+           rewrite -> E_n_eq_n'.
+           rewrite -> E_ae_eq_s.
+           reflexivity.
+        -- intros n1 n2 E_n_eq_n1 ae E_ae_eq_n2.
+           rewrite -> H_ae.
+           rewrite -> fold_unfold_evaluate_Plus.
+           rewrite -> E_n_eq_n1.
+           rewrite -> E_ae_eq_n2.
+           reflexivity.
+Qed.
 
 (* ********** *)
 
@@ -815,23 +914,23 @@ Proposition equivalence_of_the_two_lemmas_super_refactor :
         forall a : arithmetic_expression,
           evaluate (super_refactor_aux ae a) = Expressible_msg s)
     /\
-    (forall (n : nat)
-            (s : string),
-        evaluate ae = Expressible_nat n ->
-        forall a : arithmetic_expression,
-          evaluate a = Expressible_msg s ->
-          evaluate (super_refactor_aux ae a) = Expressible_msg s)
+      (forall (n : nat)
+              (s : string),
+          evaluate ae = Expressible_nat n ->
+          forall a : arithmetic_expression,
+            evaluate a = Expressible_msg s ->
+            evaluate (super_refactor_aux ae a) = Expressible_msg s)
     /\
-    (forall n1 n2 : nat,
-        evaluate ae = Expressible_nat n1 ->
-        forall a : arithmetic_expression,
-          evaluate a = Expressible_nat n2 ->
-          evaluate (super_refactor_aux ae a) = Expressible_nat (n1 + n2))
+      (forall n1 n2 : nat,
+          evaluate ae = Expressible_nat n1 ->
+          forall a : arithmetic_expression,
+            evaluate a = Expressible_nat n2 ->
+            evaluate (super_refactor_aux ae a) = Expressible_nat (n1 + n2))
     <->
-    forall a : arithmetic_expression,
-      evaluate (super_refactor_aux ae a) = evaluate (Plus ae a).
+      forall a : arithmetic_expression,
+        evaluate (super_refactor_aux ae a) = evaluate (Plus ae a).
+Proof.
 
-    
 (* ********** *)
 
 (* Preview of Week 03 (out of scope of Week 02, but maybe some of you are Very Fast): *)
