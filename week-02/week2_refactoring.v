@@ -191,11 +191,25 @@ Definition refactor (ae : arithmetic_expression) : arithmetic_expression :=
 
 Compute (let ae := Literal 2 in
          refactor ae).
+
+Compute (let ae := Literal 2 in
+         refactor (refactor ae)).
+
+Compute (let ae := Literal 2 in
+         evaluate (refactor ae)).
+
+Compute (let ae := Literal 2 in
+         (evaluate (refactor (refactor ae)))).
+
 (* If the arithmetic expression is a Literal, the Literal 0 is added to it on the right.
    This does not change the result as 0 is neutral on the right for addition *)
 
 Compute (let ae := Plus (Literal 2) (Literal 1) in
          refactor ae).
+
+Compute (let ae := Plus (Literal 2) (Literal 1) in
+         refactor (refactor ae)).
+
 (* If the arithmetic expression is a Plus, the Literal 0 is added to right of the second subexpression. 
    This does not change the result as 0 is neutral on the right for addition *)
 
@@ -215,6 +229,12 @@ Compute (let ae := Minus
                      (Minus (Literal 1) (Literal 2))
                      (Minus (Literal 3) (Literal 4)) in
          refactor ae).
+
+Compute (let ae := Minus
+                     (Minus (Literal 1) (Literal 2))
+                     (Minus (Literal 3) (Literal 4)) in
+         refactor (refactor ae)).
+
 (* When there are many Minus nodes, we see a similar pattern in the resulting tree but in the opposite direction.
    The tree is not fully flattened but associates to the left with Plus with 0. *)
 
@@ -754,6 +774,15 @@ Proof.
            reflexivity.
 Qed.
 
+Proposition refactor_is_idempotent :
+  forall (ae : arithmetic_expression),
+      evaluate (refactor ae) = evaluate (refactor (refactor ae)).
+Proof.
+  intro ae.
+  rewrite -> (refactoring_preserves_evaluation (refactor ae)).
+  reflexivity.
+Qed.
+
 (* ********** *)
 
 Fixpoint super_refactor (ae : arithmetic_expression) : arithmetic_expression :=
@@ -835,6 +864,12 @@ Compute (let ae := Minus
                      (Minus (Literal 2) (Literal 1))
                      (Minus (Literal 4) (Literal 3)) in
          super_refactor ae).
+
+Compute (let ae := Minus
+                     (Minus (Literal 2) (Literal 1))
+                     (Minus (Literal 4) (Literal 3)) in
+         super_refactor (super_refactor ae)).
+
 
 Compute (let ae := Minus
                      (Minus (Literal 2) (Literal 1))
@@ -1059,6 +1094,16 @@ Proof.
                 rewrite -> E_ae_eq_n2.
                 reflexivity.
 Qed.
+
+Proposition super_refactor_is_idempotent :
+  forall (ae : arithmetic_expression),
+    evaluate (super_refactor ae) = evaluate (super_refactor (super_refactor ae)).
+Proof.
+  intro ae.
+  rewrite -> (super_refactoring_preserves_evaluation (super_refactor ae)).
+  reflexivity.
+Qed.
+
 
 (* ********** *)
 

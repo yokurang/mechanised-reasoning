@@ -25,7 +25,7 @@ forall ae : arithmetic_expression,
   forall a : arithmetic_expression,
     evaluate (refactor_aux ae a) = evaluate (Plus ae a).
 
-[ ]
+[x]
 Likewise, could you state and prove a similar proposition about super_refactor?
 
 [ ]
@@ -34,9 +34,12 @@ Restrict super_refactor to source arithmetic expressions with only Literal and P
 and compare this restricted version and mystery_function_19 in Week 05 of FPP/LPP.
 
 Happy MR,
-[ ]
+[x]
 P.S.: Would it make sense for refactoring to be idempotent?
 If so, is that the case here?
+
+Refactor is idempotent if you evaluate. Super refactor is idempotent if you evaluate. Proven.
+Just missing explanation in the report.
 
 Report
 [] Introduction
@@ -47,4 +50,7 @@ Report
 [] Task 3: What does super_refactor do?
 [] Task 4: Prove that super-refactoring preserves evaluation
 [] Task 4b: equivalence_of_the_two_lemmas_super_refactor
+[] Task 5: Compare super_refactor and mystery_function_19
+[] Task 6: Idempotence of refactoring
+[] Task 7: Idempotence of super-refactoring
 [] Conclusion
