@@ -836,6 +836,18 @@ Compute (let ae := Minus
                      (Minus (Literal 4) (Literal 3)) in
          super_refactor ae).
 
+Compute (let ae := Minus
+                     (Minus (Literal 2) (Literal 1))
+                     (Minus (Literal 4) (Literal 3)) in
+         evaluate (super_refactor ae)).
+
+
+Compute (let ae := Minus
+                     (Minus (Literal 2) (Literal 3))
+                     (Minus (Literal 4) (Literal 3)) in
+         evaluate (super_refactor_aux ae (Literal 0))).
+
+
 (* Task 4: Prove that super-refactoring preserves evaluation. *)
 
 Lemma super_refactoring_preserves_evaluation_aux :
@@ -912,6 +924,8 @@ Proposition equivalence_of_the_two_lemmas_super_refactor :
     (forall s : string,
         evaluate ae = Expressible_msg s ->
         forall a : arithmetic_expression,
+        (evaluate (super_refactor ae) = Expressible_msg s)
+        /\
           evaluate (super_refactor_aux ae a) = Expressible_msg s)
     /\
       (forall (n : nat)
@@ -919,17 +933,132 @@ Proposition equivalence_of_the_two_lemmas_super_refactor :
           evaluate ae = Expressible_nat n ->
           forall a : arithmetic_expression,
             evaluate a = Expressible_msg s ->
-            evaluate (super_refactor_aux ae a) = Expressible_msg s)
+            (evaluate (super_refactor ae) = Expressible_nat n)
+            /\
+              evaluate (super_refactor_aux ae a) = Expressible_msg s)
     /\
       (forall n1 n2 : nat,
           evaluate ae = Expressible_nat n1 ->
           forall a : arithmetic_expression,
             evaluate a = Expressible_nat n2 ->
-            evaluate (super_refactor_aux ae a) = Expressible_nat (n1 + n2))
+            (evaluate (super_refactor ae) = Expressible_nat n1)
+            /\
+              evaluate (super_refactor_aux ae a) = Expressible_nat (n1 + n2))
     <->
+      (evaluate (super_refactor ae) = evaluate ae)
+      /\
       forall a : arithmetic_expression,
         evaluate (super_refactor_aux ae a) = evaluate (Plus ae a).
 Proof.
+  intro ae.
+  split.
+  - case ae as [ n | ae1 ae2 | ae1 ae2 ]; 
+    intros _.
+    split.
+    + rewrite -> fold_unfold_super_refactor_Literal.
+      reflexivity.
+    + intro a. 
+      rewrite -> (fold_unfold_super_refactor_aux_Literal n a).
+      reflexivity.
+    + Check (super_refactoring_preserves_evaluation_aux (Plus ae1 ae2)).
+      exact (super_refactoring_preserves_evaluation_aux (Plus ae1 ae2)).
+    + Check (super_refactoring_preserves_evaluation_aux (Minus ae1 ae2)).
+      exact (super_refactoring_preserves_evaluation_aux (Minus ae1 ae2)).
+  - case ae as [n | ae1 ae2 | ae1 ae2]. 
+    + intros [H1_ae H2_ae].
+      split.
+      * intros s E_n_eq_s a.
+        rewrite -> fold_unfold_super_refactor_Literal.
+        rewrite -> fold_unfold_super_refactor_aux_Literal.
+        rewrite -> fold_unfold_evaluate_Plus.
+        rewrite -> E_n_eq_s.
+        split.
+        -- reflexivity.
+        -- reflexivity.
+      * split.
+        -- intros n' s E_n_eq_n' ae E_ae_eq_s.
+           rewrite -> fold_unfold_super_refactor_Literal.
+           rewrite -> fold_unfold_super_refactor_aux_Literal.
+           rewrite -> fold_unfold_evaluate_Plus.
+           rewrite -> E_n_eq_n'.
+           rewrite -> E_ae_eq_s.
+           split.
+           ++ reflexivity.
+           ++ reflexivity.
+        -- intros n1 n2 E_n_eq_n1 ae E_ae_eq_n2.
+           rewrite -> fold_unfold_super_refactor_Literal.
+           rewrite -> fold_unfold_super_refactor_aux_Literal.
+           rewrite -> fold_unfold_evaluate_Plus.
+           rewrite -> E_n_eq_n1.
+           rewrite -> E_ae_eq_n2.
+           split.
+           ++ reflexivity.
+           ++ reflexivity.
+    + intros [H1_ae H2_ae].
+      split.
+      * intros s E_n_eq_s a.
+        rewrite -> H1_ae.
+        rewrite -> (H2_ae a).
+        rewrite -> E_n_eq_s.
+        split.
+        -- reflexivity.
+        -- rewrite -> fold_unfold_evaluate_Plus.
+           rewrite -> E_n_eq_s.
+           reflexivity.
+      * split.
+        -- intros n' s E_n_eq_n' ae E_ae_eq_s.
+           rewrite -> H1_ae.
+           rewrite -> (H2_ae ae).
+           rewrite -> E_n_eq_n'.
+           split.
+           ++ reflexivity.
+           ++ rewrite -> fold_unfold_evaluate_Plus.
+              rewrite -> E_n_eq_n'.
+              rewrite -> E_ae_eq_s.
+              reflexivity.
+        -- intros n1 n2 E_n_eq_n1 ae E_ae_eq_n2.
+           rewrite -> H1_ae.
+           rewrite -> (H2_ae ae).
+           rewrite -> E_n_eq_n1.
+           split.
+           ++ reflexivity.
+           ++ rewrite -> fold_unfold_evaluate_Plus.
+              rewrite -> E_n_eq_n1.
+              rewrite -> E_ae_eq_n2.
+              reflexivity.
+    + intros [H1_ae H2_ae].
+      split.
+      * intros s E_n_eq_s a.
+        rewrite -> H1_ae.
+        rewrite -> (H2_ae a).
+        rewrite -> E_n_eq_s.
+        split.
+        -- reflexivity.
+        -- rewrite -> fold_unfold_evaluate_Plus.
+           rewrite -> E_n_eq_s.
+           reflexivity.
+      * split.
+        -- intros n' s E_n_eq_n' ae E_ae_eq_s.
+           rewrite -> H1_ae.
+           rewrite -> (H2_ae ae).
+           rewrite -> E_n_eq_n'.
+           split.
+           ++ reflexivity.
+           ++ rewrite -> fold_unfold_evaluate_Plus.
+              rewrite -> E_n_eq_n'.
+              rewrite -> E_ae_eq_s.
+              reflexivity.
+        -- intros n1 n2 E_n_eq_n1 ae E_ae_eq_n2.
+            rewrite -> H1_ae.
+            rewrite -> (H2_ae ae).
+            rewrite -> E_n_eq_n1.
+            split.
+            ++ reflexivity.
+            ++ rewrite -> fold_unfold_evaluate_Plus.
+                rewrite -> E_n_eq_n1.
+                rewrite -> E_ae_eq_n2.
+                reflexivity.
+Qed.
 
 (* ********** *)
 
