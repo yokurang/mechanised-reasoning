@@ -55,13 +55,13 @@ Likewise, the proof of the converse implication should also be goal directed:
 
 [X] Ditto for Theorem super_refactoring_preserves_evaluation.
 
-[ ] The following names would be more straightforward:
+[X] The following names would be more straightforward:
   Proposition equivalence_of_the_two_lemmas_for_refactor
   Proposition equivalence_of_the_two_lemmas_for_super_refactor
 
 -----
 
-[ ] Proposition equivalence_of_the_two_lemmas_super_refactor :
+[X] Proposition equivalence_of_the_two_lemmas_super_refactor :
 
 The statement is spot on.
 
@@ -93,14 +93,14 @@ Likewise, the proof of the converse implication could start as follows:
 
 Report
 [] Introduction
-[] Task 1: What does refactor do?
-[] Task 2: Prove that refactoring preserves evaluation
-[] Task 2b: Equivalence of the two lemmas ind vs case (No need to go through induction in depth, go through case in depth),
+[X] Task 1: What does refactor do?
+[X] Task 2: Prove that refactoring preserves evaluation
+[X] Task 2b: Equivalence of the two lemmas ind vs case (No need to go through induction in depth, go through case in depth),
     explain why they differ and why cases is a much shorter proof
-  [] Task 3: What does super_refactor do?
-[] Task 4: Prove that super-refactoring preserves evaluation
+[X] Task 3: What does super_refactor do?
+[X] Task 4: Prove that super-refactoring preserves evaluation
 [] Task 4b: equivalence_of_the_two_lemmas_super_refactor
 [] Task 5: Compare super_refactor and mystery_function_19
-[] Task 6: Idempotence of refactoring
-[] Task 7: Idempotence of super-refactoring
+[X] Task 6: Idempotence of refactoring
+[X] Task 7: Idempotence of super-refactoring
 [] Conclusion

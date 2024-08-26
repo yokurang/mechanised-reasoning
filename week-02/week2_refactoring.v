@@ -189,25 +189,25 @@ Definition refactor (ae : arithmetic_expression) : arithmetic_expression :=
 (* Task 1: What does refactor do?
    Capture your observations into a unit-test function. *)
 
-Compute (let ae := Literal 2 in
+Compute (let ae := Literal 1 in
          refactor ae).
 
-Compute (let ae := Literal 2 in
-         refactor (refactor ae)).
-
-Compute (let ae := Literal 2 in
+Compute (let ae := Literal 0 in
          evaluate (refactor ae)).
 
-Compute (let ae := Literal 2 in
-         (evaluate (refactor (refactor ae)))).
+Compute (let ae := Literal 1 in
+         (refactor (refactor ae))).
+
+Compute (let ae := Literal 1 in
+         evaluate (refactor (refactor ae))).
 
 (* If the arithmetic expression is a Literal, the Literal 0 is added to it on the right.
    This does not change the result as 0 is neutral on the right for addition *)
 
-Compute (let ae := Plus (Literal 2) (Literal 1) in
+Compute (let ae := Plus (Literal 1) (Literal 2) in
          refactor ae).
 
-Compute (let ae := Plus (Literal 2) (Literal 1) in
+Compute (let ae := Plus (Literal 1) (Literal 2) in
          refactor (refactor ae)).
 
 (* If the arithmetic expression is a Plus, the Literal 0 is added to right of the second subexpression.
@@ -224,6 +224,17 @@ Compute (let ae := Plus
                      (Plus (Literal 3) (Literal 4)) in
          refactor ae).
 
+(*      +
+       / \
+      1   +
+         / \
+        2   +
+           / \
+          3   +
+             / \
+            4   0
+*)
+
 (* When there are many Plus nodes, we can see a pattern in the tree that is being produced
    Instead of a balanced tree, we get a tree that is "flattened" by associating to the right. *)
 
@@ -237,8 +248,25 @@ Compute (let ae := Minus
                      (Minus (Literal 3) (Literal 4)) in
          refactor (refactor ae)).
 
-(* When there are many Minus nodes, we see a similar pattern in the resulting tree but in the opposite direction.
-   The tree is not fully flattened but associates to the left with Plus with 0. *)
+Compute (let ae := Minus
+                     (Plus (Literal 1) (Literal 2))
+                     (Literal 3) in
+         refactor ae).
+
+(*             +
+              / \
+        ->   -   0
+            / \ 
+           +   +
+          / \ 3 0
+         1   +
+            / \
+           2   0
+
+ *)
+
+(* When there are many Minus nodes, we don't see a clear pattern, but we can see that the "flattened" binary trees are being appended to each other, with a 0 on the RHS.
+. *)
 
 Compute (let ae1 := Literal 1 in
          let ae2 := Plus (ae1) (ae1) in
@@ -247,18 +275,15 @@ Compute (let ae1 := Literal 1 in
          (expressible_value_eqb (evaluate ae1) (evaluate (refactor ae1)))
          && (expressible_value_eqb (evaluate ae2) (evaluate (refactor ae2)))
          && (expressible_value_eqb (evaluate ae3) (evaluate (refactor ae3)))
-         && (expressible_value_eqb (evaluate ae4) (evaluate (refactor ae4)))
-        ).
+         && (expressible_value_eqb (evaluate ae4) (evaluate (refactor ae4)))).
 
 (* ********** *)
 
 (* Task 2: Prove that refactoring preserves evaluation. *)
 
-(*
 Compute (let ae := Minus (Plus (Literal 3) (Literal 4)) (Literal 2) in
          let a := (Minus (Literal 5) (Literal 4)) in
-    evaluate (refactor_aux ae a)) = evaluate (Plus ae a).
-*)
+         evaluate (refactor_aux ae a) = evaluate (Plus ae a)).
 
 Lemma refactoring_preserves_evaluation_aux :
   forall (ae a : arithmetic_expression),
@@ -311,7 +336,7 @@ Proof.
   reflexivity.
 Qed.
 
-Proposition equivalence_of_the_two_lemmas_ind :
+Proposition equivalence_of_the_two_lemmas_for_refactor_ind :
   forall ae : arithmetic_expression,
     (forall s : string,
         evaluate ae = Expressible_msg s ->
@@ -677,7 +702,7 @@ Proof.
                  discriminate H_minus.
 Qed.
 
-Proposition equivalence_of_the_two_lemmas_case :
+Proposition equivalence_of_the_two_lemmas_for_refacotr_case :
   forall ae : arithmetic_expression,
     (forall s : string,
         evaluate ae = Expressible_msg s ->
@@ -715,7 +740,7 @@ Proof.
     + Check (E_s s (eq_refl (Expressible_msg s)) a).
       exact (E_s s (eq_refl (Expressible_msg s)) a).
   - case ae as [ n | ae1 ae2 | ae1 ae2 ].
-    + intro E.
+    + intro E. (* Literal case *)
       split.
       { intros s E_ae_s a.
         rewrite -> fold_unfold_refactor_aux_Literal.
@@ -738,7 +763,7 @@ Proof.
         rewrite -> E_a_n.
         reflexivity.
       }
-    + intro E.
+    + intro E. (* Plus case *)
       split.
       { intros s E_ae_s a.
         rewrite -> E.
@@ -761,7 +786,7 @@ Proof.
         rewrite -> E_a_n.
         reflexivity.
       }
-    + intro E.
+    + intro E. (* Minus case *)
       split.
       { intros s E_ae_s a.
         rewrite -> E.
@@ -872,6 +897,81 @@ Qed.
 (* Task 3: What does super_refactor do?
    Capture your observations into a unit-test function. *)
 
+Compute (let ae := Literal 2 in
+         super_refactor ae).
+
+Compute (let ae := Literal 2 in
+         super_refactor (super_refactor ae)).
+
+Compute (let ae := Literal 2 in
+         evaluate (super_refactor ae)).
+
+Compute (let ae := Literal 2 in
+         (evaluate (super_refactor (super_refactor ae)))).
+
+(* If the arithmetic expression is a Literal, Does nothing, surprisingly *)
+
+Compute (let ae := Plus (Literal 2) (Literal 1) in
+         super_refactor ae).
+
+Compute (let ae := Plus (Literal 2) (Literal 1) in
+         super_refactor (super_refactor ae)).
+
+Compute (let ae := Plus (Plus (Literal 1) (Literal 2))
+                     (Plus (Literal 3)(Literal 4)) in
+         super_refactor (super_refactor ae)).
+
+(* If the arithmetic expression is a Plus of two literals, nothing changes, if the ae is a chain of Pluses, a right-skewed binary tree, this time no Literal 0 in the nil case. *)
+
+Compute (let ae := Minus (Literal 2) (Literal 1) in
+         super_refactor ae).
+
+Compute (let ae := Minus (Plus (Literal 1) (Literal 2))
+                     (Plus (Literal 3)(Literal 4)) in
+         super_refactor ae).
+
+Compute (let ae := Minus (Minus (Literal 1) (Literal 2))
+                     (Minus (Literal 3)(Literal 4)) in
+         super_refactor ae).
+
+(* Minus of two expressios does nothing, original expression is preserved. *)
+
+Compute (let ae := Plus
+                     (Plus (Literal 1) (Literal 2))
+                     (Plus (Literal 3) (Literal 4)) in
+         super_refactor ae).
+
+(*      +
+       / \
+      1   +
+         / \
+        2   +
+           / \
+          3   4
+*)
+
+(* When there are many Plus nodes, we can see a pattern in the tree that is being produced
+   Instead of a balanced tree, we get a tree that is "flattened" by associating to the right and the nil
+case accumulator is the right-most leaf of the original binary tree *)
+
+Compute (let ae := Minus
+                     (Minus (Literal 1) (Literal 2))
+                     (Minus (Literal 3) (Literal 4)) in
+         super_refactor ae).
+
+Compute (let ae := Minus
+                     (Plus (Literal 1) (Literal 2))
+                     (Literal 3) in
+         super_refactor ae).
+
+(*      ->   - 
+            / \ 
+           +   3
+          / \ 
+         1   2
+
+*)
+
 Compute (let ae := Minus
                      (Minus (Literal 2) (Literal 1))
                      (Minus (Literal 4) (Literal 3)) in
@@ -891,6 +991,8 @@ Compute (let ae := Minus
                      (Minus (Literal 2) (Literal 3))
                      (Minus (Literal 4) (Literal 3)) in
          evaluate (super_refactor_aux ae (Literal 0))).
+
+(* Minus is similar to list_append, (Literal 0) as the accumulator *)
 
 (* Task 4: Prove that super-refactoring preserves evaluation. *)
 
@@ -912,7 +1014,6 @@ Proof.
     rewrite -> fold_unfold_super_refactor_aux_Literal.
     reflexivity.
   - rewrite -> fold_unfold_super_refactor_Plus.
-    Check (IHae1_aux (super_refactor ae2)).
     rewrite -> (IHae1_aux (super_refactor ae2)).
     rewrite -> fold_unfold_evaluate_Plus.
     rewrite -> IHae2.
@@ -922,13 +1023,13 @@ Proof.
     rewrite -> fold_unfold_super_refactor_aux_Plus.
     rewrite -> (IHae1_aux (super_refactor_aux ae2 a)).
     rewrite -> fold_unfold_evaluate_Plus.
+    rewrite -> IHae2_aux.
     case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
-    + rewrite -> IHae2_aux.
-      rewrite ->3 fold_unfold_evaluate_Plus.
+    + rewrite ->3 fold_unfold_evaluate_Plus.
       rewrite -> E_ae1.
       case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
       * case (evaluate a) as [n | s] eqn:E_a.
-        -- rewrite -> Nat.add_assoc. (* Key aha! moment, mention in report *)
+        -- rewrite -> Nat.add_assoc.
            reflexivity.
         -- reflexivity.
       * reflexivity.
@@ -938,20 +1039,17 @@ Proof.
   - rewrite -> fold_unfold_super_refactor_Minus.
     rewrite ->2 fold_unfold_evaluate_Minus.
     rewrite -> IHae1.
-    case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
-    + rewrite -> IHae2.
-      reflexivity.
-    + reflexivity.
+    rewrite -> IHae2.
+    reflexivity.
   - intro a.
     rewrite -> fold_unfold_super_refactor_aux_Minus.
-    rewrite ->2 fold_unfold_evaluate_Plus.
-    rewrite ->2 fold_unfold_evaluate_Minus.
-    rewrite -> IHae1, IHae2.
-    case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
-    + case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
-      * reflexivity.
-      * reflexivity.
-    + reflexivity.
+    rewrite -> fold_unfold_evaluate_Plus.
+    rewrite -> fold_unfold_evaluate_Minus.
+    rewrite -> IHae1.
+    rewrite -> IHae2.
+    rewrite <- fold_unfold_evaluate_Minus.
+    rewrite <- fold_unfold_evaluate_Plus.
+    reflexivity.
 Qed.
 
 Theorem super_refactoring_preserves_evaluation :
@@ -964,7 +1062,7 @@ Proof.
   exact H_sr.
 Qed.
 
-Proposition equivalence_of_the_two_lemmas_super_refactor :
+Proposition equivalence_of_the_two_lemmas_for_super_refactor :
   forall ae : arithmetic_expression,
     (forall s : string,
         evaluate ae = Expressible_msg s ->
