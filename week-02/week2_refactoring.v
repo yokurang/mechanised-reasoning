@@ -311,7 +311,7 @@ Proof.
   reflexivity.
 Qed.
 
-Proposition equivalence_of_the_two_lemmas :
+Proposition equivalence_of_the_two_lemmas_ind :
   forall ae : arithmetic_expression,
     (forall s : string,
         evaluate ae = Expressible_msg s ->
@@ -702,18 +702,18 @@ Proposition equivalence_of_the_two_lemmas_case :
 Proof.
   intro ae.
   split.
-  - intros [E_n_s [E_n_s_s E_n_n_n]] a.
+  - intros [E_s [E_n_s E_n_n]] a.
     rewrite -> fold_unfold_evaluate_Plus.
     case (evaluate ae) as [ n | s ] eqn:E_ae;
       case (evaluate a) as [ n' | s' ] eqn:E_a.
-    + Check (E_n_n_n n n' (eq_refl (Expressible_nat n)) a E_a).
-      exact (E_n_n_n n n' (eq_refl (Expressible_nat n)) a E_a).
-    + Check (E_n_s_s n s' (eq_refl (Expressible_nat n)) a E_a).
-      exact (E_n_s_s n s' (eq_refl (Expressible_nat n)) a E_a).
-    + Check (E_n_s s (eq_refl (Expressible_msg s)) a).
-      exact (E_n_s s (eq_refl (Expressible_msg s)) a).
-    + Check (E_n_s s (eq_refl (Expressible_msg s)) a).
-      exact (E_n_s s (eq_refl (Expressible_msg s)) a).
+    + Check (E_n_n n n' (eq_refl (Expressible_nat n)) a E_a).
+      exact (E_n_n n n' (eq_refl (Expressible_nat n)) a E_a).
+    + Check (E_n_s n s' (eq_refl (Expressible_nat n)) a E_a).
+      exact (E_n_s n s' (eq_refl (Expressible_nat n)) a E_a).
+    + Check (E_s s (eq_refl (Expressible_msg s)) a).
+      exact (E_s s (eq_refl (Expressible_msg s)) a).
+    + Check (E_s s (eq_refl (Expressible_msg s)) a).
+      exact (E_s s (eq_refl (Expressible_msg s)) a).
   - case ae as [ n | ae1 ae2 | ae1 ae2 ].
     + intro E.
       split.
@@ -997,112 +997,66 @@ Proposition equivalence_of_the_two_lemmas_super_refactor :
 Proof.
   intro ae.
   split.
-  - case ae as [ n | ae1 ae2 | ae1 ae2 ];
-    intros _.
-    split.
-    + rewrite -> fold_unfold_super_refactor_Literal.
-      reflexivity.
-    + intro a.
-      rewrite -> (fold_unfold_super_refactor_aux_Literal n a).
-      reflexivity.
-    + Check (super_refactoring_preserves_evaluation_aux (Plus ae1 ae2)).
-      exact (super_refactoring_preserves_evaluation_aux (Plus ae1 ae2)).
-    + Check (super_refactoring_preserves_evaluation_aux (Minus ae1 ae2)).
-      exact (super_refactoring_preserves_evaluation_aux (Minus ae1 ae2)).
-  - case ae as [n | ae1 ae2 | ae1 ae2].
-    + intros [H1_ae H2_ae].
-      split.
-      * intros s E_n_eq_s a.
-        rewrite -> fold_unfold_super_refactor_Literal.
-        rewrite -> fold_unfold_super_refactor_aux_Literal.
+  { intros [E_s [E_n_s E_n_n]] .
+    case (evaluate ae) as [n1 | s1] eqn:E_ae.
+    - split.
+      + Check (E_n_n n1 0 (eq_refl (Expressible_nat n1)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+        destruct (E_n_n n1 0 (eq_refl (Expressible_nat n1)) (Literal 0) (fold_unfold_evaluate_Literal 0)) as [ly _].
+        exact ly.
+      + intro a.
+        case (evaluate a) as [n2 | s2] eqn:E_a.
+        * rewrite -> fold_unfold_evaluate_Plus.
+          rewrite -> E_ae, E_a.
+          Check (E_n_n n1 n2 (eq_refl (Expressible_nat n1)) a E_a).
+          destruct (E_n_n n1 n2 (eq_refl (Expressible_nat n1)) a E_a) as [_ ly].
+          exact ly.
+        * rewrite -> fold_unfold_evaluate_Plus.
+          rewrite -> E_ae, E_a.
+          Check (E_n_s n1 s2 (eq_refl (Expressible_nat n1)) a E_a).
+          destruct (E_n_s n1 s2 (eq_refl (Expressible_nat n1)) a E_a) as [_ ly].
+          exact ly.
+    - split.
+      + Check (E_s s1 (eq_refl (Expressible_msg s1)) (Literal 0)).
+        destruct (E_s s1 (eq_refl (Expressible_msg s1)) (Literal 0)) as [ly _].
+        exact ly.
+      + intro a.
         rewrite -> fold_unfold_evaluate_Plus.
-        rewrite -> E_n_eq_s.
-        split.
-        -- reflexivity.
-        -- reflexivity.
-      * split.
-        -- intros n' s E_n_eq_n' ae E_ae_eq_s.
-           rewrite -> fold_unfold_super_refactor_Literal.
-           rewrite -> fold_unfold_super_refactor_aux_Literal.
-           rewrite -> fold_unfold_evaluate_Plus.
-           rewrite -> E_n_eq_n'.
-           rewrite -> E_ae_eq_s.
-           split.
-           ++ reflexivity.
-           ++ reflexivity.
-        -- intros n1 n2 E_n_eq_n1 ae E_ae_eq_n2.
-           rewrite -> fold_unfold_super_refactor_Literal.
-           rewrite -> fold_unfold_super_refactor_aux_Literal.
-           rewrite -> fold_unfold_evaluate_Plus.
-           rewrite -> E_n_eq_n1.
-           rewrite -> E_ae_eq_n2.
-           split.
-           ++ reflexivity.
-           ++ reflexivity.
-    + intros [H1_ae H2_ae].
+        rewrite E_ae.
+        Check (E_s s1 (eq_refl (Expressible_msg s1)) a).
+        destruct (E_s s1 (eq_refl (Expressible_msg s1)) a) as [_ ly].
+        exact ly.
+  }.
+  { intros [E_sr_ae E_sr_aux_ae] .
+    split.
+    { intros s E_ae_s a.
       split.
-      * intros s E_n_eq_s a.
-        rewrite -> H1_ae.
-        rewrite -> (H2_ae a).
-        rewrite -> E_n_eq_s.
-        split.
-        -- reflexivity.
-        -- rewrite -> fold_unfold_evaluate_Plus.
-           rewrite -> E_n_eq_s.
-           reflexivity.
-      * split.
-        -- intros n' s E_n_eq_n' ae E_ae_eq_s.
-           rewrite -> H1_ae.
-           rewrite -> (H2_ae ae).
-           rewrite -> E_n_eq_n'.
-           split.
-           ++ reflexivity.
-           ++ rewrite -> fold_unfold_evaluate_Plus.
-              rewrite -> E_n_eq_n'.
-              rewrite -> E_ae_eq_s.
-              reflexivity.
-        -- intros n1 n2 E_n_eq_n1 ae E_ae_eq_n2.
-           rewrite -> H1_ae.
-           rewrite -> (H2_ae ae).
-           rewrite -> E_n_eq_n1.
-           split.
-           ++ reflexivity.
-           ++ rewrite -> fold_unfold_evaluate_Plus.
-              rewrite -> E_n_eq_n1.
-              rewrite -> E_ae_eq_n2.
-              reflexivity.
-    + intros [H1_ae H2_ae].
+      - rewrite E_ae_s in E_sr_ae.
+        exact E_sr_ae.
+      - rewrite -> (E_sr_aux_ae a).
+        rewrite -> fold_unfold_evaluate_Plus.
+        rewrite -> E_ae_s.
+        reflexivity.
+    }.
+    split.
+    { intros n s E_ae_n a E_a_s.
       split.
-      * intros s E_n_eq_s a.
-        rewrite -> H1_ae.
-        rewrite -> (H2_ae a).
-        rewrite -> E_n_eq_s.
-        split.
-        -- reflexivity.
-        -- rewrite -> fold_unfold_evaluate_Plus.
-           rewrite -> E_n_eq_s.
-           reflexivity.
-      * split.
-        -- intros n' s E_n_eq_n' ae E_ae_eq_s.
-           rewrite -> H1_ae.
-           rewrite -> (H2_ae ae).
-           rewrite -> E_n_eq_n'.
-           split.
-           ++ reflexivity.
-           ++ rewrite -> fold_unfold_evaluate_Plus.
-              rewrite -> E_n_eq_n'.
-              rewrite -> E_ae_eq_s.
-              reflexivity.
-        -- intros n1 n2 E_n_eq_n1 ae E_ae_eq_n2.
-            rewrite -> H1_ae.
-            rewrite -> (H2_ae ae).
-            rewrite -> E_n_eq_n1.
-            split.
-            ++ reflexivity.
-            ++ rewrite -> fold_unfold_evaluate_Plus.
-                rewrite -> E_n_eq_n1.
-                rewrite -> E_ae_eq_n2.
-                reflexivity.
+      - rewrite E_ae_n in E_sr_ae.
+        exact E_sr_ae.
+      - rewrite -> (E_sr_aux_ae a).
+        rewrite -> fold_unfold_evaluate_Plus.
+        rewrite -> E_ae_n, E_a_s.
+        reflexivity.
+    }.
+    { intros n1 n2 E_ae_n a E_a_n.
+      split.
+      - rewrite E_ae_n in E_sr_ae.
+        exact E_sr_ae.
+      - rewrite -> (E_sr_aux_ae a).
+        rewrite -> fold_unfold_evaluate_Plus.
+        rewrite -> E_ae_n, E_a_n.
+        reflexivity.
+    }.
+  }.
 Qed.
 
 Proposition super_refactor_is_idempotent :
