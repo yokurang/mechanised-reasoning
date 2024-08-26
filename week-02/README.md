@@ -92,7 +92,7 @@ Likewise, the proof of the converse implication could start as follows:
       exact ESR_ae.
 
 Report
-[] Introduction
+[X] Introduction
 [X] Task 1: What does refactor do?
 [X] Task 2: Prove that refactoring preserves evaluation
 [X] Task 2b: Equivalence of the two lemmas ind vs case (No need to go through induction in depth, go through case in depth),
