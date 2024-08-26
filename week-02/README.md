@@ -3,27 +3,6 @@ This email is about the remainder of the homework for Week 02.
 Could you also prove the following proposition about refactor:
 [x] - Proved
 Proposition equivalence_of_the_two_lemmas :
-forall ae : arithmetic_expression,
-  (forall s : string,
-      evaluate ae = Expressible_msg s ->
-      forall a : arithmetic_expression,
-        evaluate (refactor_aux ae a) = Expressible_msg s)
-  /\
-  (forall (n : nat)
-          (s : string),
-      evaluate ae = Expressible_nat n ->
-      forall a : arithmetic_expression,
-        evaluate a = Expressible_msg s ->
-        evaluate (refactor_aux ae a) = Expressible_msg s)
-  /\
-  (forall n1 n2 : nat,
-      evaluate ae = Expressible_nat n1 ->
-      forall a : arithmetic_expression,
-        evaluate a = Expressible_nat n2 ->
-        evaluate (refactor_aux ae a) = Expressible_nat (n1 + n2))
-  <->
-  forall a : arithmetic_expression,
-    evaluate (refactor_aux ae a) = evaluate (Plus ae a).
 
 [x]
 Likewise, could you state and prove a similar proposition about super_refactor?
@@ -41,13 +20,84 @@ If so, is that the case here?
 Refactor is idempotent if you evaluate. Super refactor is idempotent if you evaluate. Proven.
 Just missing explanation in the report.
 
+Feeback
+
+[x] Proposition equivalence_of_the_two_lemmas :
+The proof does not systematically focus on the current subgoal, which it should.
+
+[X] Proposition equivalence_of_the_two_lemmas_case :
+
+The first implication is not proved as such since it does not use the premises of the implication to prove its conclusion.
+One needs to write something like
+
+  intro ae.
+  split.
+  { intros [A [B C]].
+    intro a.
+    rewrite -> fold_unfold_evaluate_Plus.
+
+and then, depending on (evaluate ae) and (evaluate a),
+one can use A, B, and C to conclude.
+
+Likewise, the proof of the converse implication should also be goal directed:
+
+    intros E.
+    split.
+    { intros s E_ae_S a.
+      ... }
+    split.
+    { intros n s E_ae_N a E_a_S.
+      ... }
+    intros n1 n2 E_ae_N a E_a_N.
+    ...
+
+[X] The proof of Lemma super_refactoring_preserves_evaluation_aux is fine.
+
+[X] Ditto for Theorem super_refactoring_preserves_evaluation.
+
+[ ] The following names would be more straightforward:
+  Proposition equivalence_of_the_two_lemmas_for_refactor
+  Proposition equivalence_of_the_two_lemmas_for_super_refactor
+
+-----
+
+[ ] Proposition equivalence_of_the_two_lemmas_super_refactor :
+
+The statement is spot on.
+
+Like the proof of Proposition equivalence_of_the_two_lemmas_case,
+the proof of equivalence_of_the_two_lemmas_super_refactor
+can be rewritten so that the proof of the first implication uses its premiss
+rather than things proved earlier,
+and so that the proof of the converse implication is more goal-directed.
+
+Concretely, the proof of the first implication could start as follows:
+
+  intro ae.
+  split.
+  { intros [A [B C]].
+    case (evaluate ae) as [n1 | s1] eqn:E_ae.
+    - split.
+      + Check (C n1 0 (eq_refl (Expressible_nat n1)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+        destruct (C n1 0 (eq_refl (Expressible_nat n1)) (Literal 0) (fold_unfold_evaluate_Literal 0)) as [ly _].
+        exact ly.
+
+Likewise, the proof of the converse implication could start as follows:
+
+  intros [ESR_ae ESR_aux_ae_a].
+  split.
+  { intros s E_ae_S a.
+    split.
+    - rewrite -> E_ae_S in ESR_ae.
+      exact ESR_ae.
+
 Report
 [] Introduction
 [] Task 1: What does refactor do?
 [] Task 2: Prove that refactoring preserves evaluation
 [] Task 2b: Equivalence of the two lemmas ind vs case (No need to go through induction in depth, go through case in depth),
     explain why they differ and why cases is a much shorter proof
-[] Task 3: What does super_refactor do?
+  [] Task 3: What does super_refactor do?
 [] Task 4: Prove that super-refactoring preserves evaluation
 [] Task 4b: equivalence_of_the_two_lemmas_super_refactor
 [] Task 5: Compare super_refactor and mystery_function_19
