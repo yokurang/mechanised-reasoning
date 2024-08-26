@@ -702,7 +702,7 @@ Proof.
                  discriminate H_minus.
 Qed.
 
-Proposition equivalence_of_the_two_lemmas_for_refacotr_case :
+Proposition equivalence_of_the_two_lemmas_for_refactor_case :
   forall ae : arithmetic_expression,
     (forall s : string,
         evaluate ae = Expressible_msg s ->
@@ -1095,7 +1095,7 @@ Proposition equivalence_of_the_two_lemmas_for_super_refactor :
 Proof.
   intro ae.
   split.
-  { intros [E_s [E_n_s E_n_n]] .
+  { intros [E_s [E_n_s E_n_n]].
     case (evaluate ae) as [n1 | s1] eqn:E_ae.
     - split.
       + Check (E_n_n n1 0 (eq_refl (Expressible_nat n1)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
@@ -1123,8 +1123,8 @@ Proof.
         Check (E_s s1 (eq_refl (Expressible_msg s1)) a).
         destruct (E_s s1 (eq_refl (Expressible_msg s1)) a) as [_ ly].
         exact ly.
-  }.
-  { intros [E_sr_ae E_sr_aux_ae] .
+  }
+  { intros [E_sr_ae E_sr_aux_ae].
     split.
     { intros s E_ae_s a.
       split.
@@ -1134,7 +1134,7 @@ Proof.
         rewrite -> fold_unfold_evaluate_Plus.
         rewrite -> E_ae_s.
         reflexivity.
-    }.
+    }
     split.
     { intros n s E_ae_n a E_a_s.
       split.
@@ -1144,7 +1144,7 @@ Proof.
         rewrite -> fold_unfold_evaluate_Plus.
         rewrite -> E_ae_n, E_a_s.
         reflexivity.
-    }.
+    }
     { intros n1 n2 E_ae_n a E_a_n.
       split.
       - rewrite E_ae_n in E_sr_ae.
@@ -1153,8 +1153,8 @@ Proof.
         rewrite -> fold_unfold_evaluate_Plus.
         rewrite -> E_ae_n, E_a_n.
         reflexivity.
-    }.
-  }.
+    }
+  }
 Qed.
 
 Proposition super_refactor_is_idempotent :
