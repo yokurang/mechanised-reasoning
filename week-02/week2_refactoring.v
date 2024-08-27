@@ -115,21 +115,38 @@ Proof.
   fold_unfold_tactic evaluate.
 Qed.
 
-Definition expressible_value_eqb (ev1 ev2 : expressible_value) : bool :=
+Definition eqb_expressible_value (ev1 ev2 : expressible_value) : bool :=
   match ev1 with
   | Expressible_nat n1 =>
       match ev2 with
-      | Expressible_nat n2 =>
-          Nat.eqb n1 n2
-      | Expressible_msg s2 =>
-          false
+      | Expressible_nat n2 => Nat.eqb n1 n2
+      | Expressible_msg _ => false
       end
   | Expressible_msg s1 =>
       match ev2 with
-      | Expressible_nat n2 =>
-          false
-      | Expressible_msg s2 =>
-          String.eqb s1 s2
+      | Expressible_nat _ => false
+      | Expressible_msg s2 => String.eqb s1 s2
+      end
+  end.
+
+Fixpoint eqb_arithmetic_expression (ae1 ae2 : arithmetic_expression) : bool :=
+  match ae1 with
+  | Literal n1 =>
+      match ae2 with
+      | Literal n2 => Nat.eqb n1 n2
+      | _ => false
+      end
+  | Plus ae11 ae12 =>
+      match ae2 with
+      | Plus ae21 ae22 => 
+          eqb_arithmetic_expression ae11 ae21 && eqb_arithmetic_expression ae12 ae22
+      | _ => false
+      end
+  | Minus ae11 ae12 =>
+      match ae2 with
+      | Minus ae21 ae22 => 
+          eqb_arithmetic_expression ae11 ae21 && eqb_arithmetic_expression ae12 ae22
+      | _ => false
       end
   end.
 
@@ -272,10 +289,40 @@ Compute (let ae1 := Literal 1 in
          let ae2 := Plus (ae1) (ae1) in
          let ae3 := Minus (ae1) (ae1) in
          let ae4 := Plus (ae2) (ae3) in
-         (expressible_value_eqb (evaluate ae1) (evaluate (refactor ae1)))
-         && (expressible_value_eqb (evaluate ae2) (evaluate (refactor ae2)))
-         && (expressible_value_eqb (evaluate ae3) (evaluate (refactor ae3)))
-         && (expressible_value_eqb (evaluate ae4) (evaluate (refactor ae4)))).
+         (eqb_expressible_value (evaluate ae1) (evaluate (refactor ae1)))
+         && (eqb_expressible_value (evaluate ae2) (evaluate (refactor ae2)))
+         && (eqb_expressible_value (evaluate ae3) (evaluate (refactor ae3)))
+         && (eqb_expressible_value (evaluate ae4) (evaluate (refactor ae4)))).
+
+Definition test_refactor (candidate : arithmetic_expression -> arithmetic_expression) :=
+  (* Test Literal *)
+  (eqb_arithmetic_expression (candidate (Literal 1))
+  (Plus (Literal 1) (Literal 0))) &&
+  
+  (* Test Plus *)
+  (eqb_arithmetic_expression 
+    (candidate (Plus (Literal 1) (Literal 2))) 
+    (Plus (Literal 1) (Plus (Literal 2) (Literal 0)))) &&
+  
+  (* Test nested Plus *)
+  (eqb_arithmetic_expression 
+    (candidate (Plus (Plus (Literal 1) (Literal 2)) (Plus (Literal 3) (Literal 4))))
+    (Plus (Literal 1) (Plus (Literal 2) (Plus (Literal 3) (Plus (Literal 4) (Literal 0)))))) &&
+  
+  (* Test Minus *)
+  (eqb_arithmetic_expression 
+    (candidate (Minus (Literal 2) (Literal 1)))
+    (Plus (Minus (Plus (Literal 2) (Literal 0)) (Plus (Literal 1) (Literal 0))) (Literal 0))) &&
+  
+  (* Test nested Minus *)
+  (eqb_arithmetic_expression 
+    (candidate (Minus (Minus (Literal 2) (Literal 1)) (Minus (Literal 4) (Literal 3))))
+    (Plus (Minus 
+            (Plus (Minus (Plus (Literal 2) (Literal 0)) (Plus (Literal 1) (Literal 0))) (Literal 0))
+            (Plus (Minus (Plus (Literal 4) (Literal 0)) (Plus (Literal 3) (Literal 0))) (Literal 0)))
+          (Literal 0))).
+
+Compute (test_refactor refactor).
 
 (* ********** *)
 
@@ -401,31 +448,6 @@ Qed.
 
 (* ***** *)
 
-Fixpoint eqb_arithmetic_expression (ae1 ae2 : arithmetic_expression) : bool :=
-  match ae1 with
-  | Literal n1 =>
-      match ae2 with
-      | Literal n2 =>
-          Nat.eqb n1 n2
-      | _ =>
-          false
-      end
-  | Plus ae11 ae12 => 
-      match ae2 with
-      | Plus ae21 ae22 =>
-          (eqb_arithmetic_expression ae11 ae21) && (eqb_arithmetic_expression ae12 ae22)
-      | _ =>
-          false
-      end
-  | Minus ae11 ae12 =>
-      match ae2 with
-      | Minus ae21 ae22 =>
-          (eqb_arithmetic_expression ae11 ae21) && (eqb_arithmetic_expression ae12 ae22)
-      | _ =>
-          false
-      end
-  end.
-
 Compute (eqb_arithmetic_expression (Literal 1) (Literal 1)).
 Compute (eqb_arithmetic_expression (Literal 1) (Literal 2)).
 Compute (eqb_arithmetic_expression (Plus (Literal 0) (Literal 1)) (Literal 1)).
@@ -434,17 +456,13 @@ Compute (eqb_arithmetic_expression (Minus (Literal 1) (Literal 0)) ((Minus (Lite
 Compute (eqb_arithmetic_expression (Minus (Literal 0) (Literal 1)) ((Minus (Literal 0) (Literal 1)))).
 
 Proposition refactor_is_never_idempotent :
-  forall (ae : arithmetic_expression),
+  exists (ae : arithmetic_expression),
       refactor ae <> refactor (refactor ae).
 Proof.
-  intro ae.
-  unfold refactor.
-  case ae as [ n | ae1 ae2 | ae1 ae2 ].
-  - rewrite -> fold_unfold_refactor_aux_Literal.
-    rewrite -> fold_unfold_refactor_aux_Plus.
-    rewrite ->2 fold_unfold_refactor_aux_Literal.
-    Check (eqb_arithmetic_expression (Plus (Literal n) (Literal 0)) (Plus (Literal n) (Plus (Literal 0)(Literal 0)))).
-  reflexivity.
+  exists (Minus (Literal 1) (Literal 0)).
+  compute.
+  intro H_absurd.
+  discriminate H_absurd.
 Qed.
 
 (* ********** *)
@@ -546,6 +564,11 @@ Compute (let ae := Plus (Literal 2) (Literal 1) in
 
 Compute (let ae := Plus (Plus (Literal 1) (Literal 2))
                      (Plus (Literal 3)(Literal 4)) in
+         super_refactor ae).
+
+
+Compute (let ae := Plus (Plus (Literal 1) (Literal 2))
+                     (Plus (Literal 3)(Literal 4)) in
          super_refactor (super_refactor ae)).
 
 (* If the arithmetic expression is a Plus of two literals, nothing changes, if the ae is a chain of Pluses, a right-skewed binary tree, this time no Literal 0 in the nil case. *)
@@ -620,6 +643,43 @@ Compute (let ae := Minus
          evaluate (super_refactor_aux ae (Literal 0))).
 
 (* Minus is similar to list_append, (Literal 0) as the accumulator *)
+
+Definition test_super_refactor (candidate : arithmetic_expression -> arithmetic_expression) :=
+  (* Test Literal *)
+  (eqb_arithmetic_expression (candidate (Literal 1)) (Literal 1)) &&
+  
+  (* Test Plus *)
+  (eqb_arithmetic_expression 
+    (candidate (Plus (Literal 1) (Literal 2))) 
+    (Plus (Literal 1) (Literal 2))) &&
+  
+  (* Test nested Plus *)
+  (eqb_arithmetic_expression 
+    (candidate
+    (Plus (Plus (Literal 1) (Literal 2))
+    (Plus (Literal 3) (Literal 4))))
+    (Plus (Literal 1) (Plus (Literal 2)
+    (Plus (Literal 3) (Literal 4))))) &&
+  
+  (* Test Minus *)
+  (eqb_arithmetic_expression 
+    (candidate (Minus (Literal 2) (Literal 1)))
+    (Minus (Literal 2) (Literal 1))) &&
+  
+  (* Test nested Minus *)
+  (eqb_arithmetic_expression 
+    (candidate (Minus (Minus (Literal 2) (Literal 1))
+    (Minus (Literal 4) (Literal 3))))
+    (Minus (Minus (Literal 2) (Literal 1))
+    (Minus (Literal 4) (Literal 3)))) &&
+  
+  (* Test Mixed Plus and Minus *)
+  (eqb_arithmetic_expression 
+    (candidate
+    (Minus (Plus (Literal 1) (Literal 2)) (Literal 3)))
+    (Minus (Plus (Literal 1) (Literal 2)) (Literal 3))).
+
+Compute (test_super_refactor super_refactor).
 
 (* Task 4: Prove that super-refactoring preserves evaluation. *)
 
@@ -786,11 +846,14 @@ Qed.
 
 Proposition super_refactor_is_idempotent :
   forall (ae : arithmetic_expression),
-    evaluate (super_refactor ae) = evaluate (super_refactor (super_refactor ae)).
+   super_refactor ae = super_refactor (super_refactor ae).
 Proof.
   intro ae.
-  rewrite -> (super_refactoring_preserves_evaluation (super_refactor ae)).
-  reflexivity.
+  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
+  * rewrite -> fold_unfold_super_refactor_Literal.
+    reflexivity.
+  *
+
 Qed.
 
 

@@ -31,7 +31,7 @@ That's not the definition of idempotency.
 
 (* Task 3: What does super_refactor do?
    Capture your observations into a unit-test function. *)
-
+ASSIGNMENT_TWO_ALAN.pdf
 good analysis but that stops too soon
 
 (* Minus of two expressios does nothing, original expression is preserved. *)
