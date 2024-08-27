@@ -1,106 +1,243 @@
-This email is about the remainder of the homework for Week 02.
+Hi guys,
 
-Could you also prove the following proposition about refactor:
-[x] - Proved
-Proposition equivalence_of_the_two_lemmas :
+Thanks for your handin.  Here are some comments.
 
-[x]
-Likewise, could you state and prove a similar proposition about super_refactor?
+----------
 
-[ ]
-Food for thought:
-Restrict super_refactor to source arithmetic expressions with only Literal and Plus,
-and compare this restricted version and mystery_function_19 in Week 05 of FPP/LPP.
-
-Happy MR,
-[x]
-P.S.: Would it make sense for refactoring to be idempotent?
-If so, is that the case here?
-
-Refactor is idempotent if you evaluate. Super refactor is idempotent if you evaluate. Proven.
-Just missing explanation in the report.
-
-Feeback
-
-[x] Proposition equivalence_of_the_two_lemmas :
-The proof does not systematically focus on the current subgoal, which it should.
-
-[X] Proposition equivalence_of_the_two_lemmas_case :
-
-The first implication is not proved as such since it does not use the premises of the implication to prove its conclusion.
-One needs to write something like
-
-  intro ae.
-  split.
-  { intros [A [B C]].
-    intro a.
-    rewrite -> fold_unfold_evaluate_Plus.
-
-and then, depending on (evaluate ae) and (evaluate a),
-one can use A, B, and C to conclude.
-
-Likewise, the proof of the converse implication should also be goal directed:
-
-    intros E.
-    split.
-    { intros s E_ae_S a.
-      ... }
-    split.
-    { intros n s E_ae_N a E_a_S.
-      ... }
-    intros n1 n2 E_ae_N a E_a_N.
-    ...
-
-[X] The proof of Lemma super_refactoring_preserves_evaluation_aux is fine.
-
-[X] Ditto for Theorem super_refactoring_preserves_evaluation.
-
-[X] The following names would be more straightforward:
-  Proposition equivalence_of_the_two_lemmas_for_refactor
-  Proposition equivalence_of_the_two_lemmas_for_super_refactor
+week2_refactoring.v
 
 -----
 
-[X] Proposition equivalence_of_the_two_lemmas_super_refactor :
+(* Task 1: What does refactor do?
+   Capture your observations into a unit-test function. *)
 
-The statement is spot on.
+good analysis until you gave up for Minus;
+do go to the end of your thoughts, they are worth it
 
-Like the proof of Proposition equivalence_of_the_two_lemmas_case,
-the proof of equivalence_of_the_two_lemmas_super_refactor
-can be rewritten so that the proof of the first implication uses its premiss
-rather than things proved earlier,
-and so that the proof of the converse implication is more goal-directed.
+Where is the unit-test function?
 
-Concretely, the proof of the first implication could start as follows:
+-----
 
-  intro ae.
-  split.
-  { intros [A [B C]].
-    case (evaluate ae) as [n1 | s1] eqn:E_ae.
-    - split.
-      + Check (C n1 0 (eq_refl (Expressible_nat n1)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
-        destruct (C n1 0 (eq_refl (Expressible_nat n1)) (Literal 0) (fold_unfold_evaluate_Literal 0)) as [ly _].
-        exact ly.
+(* Task 2: Prove that refactoring preserves evaluation. *)
 
-Likewise, the proof of the converse implication could start as follows:
 
-  intros [ESR_ae ESR_aux_ae_a].
-  split.
-  { intros s E_ae_S a.
-    split.
-    - rewrite -> E_ae_S in ESR_ae.
-      exact ESR_ae.
+Proposition refactor_is_idempotent :
+  forall (ae : arithmetic_expression),
+      evaluate (refactor ae) = evaluate (refactor (refactor ae)).
 
-Report
-[X] Introduction
-[X] Task 1: What does refactor do?
-[X] Task 2: Prove that refactoring preserves evaluation
-[X] Task 2b: Equivalence of the two lemmas ind vs case (No need to go through induction in depth, go through case in depth),
-    explain why they differ and why cases is a much shorter proof
-[X] Task 3: What does super_refactor do?
-[X] Task 4: Prove that super-refactoring preserves evaluation
-[] Task 4b: equivalence_of_the_two_lemmas_super_refactor
-[] Task 5: Compare super_refactor and mystery_function_19
-[X] Task 6: Idempotence of refactoring
-[X] Task 7: Idempotence of super-refactoring
-[] Conclusion
+That's not the definition of idempotency.
+
+-----
+
+(* Task 3: What does super_refactor do?
+   Capture your observations into a unit-test function. *)
+
+good analysis but that stops too soon
+
+(* Minus of two expressios does nothing, original expression is preserved. *)
+
+except that the two operands are refactored
+
+-----
+
+(* Minus is similar to list_append, (Literal 0) as the accumulator *)
+
+Minus is similar to list_append?!?
+
+-----
+
+(* Task 4: Prove that super-refactoring preserves evaluation. *)
+
+
+Proposition super_refactor_is_idempotent :
+  forall (ae : arithmetic_expression),
+    evaluate (super_refactor ae) = evaluate (super_refactor (super_refactor ae)).
+
+That's not the definition of idempotency.
+
+----------
+
+week-02.pdf
+
+-----
+
+the title needs more mindfulness:
+
+- languages are not refactored; programs are
+
+- a refactoring that does not preserve evaluation is pointless, so preserving evaluation should be implicit
+
+- the grammar of the title suggests that the language is refactored with idempotence?
+
+the picture is generically funny, not specific to this report
+
+-----
+
+S1
+
+good but incomplete: flattening and reassociation are not mentioned
+
+the quote is gratuitous
+
+(Note that if you were to rename S1 to be S0, then the section numbers would aligned with the exercise numbers, a sign of mindfulness that makes you stand out.)
+
+-----
+
+2.1
+
+good but incomplete (the introduction needs to give a complete picture of the section) and inaccurate ("During the proof" -> "In the course of proving that refactoring preserves the result of evaluation")
+
+-----
+
+2.3
+
+> This is the aha! moment in the proof. Remember how in section 2.2,
+> we discussed how refactoring is applying right-associativity to chained plus
+> operations? Now we see the right-association in action in the goal because
+> we’re in the case where ae1, ae2, and the accumulator a all evaluate to
+> a natural number.
+
+Very good.  This indeed the heart of the matter.
+
+
+> We see that
+> a 0 is added to the RHS of n1 such that Plus always stays on the top of
+> the refactored binary tree and another 0 is added to the RHS of n2 because
+> the right-most leaf for the refactored binary tree must be 0.
+
+Very good.  This indeed the heart of the matter, and it is explained properly (note how no lists are mentioned).
+This proper explanation should occur earlier in the report too.
+
+-----
+
+2.4
+
+Also, it would have been a learning experience to actually carry out of the proof
+of the lemma with the conjunction, not with (Plus ae a), because this shortcut
+is not always possible.  Otherwise, next time, if the shorcut is not possible,
+you won't be prepared to state the lemma nor to prove it.
+
+-----
+
+2.5
+
+> We can take it a step further and show
+> that refactor is idempotent, that is performing an operation multiple
+> times has the same effect as doing it once.
+
+This narrative is not consistent with the statement of the proposition
+nor with its subsequent description:
+
+> The proposition states that for all arithmetic expressions, evaluating
+> the refactored arithmetic expression yields the same result as evaluating an
+> arithmetic expression that has been refactored twice.
+
+-----
+
+2.6
+
+> When reasoning about premises and conclusions, use the premises
+> of the implication to prove its conclusions, rather than relying on
+> previous lemmas that lets us override the premises.
+
+But that is true in general, there is nothing specific about that here.
+
+-----
+
+S3 E2
+
+3.1
+
+this introduction is incomplete; it also needs to be more definite (so "most likely" needs to go)
+
+"to deal with" is overly familiar for an academic report
+
+-----
+
+3.2
+
+this section needs to be rewritten; for example, super-refactor does not map a subtraction to the same subtraction
+
+the words "the right-most leaf instead of (Literal 0)" would come handy in this rewrite
+
+-----
+
+3.3
+
+the analysis is OK
+
+-----
+
+"match cases become ugly really quickly"
+
+what does this mean?
+
+-----
+
+3.4
+
+OK
+
+An explanation of the LHS of the bi-implication would be nice.
+
+-----
+
+3.5
+
+same as in 2.5
+
+-----
+
+3.6
+
+same as in 2.6
+
+-----
+
+4
+
+> Mutual recursion in functions like super_refactor requires careful
+> consideration in proofs, often necessitating conjunctive lemmas.
+
+Not "often": "always", as seen for even/odd and ternary/post_ternary/pre_ternary in FPP.
+
+> When proving equivalence, it’s crucial to consider all possible evalua-
+> tion outcomes and their interactions, but it is equivalently important
+> to be mindful of whether the sub-branch of the proof occurs in prac-
+> tice of not (ex: in an ltr programme, if the ae1 evaluates to an error,
+> we do not have to consider the what ae2 evaluates to).
+
+That is true.
+However, in the proof of
+  Proposition equivalence_of_the_two_lemmas_for_refactor_case :
+you wrote
+  case (evaluate ae) as [ n | s ] eqn:E_ae;
+    case (evaluate a) as [ n' | s' ] eqn:E_a.
+which forced you to consider all cases, even when ae evaluated to an error.
+
+> Idempotence in the context of program transformations can be nu-
+> anced, applying to evaluation outcomes rather than structural equal-
+> ity.
+
+Of course I don't know who wrote this sentence,
+and so the following message is for the two other authors:
+whenever you see a sentence that waxes lyrical (here: "nuanced")
+in the first draft of your report,
+convey appreciation for the style,
+and then rewrite this sentence in a tighter form.
+
+The quote is overly general, and considering that it arises
+from something wrong (idempotence is not what what formalized),
+it should be omitted.
+
+----------
+
+Overall, this handin includes multiples hints that
+there is a shorter, tighter, and more accurate version
+that is begging to come into existence.
+Could you mindfully rewrite this handin in a "less is more" sort of way
+as well as in a more consistent and accurate way?
+
+Thanks for attending MR,
+
+-- Olivier
