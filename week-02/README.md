@@ -10,12 +10,15 @@ week2_refactoring.v
 
 (* Task 2: Prove that refactoring preserves evaluation. *)
 
-
+[x]
 Proposition refactor_is_idempotent :
   forall (ae : arithmetic_expression),
       evaluate (refactor ae) = evaluate (refactor (refactor ae)).
 
 That's not the definition of idempotency.
+
+[ ] We still need to polish the unit tests to show that refactor is conditionally idempotent and add this
+in the comments in one of the tasks.
 
 -----
 

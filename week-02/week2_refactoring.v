@@ -209,14 +209,8 @@ Definition refactor (ae : arithmetic_expression) : arithmetic_expression :=
 Compute (let ae := Literal 1 in
          refactor ae).
 
-Compute (let ae := Literal 0 in
-         evaluate (refactor ae)).
-
 Compute (let ae := Literal 1 in
          (refactor (refactor ae))).
-
-Compute (let ae := Literal 1 in
-         evaluate (refactor (refactor ae))).
 
 (* If the arithmetic expression is a Literal, the Literal 0 is added to it on the right.
    This does not change the result as 0 is neutral on the right for addition *)
@@ -233,6 +227,9 @@ Compute (let ae := Plus (Literal 1) (Literal 2) in
 Compute (let ae := Minus (Literal 2) (Literal 1) in
          refactor ae).
 
+Compute (let ae := Minus (Literal 2) (Literal 1) in
+         refactor (refactor ae)).
+
 (* If the arithmetic expression is a Minus, the Literal 0 is added on the right to the overall expression and both of its subexpressions.
    This does not change the result as 0 is neutral on the right for addition *)
 
@@ -240,6 +237,11 @@ Compute (let ae := Plus
                      (Plus (Literal 1) (Literal 2))
                      (Plus (Literal 3) (Literal 4)) in
          refactor ae).
+
+Compute (let ae := Plus
+                     (Plus (Literal 1) (Literal 2))
+                     (Plus (Literal 3) (Literal 4)) in
+         refactor (refactor ae)).
 
 (*      +
        / \
@@ -269,6 +271,11 @@ Compute (let ae := Minus
                      (Plus (Literal 1) (Literal 2))
                      (Literal 3) in
          refactor ae).
+
+Compute (let ae := Minus
+                     (Plus (Literal 1) (Literal 2))
+                     (Literal 3) in
+         refactor (refactor ae)).
 
 (*             +
               / \
@@ -616,12 +623,6 @@ Compute (let ae := Literal 2 in
 Compute (let ae := Literal 2 in
          super_refactor (super_refactor ae)).
 
-Compute (let ae := Literal 2 in
-         evaluate (super_refactor ae)).
-
-Compute (let ae := Literal 2 in
-         (evaluate (super_refactor (super_refactor ae)))).
-
 (* If the arithmetic expression is a Literal, Does nothing, surprisingly *)
 
 Compute (let ae := Plus (Literal 2) (Literal 1) in
@@ -644,13 +645,24 @@ Compute (let ae := Plus (Plus (Literal 1) (Literal 2))
 Compute (let ae := Minus (Literal 2) (Literal 1) in
          super_refactor ae).
 
+Compute (let ae := Minus (Literal 2) (Literal 1) in
+         super_refactor (super_refactor ae)).
+
 Compute (let ae := Minus (Plus (Literal 1) (Literal 2))
                      (Plus (Literal 3)(Literal 4)) in
          super_refactor ae).
 
+Compute (let ae := Minus (Plus (Literal 1) (Literal 2))
+                     (Plus (Literal 3)(Literal 4)) in
+         super_refactor (super_refactor ae)).
+
 Compute (let ae := Minus (Minus (Literal 1) (Literal 2))
                      (Minus (Literal 3)(Literal 4)) in
          super_refactor ae).
+
+Compute (let ae := Minus (Minus (Literal 1) (Literal 2))
+                     (Minus (Literal 3)(Literal 4)) in
+         super_refactor (super_refactor ae)).
 
 (* Minus of two expressios does nothing, original expression is preserved. *)
 
@@ -658,6 +670,11 @@ Compute (let ae := Plus
                      (Plus (Literal 1) (Literal 2))
                      (Plus (Literal 3) (Literal 4)) in
          super_refactor ae).
+
+Compute (let ae := Plus
+                     (Plus (Literal 1) (Literal 2))
+                     (Plus (Literal 3) (Literal 4)) in
+         super_refactor (super_refactor ae)).
 
 (*      +
        / \
@@ -678,9 +695,19 @@ Compute (let ae := Minus
          super_refactor ae).
 
 Compute (let ae := Minus
+                     (Minus (Literal 1) (Literal 2))
+                     (Minus (Literal 3) (Literal 4)) in
+         super_refactor (super_refactor ae)).
+
+Compute (let ae := Minus
                      (Plus (Literal 1) (Literal 2))
                      (Literal 3) in
          super_refactor ae).
+
+Compute (let ae := Minus
+                     (Plus (Literal 1) (Literal 2))
+                     (Literal 3) in
+         super_refactor (super_refactor ae)).
 
 (*      ->   -
             / \
@@ -699,16 +726,6 @@ Compute (let ae := Minus
                      (Minus (Literal 2) (Literal 1))
                      (Minus (Literal 4) (Literal 3)) in
          super_refactor (super_refactor ae)).
-
-Compute (let ae := Minus
-                     (Minus (Literal 2) (Literal 1))
-                     (Minus (Literal 4) (Literal 3)) in
-         evaluate (super_refactor ae)).
-
-Compute (let ae := Minus
-                     (Minus (Literal 2) (Literal 3))
-                     (Minus (Literal 4) (Literal 3)) in
-         evaluate (super_refactor_aux ae (Literal 0))).
 
 (* Minus is similar to list_append, (Literal 0) as the accumulator *)
 
