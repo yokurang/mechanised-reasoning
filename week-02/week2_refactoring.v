@@ -138,13 +138,13 @@ Fixpoint eqb_arithmetic_expression (ae1 ae2 : arithmetic_expression) : bool :=
       end
   | Plus ae11 ae12 =>
       match ae2 with
-      | Plus ae21 ae22 => 
+      | Plus ae21 ae22 =>
           eqb_arithmetic_expression ae11 ae21 && eqb_arithmetic_expression ae12 ae22
       | _ => false
       end
   | Minus ae11 ae12 =>
       match ae2 with
-      | Minus ae21 ae22 => 
+      | Minus ae21 ae22 =>
           eqb_arithmetic_expression ae11 ae21 && eqb_arithmetic_expression ae12 ae22
       | _ => false
       end
@@ -273,7 +273,7 @@ Compute (let ae := Minus
 (*             +
               / \
         ->   -   0
-            / \ 
+            / \
            +   +
           / \ 3 0
          1   +
@@ -298,26 +298,26 @@ Definition test_refactor (candidate : arithmetic_expression -> arithmetic_expres
   (* Test Literal *)
   (eqb_arithmetic_expression (candidate (Literal 1))
   (Plus (Literal 1) (Literal 0))) &&
-  
+
   (* Test Plus *)
-  (eqb_arithmetic_expression 
-    (candidate (Plus (Literal 1) (Literal 2))) 
+  (eqb_arithmetic_expression
+    (candidate (Plus (Literal 1) (Literal 2)))
     (Plus (Literal 1) (Plus (Literal 2) (Literal 0)))) &&
-  
+
   (* Test nested Plus *)
-  (eqb_arithmetic_expression 
+  (eqb_arithmetic_expression
     (candidate (Plus (Plus (Literal 1) (Literal 2)) (Plus (Literal 3) (Literal 4))))
     (Plus (Literal 1) (Plus (Literal 2) (Plus (Literal 3) (Plus (Literal 4) (Literal 0)))))) &&
-  
+
   (* Test Minus *)
-  (eqb_arithmetic_expression 
+  (eqb_arithmetic_expression
     (candidate (Minus (Literal 2) (Literal 1)))
     (Plus (Minus (Plus (Literal 2) (Literal 0)) (Plus (Literal 1) (Literal 0))) (Literal 0))) &&
-  
+
   (* Test nested Minus *)
-  (eqb_arithmetic_expression 
+  (eqb_arithmetic_expression
     (candidate (Minus (Minus (Literal 2) (Literal 1)) (Minus (Literal 4) (Literal 3))))
-    (Plus (Minus 
+    (Plus (Minus
             (Plus (Minus (Plus (Literal 2) (Literal 0)) (Plus (Literal 1) (Literal 0))) (Literal 0))
             (Plus (Minus (Plus (Literal 4) (Literal 0)) (Plus (Literal 3) (Literal 0))) (Literal 0)))
           (Literal 0))).
@@ -614,10 +614,10 @@ Compute (let ae := Minus
                      (Literal 3) in
          super_refactor ae).
 
-(*      ->   - 
-            / \ 
+(*      ->   -
+            / \
            +   3
-          / \ 
+          / \
          1   2
 
 *)
@@ -647,34 +647,34 @@ Compute (let ae := Minus
 Definition test_super_refactor (candidate : arithmetic_expression -> arithmetic_expression) :=
   (* Test Literal *)
   (eqb_arithmetic_expression (candidate (Literal 1)) (Literal 1)) &&
-  
+
   (* Test Plus *)
-  (eqb_arithmetic_expression 
-    (candidate (Plus (Literal 1) (Literal 2))) 
+  (eqb_arithmetic_expression
+    (candidate (Plus (Literal 1) (Literal 2)))
     (Plus (Literal 1) (Literal 2))) &&
-  
+
   (* Test nested Plus *)
-  (eqb_arithmetic_expression 
+  (eqb_arithmetic_expression
     (candidate
     (Plus (Plus (Literal 1) (Literal 2))
     (Plus (Literal 3) (Literal 4))))
     (Plus (Literal 1) (Plus (Literal 2)
     (Plus (Literal 3) (Literal 4))))) &&
-  
+
   (* Test Minus *)
-  (eqb_arithmetic_expression 
+  (eqb_arithmetic_expression
     (candidate (Minus (Literal 2) (Literal 1)))
     (Minus (Literal 2) (Literal 1))) &&
-  
+
   (* Test nested Minus *)
-  (eqb_arithmetic_expression 
+  (eqb_arithmetic_expression
     (candidate (Minus (Minus (Literal 2) (Literal 1))
     (Minus (Literal 4) (Literal 3))))
     (Minus (Minus (Literal 2) (Literal 1))
     (Minus (Literal 4) (Literal 3)))) &&
-  
+
   (* Test Mixed Plus and Minus *)
-  (eqb_arithmetic_expression 
+  (eqb_arithmetic_expression
     (candidate
     (Minus (Plus (Literal 1) (Literal 2)) (Literal 3)))
     (Minus (Plus (Literal 1) (Literal 2)) (Literal 3))).
