@@ -415,7 +415,7 @@ Proof.
       exact (E_s s (eq_refl (Expressible_msg s)) a).
     + Check (E_s s (eq_refl (Expressible_msg s)) a).
       exact (E_s s (eq_refl (Expressible_msg s)) a).
-  - intro E. 
+  - intro E.
     split.
       { intros s E_ae_s a.
         rewrite -> E.
@@ -489,7 +489,7 @@ Abort.
 Lemma refactor_is_conditionally_idempotent_aux :
   forall (ae a : arithmetic_expression),
     (forall a' : arithmetic_expression,
-        a' = (refactor_aux a' (Literal 0))) -> 
+        a' = (refactor_aux a' (Literal 0))) ->
     refactor_aux ae a = refactor_aux (refactor_aux ae a) (Literal 0).
 Proof.
   intro ae.
@@ -514,14 +514,15 @@ Proof.
     rewrite -> fold_unfold_refactor_aux_Minus.
     Check (IHae2 (Literal 0) H_a).
     rewrite <- (IHae2 (Literal 0) H_a).
-    Check (IHae2 (Literal 0) H_a).    
+    Check (IHae2 (Literal 0) H_a).
     rewrite <- (IHae1 (Literal 0) H_a).
     rewrite <- (H_a a).
     reflexivity.
 Qed.
 
 Proposition refactor_is_conditionally_idempotent :
-  (forall a' : arithmetic_expression, a' = refactor_aux a' (Literal 0)) ->
+  (forall a' : arithmetic_expression,
+      a' = refactor_aux a' (Literal 0)) ->
   forall (ae : arithmetic_expression),
     refactor ae = refactor (refactor ae).
 Proof.
@@ -530,7 +531,7 @@ Proof.
   intro ae.
   Check (refactor_is_conditionally_idempotent_aux ae (Literal 0) H_a').
   exact (refactor_is_conditionally_idempotent_aux ae (Literal 0) H_a').
-Qed.  
+Qed.
 
 (* ********** *)
 
@@ -929,7 +930,7 @@ Proof.
       rewrite ->2 fold_unfold_super_refactor_aux_Literal.
       rewrite -> fold_unfold_super_refactor_Plus.
       rewrite -> fold_unfold_super_refactor_aux_Literal.
-      reflexivity. 
+      reflexivity.
   - split.
     + rewrite -> fold_unfold_super_refactor_Plus.
       rewrite -> (IHae1_sr_aux (super_refactor ae2)).
