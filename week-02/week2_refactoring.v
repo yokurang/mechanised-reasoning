@@ -253,7 +253,7 @@ Compute (let ae := Plus
 *)
 
 (* When there are many Plus nodes, we can see a pattern in the tree that is being produced
-   Instead of a balanced tree, we get a tree that is "flattened" by associating to the right. *)
+   Instead of a balanced tree, we get a tree that is "flattened" by associating to the right, with an accumulator 0 appended to the right-most leaf of the original tree. *)
 
 Compute (let ae := Minus
                      (Minus (Literal 1) (Literal 2))
@@ -282,44 +282,38 @@ Compute (let ae := Minus
 
  *)
 
-(* When there are many Minus nodes, we don't see a clear pattern, but we can see that the "flattened" binary trees are being appended to each other, with a 0 on the RHS.
+(* Minus refactors the LHS and the RHS of original tree. Then, it creates a new binary tree with the following nodes:
+   Parent : Plus
+   Left child : refactored LHS and RHS of original tree joined by Minus as the root
+   Right child : accumulator (Literal 0).
 . *)
-
-Compute (let ae1 := Literal 1 in
-         let ae2 := Plus (ae1) (ae1) in
-         let ae3 := Minus (ae1) (ae1) in
-         let ae4 := Plus (ae2) (ae3) in
-         (eqb_expressible_value (evaluate ae1) (evaluate (refactor ae1)))
-         && (eqb_expressible_value (evaluate ae2) (evaluate (refactor ae2)))
-         && (eqb_expressible_value (evaluate ae3) (evaluate (refactor ae3)))
-         && (eqb_expressible_value (evaluate ae4) (evaluate (refactor ae4)))).
 
 Definition test_refactor (candidate : arithmetic_expression -> arithmetic_expression) :=
   (* Test Literal *)
   (eqb_arithmetic_expression (candidate (Literal 1))
-  (Plus (Literal 1) (Literal 0))) &&
+     (Plus (Literal 1) (Literal 0))) &&
 
-  (* Test Plus *)
-  (eqb_arithmetic_expression
-    (candidate (Plus (Literal 1) (Literal 2)))
-    (Plus (Literal 1) (Plus (Literal 2) (Literal 0)))) &&
+    (* Test Plus *)
+    (eqb_arithmetic_expression
+       (candidate (Plus (Literal 1) (Literal 2)))
+       (Plus (Literal 1) (Plus (Literal 2) (Literal 0)))) &&
 
-  (* Test nested Plus *)
-  (eqb_arithmetic_expression
-    (candidate (Plus (Plus (Literal 1) (Literal 2)) (Plus (Literal 3) (Literal 4))))
-    (Plus (Literal 1) (Plus (Literal 2) (Plus (Literal 3) (Plus (Literal 4) (Literal 0)))))) &&
+    (* Test nested Plus *)
+    (eqb_arithmetic_expression
+       (candidate (Plus (Plus (Literal 1) (Literal 2)) (Plus (Literal 3) (Literal 4))))
+       (Plus (Literal 1) (Plus (Literal 2) (Plus (Literal 3) (Plus (Literal 4) (Literal 0)))))) &&
 
-  (* Test Minus *)
-  (eqb_arithmetic_expression
-    (candidate (Minus (Literal 2) (Literal 1)))
-    (Plus (Minus (Plus (Literal 2) (Literal 0)) (Plus (Literal 1) (Literal 0))) (Literal 0))) &&
-
-  (* Test nested Minus *)
-  (eqb_arithmetic_expression
-    (candidate (Minus (Minus (Literal 2) (Literal 1)) (Minus (Literal 4) (Literal 3))))
-    (Plus (Minus
-            (Plus (Minus (Plus (Literal 2) (Literal 0)) (Plus (Literal 1) (Literal 0))) (Literal 0))
-            (Plus (Minus (Plus (Literal 4) (Literal 0)) (Plus (Literal 3) (Literal 0))) (Literal 0)))
+    (* Test Minus *)
+    (eqb_arithmetic_expression
+       (candidate (Minus (Literal 2) (Literal 1)))
+       (Plus (Minus (Plus (Literal 2) (Literal 0)) (Plus (Literal 1) (Literal 0))) (Literal 0))) &&
+    
+    (* Test nested Minus *)
+    (eqb_arithmetic_expression
+       (candidate (Minus (Minus (Literal 2) (Literal 1)) (Minus (Literal 4) (Literal 3))))
+       (Plus (Minus
+                (Plus (Minus (Plus (Literal 2) (Literal 0)) (Plus (Literal 1) (Literal 0))) (Literal 0))
+                (Plus (Minus (Plus (Literal 4) (Literal 0)) (Plus (Literal 3) (Literal 0))) (Literal 0)))
           (Literal 0))).
 
 Compute (test_refactor refactor).
@@ -448,14 +442,7 @@ Qed.
 
 (* ***** *)
 
-Compute (eqb_arithmetic_expression (Literal 1) (Literal 1)).
-Compute (eqb_arithmetic_expression (Literal 1) (Literal 2)).
-Compute (eqb_arithmetic_expression (Plus (Literal 0) (Literal 1)) (Literal 1)).
-Compute (eqb_arithmetic_expression (Literal 1) (Minus (Literal 1) (Literal 0))).
-Compute (eqb_arithmetic_expression (Minus (Literal 1) (Literal 0)) ((Minus (Literal 1) (Literal 0)))).
-Compute (eqb_arithmetic_expression (Minus (Literal 0) (Literal 1)) ((Minus (Literal 0) (Literal 1)))).
-
-Proposition refactor_is_never_idempotent :
+Proposition refactor_is_not_idempotent :
   exists (ae : arithmetic_expression),
       refactor ae <> refactor (refactor ae).
 Proof.
@@ -464,6 +451,86 @@ Proof.
   intro H_absurd.
   discriminate H_absurd.
 Qed.
+
+Lemma refactor_is_conditionally_idempotent_aux :
+  forall (ae a : arithmetic_expression),
+    refactor_aux ae a = refactor_aux (refactor_aux ae a) (Literal 0).
+Proof.
+  intro ae.
+  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
+  - intro a.
+    rewrite -> fold_unfold_refactor_aux_Literal.
+    rewrite -> fold_unfold_refactor_aux_Plus.
+    rewrite -> fold_unfold_refactor_aux_Literal.
+    (* Plus (Literal n)
+       a =
+       Plus (Literal n)
+       (refactor_aux a (Literal 0))
+     *)
+    admit.
+  - intro a.
+    rewrite -> fold_unfold_refactor_aux_Plus.
+    rewrite <- IHae1.
+    reflexivity.
+  - intro a.
+    rewrite -> fold_unfold_refactor_aux_Minus.
+    rewrite -> fold_unfold_refactor_aux_Plus.
+    rewrite -> fold_unfold_refactor_aux_Minus.
+    rewrite <- IHae1.
+    rewrite <- IHae2.
+    (* Plus (Minus (refactor_aux ae1 (Literal 0)) (refactor_aux ae2 (Literal 0)))
+       a =
+       Plus (Minus (refactor_aux ae1 (Literal 0)) (refactor_aux ae2 (Literal 0)))
+       (refactor_aux a (Literal 0))
+     *)
+    admit.
+Abort.
+
+Lemma refactor_is_conditionally_idempotent_aux :
+  forall (ae a : arithmetic_expression),
+    (forall a' : arithmetic_expression,
+        a' = (refactor_aux a' (Literal 0))) -> 
+    refactor_aux ae a = refactor_aux (refactor_aux ae a) (Literal 0).
+Proof.
+  intro ae.
+  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
+  - intro a.
+    intro H_a.
+    rewrite -> fold_unfold_refactor_aux_Literal.
+    rewrite -> fold_unfold_refactor_aux_Plus.
+    rewrite -> fold_unfold_refactor_aux_Literal.
+    Check (H_a a).
+    rewrite <- (H_a a) at 1.
+    reflexivity.
+  - intro a.
+    intros H_a.
+    rewrite -> fold_unfold_refactor_aux_Plus.
+    Check (IHae1 (refactor_aux ae2 a) H_a).
+    exact (IHae1 (refactor_aux ae2 a) H_a).
+  - intro a.
+    intro H_a.
+    rewrite -> fold_unfold_refactor_aux_Minus.
+    rewrite -> fold_unfold_refactor_aux_Plus.
+    rewrite -> fold_unfold_refactor_aux_Minus.
+    Check (IHae2 (Literal 0) H_a).
+    rewrite <- (IHae2 (Literal 0) H_a).
+    Check (IHae2 (Literal 0) H_a).    
+    rewrite <- (IHae1 (Literal 0) H_a).
+    rewrite <- (H_a a).
+    reflexivity.
+Qed.
+
+Proposition refactor_is_conditionally_idempotent :
+  (forall a' : arithmetic_expression, a' = refactor_aux a' (Literal 0)) ->
+  forall (ae : arithmetic_expression),
+    refactor ae = refactor (refactor ae).
+Proof.
+  intro H_a'.
+  unfold refactor.
+  intro ae.
+  Check (refactor_is_conditionally_idempotent_aux ae (Literal 0) H_a').
+  exact (refactor_is_conditionally_idempotent_aux ae (Literal 0) H_a').
+Qed.  
 
 (* ********** *)
 

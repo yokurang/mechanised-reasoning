@@ -8,16 +8,6 @@ week2_refactoring.v
 
 -----
 
-(* Task 1: What does refactor do?
-   Capture your observations into a unit-test function. *)
-
-good analysis until you gave up for Minus;
-do go to the end of your thoughts, they are worth it
-
-Where is the unit-test function?
-
------
-
 (* Task 2: Prove that refactoring preserves evaluation. *)
 
 
