@@ -212,17 +212,11 @@ Compute (let ae := Literal 1 in
 Compute (let ae := Literal 1 in
          (refactor (refactor ae))).
 
-(* If the arithmetic expression is a Literal, the Literal 0 is added to it on the right.
-   This does not change the result as 0 is neutral on the right for addition *)
-
 Compute (let ae := Plus (Literal 1) (Literal 2) in
          refactor ae).
 
 Compute (let ae := Plus (Literal 1) (Literal 2) in
          refactor (refactor ae)).
-
-(* If the arithmetic expression is a Plus, the Literal 0 is added to right of the second subexpression.
-   This does not change the result as 0 is neutral on the right for addition *)
 
 Compute (let ae := Minus (Literal 2) (Literal 1) in
          refactor ae).
@@ -230,70 +224,47 @@ Compute (let ae := Minus (Literal 2) (Literal 1) in
 Compute (let ae := Minus (Literal 2) (Literal 1) in
          refactor (refactor ae)).
 
-(* If the arithmetic expression is a Minus, the Literal 0 is added on the right to the overall expression and both of its subexpressions.
-   This does not change the result as 0 is neutral on the right for addition *)
-
-Compute (let ae := Plus
-                     (Plus (Literal 1) (Literal 2))
-                     (Plus (Literal 3) (Literal 4)) in
-         refactor ae).
-
-Compute (let ae := Plus
-                     (Plus (Literal 1) (Literal 2))
-                     (Plus (Literal 3) (Literal 4)) in
-         refactor (refactor ae)).
-
-(*      +
-       / \
-      1   +
-         / \
-        2   +
-           / \
-          3   +
-             / \
-            4   0
-*)
-
-(* When there are many Plus nodes, we can see a pattern in the tree that is being produced
-   Instead of a balanced tree, we get a tree that is "flattened" by associating to the right, with an accumulator 0 appended to the right-most leaf of the original tree. *)
-
-Compute (let ae := Minus
-                     (Minus (Literal 1) (Literal 2))
-                     (Minus (Literal 3) (Literal 4)) in
-         refactor ae).
-
-Compute (let ae := Minus
-                     (Minus (Literal 1) (Literal 2))
-                     (Minus (Literal 3) (Literal 4)) in
-         refactor (refactor ae)).
-
-Compute (let ae := Minus
-                     (Plus (Literal 1) (Literal 2))
-                     (Literal 3) in
-         refactor ae).
-
-Compute (let ae := Minus
-                     (Plus (Literal 1) (Literal 2))
-                     (Literal 3) in
-         refactor (refactor ae)).
-
-(*             +
-              / \
-        ->   -   0
-            / \
-           +   +
-          / \ 3 0
-         1   +
-            / \
-           2   0
-
+(* Single refactor ae case :
+   Literal : (Original on LHS, accumualtor (Literal 0) on RHS) joined by Plus as parent
+   Plus : (Original ae1 on LHS, ae2 joined by accumulator (Literal 0) on RHS) joined by Plus as parent
+   Minus : ((Flattened ae1 on LHS, Flattened ae2 on RHS joined by Minus as parent) on LHS, joined by accumulator (Literal 0) on RHS), joined by Plus.
  *)
 
-(* Minus refactors the LHS and the RHS of original tree. Then, it creates a new binary tree with the following nodes:
-   Parent : Plus
-   Left child : refactored LHS and RHS of original tree joined by Minus as the root
-   Right child : accumulator (Literal 0).
-. *)
+Compute (let ae := Plus
+                     (Plus (Literal 1) (Literal 2))
+                     (Plus (Literal 3) (Literal 4)) in
+         refactor ae).
+
+Compute (let ae := Plus
+                     (Plus (Literal 1) (Literal 2))
+                     (Plus (Literal 3) (Literal 4)) in
+         refactor (refactor ae)).
+
+Compute (let ae := Minus
+                     (Minus (Literal 1) (Literal 2))
+                     (Minus (Literal 3) (Literal 4)) in
+         refactor ae).
+
+Compute (let ae := Minus
+                     (Minus (Literal 1) (Literal 2))
+                     (Minus (Literal 3) (Literal 4)) in
+         refactor (refactor ae)).
+
+Compute (let ae := Minus
+                     (Plus (Literal 1) (Literal 2))
+                     (Literal 3) in
+         refactor ae).
+
+Compute (let ae := Minus
+                     (Plus (Literal 1) (Literal 2))
+                     (Literal 3) in
+         refactor (refactor ae)).
+
+(* Nested refactor ae case :
+   Plus : Creates a right-skewed version of the original binary tree. Accumulator (Literal 0) on the right-most leaf. Similar to flattening the original binary tree with nil case (Literal 0)
+   Minus : ((Flattened ae1 on LHS, Flattened ae2 on RHS joined by Minus as parent) on LHS, joined by accumulator (Literal 0) on RHS), joined by Plus as parent.
+   Overall effect: Plus always on the root of the resulting binary tree, right leaf is always Plus or (Literal 0) in the nil case.
+ *)
 
 Definition test_refactor (candidate : arithmetic_expression -> arithmetic_expression) :=
   (* Test Literal *)
@@ -623,8 +594,6 @@ Compute (let ae := Literal 2 in
 Compute (let ae := Literal 2 in
          super_refactor (super_refactor ae)).
 
-(* If the arithmetic expression is a Literal, Does nothing, surprisingly *)
-
 Compute (let ae := Plus (Literal 2) (Literal 1) in
          super_refactor ae).
 
@@ -635,12 +604,9 @@ Compute (let ae := Plus (Plus (Literal 1) (Literal 2))
                      (Plus (Literal 3)(Literal 4)) in
          super_refactor ae).
 
-
 Compute (let ae := Plus (Plus (Literal 1) (Literal 2))
                      (Plus (Literal 3)(Literal 4)) in
          super_refactor (super_refactor ae)).
-
-(* If the arithmetic expression is a Plus of two literals, nothing changes, if the ae is a chain of Pluses, a right-skewed binary tree, this time no Literal 0 in the nil case. *)
 
 Compute (let ae := Minus (Literal 2) (Literal 1) in
          super_refactor ae).
@@ -664,7 +630,13 @@ Compute (let ae := Minus (Minus (Literal 1) (Literal 2))
                      (Minus (Literal 3)(Literal 4)) in
          super_refactor (super_refactor ae)).
 
-(* Minus of two expressios does nothing, original expression is preserved. *)
+(* Single super_refactor ae case :
+   Literal : Nothing
+   Plus : Nothing
+   Minus : Nothing
+
+   So super_refactor ae = ae?
+ *)
 
 Compute (let ae := Plus
                      (Plus (Literal 1) (Literal 2))
@@ -685,10 +657,6 @@ Compute (let ae := Plus
           3   4
 *)
 
-(* When there are many Plus nodes, we can see a pattern in the tree that is being produced
-   Instead of a balanced tree, we get a tree that is "flattened" by associating to the right and the nil
-case accumulator is the right-most leaf of the original binary tree *)
-
 Compute (let ae := Minus
                      (Minus (Literal 1) (Literal 2))
                      (Minus (Literal 3) (Literal 4)) in
@@ -709,14 +677,6 @@ Compute (let ae := Minus
                      (Literal 3) in
          super_refactor (super_refactor ae)).
 
-(*      ->   -
-            / \
-           +   3
-          / \
-         1   2
-
-*)
-
 Compute (let ae := Minus
                      (Minus (Literal 2) (Literal 1))
                      (Minus (Literal 4) (Literal 3)) in
@@ -727,7 +687,11 @@ Compute (let ae := Minus
                      (Minus (Literal 4) (Literal 3)) in
          super_refactor (super_refactor ae)).
 
-(* Minus is similar to list_append, (Literal 0) as the accumulator *)
+(* Nested super_refactor ae case :
+   Plus : Creates a right-skewed version of the original binary tree. Accumulator is the right-most leaf of the original binary tree. Similar to flattening the original binary tree with nil case (right-most of original tree).
+   Minus : Flattened ae1 on LHS, Flattened ae2 on RHS joined by Minus as parent.
+   Overall effect: Unlike refactor, Literal, Plus and Minus can all lie on the root of the returned binary tree. The right-most leaf of the original binary tree is the right-most leaf of the returned binary tree (and is also the accumulator for that tree).
+ *)
 
 Definition test_super_refactor (candidate : arithmetic_expression -> arithmetic_expression) :=
   (* Test Literal *)
