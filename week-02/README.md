@@ -31,6 +31,8 @@ good analysis but that stops too soon
 
 except that the two operands are refactored
 
+[ ] Still need to check that the unit tests and comments are correct and that comments properly document reason why super refactor is idempotent.
+
 -----
 
 (* Minus is similar to list_append, (Literal 0) as the accumulator *)
@@ -41,7 +43,7 @@ Minus is similar to list_append?!?
 
 (* Task 4: Prove that super-refactoring preserves evaluation. *)
 
-
+[x]
 Proposition super_refactor_is_idempotent :
   forall (ae : arithmetic_expression),
     evaluate (super_refactor ae) = evaluate (super_refactor (super_refactor ae)).
