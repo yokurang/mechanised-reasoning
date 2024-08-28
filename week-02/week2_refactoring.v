@@ -844,16 +844,58 @@ Proof.
   }
 Qed.
 
-Proposition super_refactor_is_idempotent :
-  forall (ae : arithmetic_expression),
-   super_refactor ae = super_refactor (super_refactor ae).
+Lemma super_refactor_is_idempotent_aux:
+    forall ae : arithmetic_expression,
+      super_refactor (super_refactor ae) = super_refactor ae
+      /\
+      forall a : arithmetic_expression,
+        super_refactor (super_refactor_aux ae a) = super_refactor_aux ae (super_refactor a).
 Proof.
   intro ae.
-  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
-  * rewrite -> fold_unfold_super_refactor_Literal.
-    reflexivity.
-  *
+  induction ae as [ n
+                  | ae1 [IHae1_sr IHae1_sr_aux] ae2 [IHae2_sr IHae2_sr_aux]
+                  | ae1 [IHae1_sr IHae1_sr_aux] ae2 [IHae2_sr IHae2_sr_aux] ].
+  - split.
+    + rewrite ->2 fold_unfold_super_refactor_Literal.
+      reflexivity.
+    + intro a.
+      rewrite ->2 fold_unfold_super_refactor_aux_Literal.
+      rewrite -> fold_unfold_super_refactor_Plus.
+      rewrite -> fold_unfold_super_refactor_aux_Literal.
+      reflexivity. 
+  - split.
+    + rewrite -> fold_unfold_super_refactor_Plus.
+      rewrite -> (IHae1_sr_aux (super_refactor ae2)).
+      rewrite -> IHae2_sr.
+      reflexivity.
+    + intro a.
+      rewrite ->2 fold_unfold_super_refactor_aux_Plus.
+      rewrite -> (IHae1_sr_aux (super_refactor_aux ae2 a)).
+      rewrite -> (IHae2_sr_aux a).
+      reflexivity.
+  - split.
+    + rewrite ->2 fold_unfold_super_refactor_Minus.
+      rewrite -> IHae1_sr.
+      rewrite -> IHae2_sr.
+      reflexivity.
+    + intro a.
+      rewrite ->2 fold_unfold_super_refactor_aux_Minus.
+      rewrite -> fold_unfold_super_refactor_Plus.
+      rewrite -> fold_unfold_super_refactor_aux_Minus.
+      rewrite -> IHae1_sr.
+      rewrite -> IHae2_sr.
+      reflexivity.
+Qed.
 
+Proposition super_refactor_is_idempotent :
+  forall ae,
+    super_refactor ae = super_refactor (super_refactor ae).
+Proof.
+  intros ae.
+  Check super_refactor_is_idempotent_aux.
+  destruct (super_refactor_is_idempotent_aux ae) as [ H_sr H_sr_aux ].
+  rewrite -> H_sr.
+  reflexivity.
 Qed.
 
 
