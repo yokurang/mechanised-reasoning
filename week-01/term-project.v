@@ -2020,7 +2020,7 @@ Proof.
   intro H_absurd.
   discriminate H_absurd.
 Qed.
-
+        
 Proposition Plus_is_conditionally_commutative :
   forall ae1 ae2 : arithmetic_expression,
     ((exists n : nat,
@@ -2032,7 +2032,7 @@ Proposition Plus_is_conditionally_commutative :
        (exists s : string,
            evaluate ae1 = Expressible_msg s /\ evaluate ae2 = Expressible_msg s))
     <->
-evaluate (Plus ae1 ae2) = evaluate (Plus ae2 ae1).
+      evaluate (Plus ae1 ae2) = evaluate (Plus ae2 ae1).
 Proof.
   intros ae1 ae2.
   split.
