@@ -285,7 +285,7 @@ Definition test_refactor (candidate : arithmetic_expression -> arithmetic_expres
     (eqb_arithmetic_expression
        (candidate (Minus (Literal 2) (Literal 1)))
        (Plus (Minus (Plus (Literal 2) (Literal 0)) (Plus (Literal 1) (Literal 0))) (Literal 0))) &&
-    
+
     (* Test nested Minus *)
     (eqb_arithmetic_expression
        (candidate (Minus (Minus (Literal 2) (Literal 1)) (Minus (Literal 4) (Literal 3))))
@@ -354,6 +354,56 @@ Proof.
   rewrite -> (refactoring_preserves_evaluation_aux ae (Literal 0)).
   rewrite -> Literal_0_is_neutral_for_Plus_on_the_right.
   reflexivity.
+Qed.
+
+Lemma refactoring_preserves_evaluation_aux' :
+  forall ae : arithmetic_expression,
+    (forall s : string,
+        evaluate ae = Expressible_msg s ->
+        forall a : arithmetic_expression,
+          evaluate (refactor_aux ae a) = Expressible_msg s)
+    /\
+      (forall (n : nat)
+              (s : string),
+          evaluate ae = Expressible_nat n ->
+          forall a : arithmetic_expression,
+            evaluate a = Expressible_msg s ->
+            evaluate (refactor_aux ae a) = Expressible_msg s)
+    /\
+      (forall n1 n2 : nat,
+          evaluate ae = Expressible_nat n1 ->
+          forall a : arithmetic_expression,
+            evaluate a = Expressible_nat n2 ->
+            evaluate (refactor_aux ae a) = Expressible_nat (n1 + n2)).
+Proof.
+  intro ae.
+  split.
+  { intros s E_ae a.
+    
+    unfold refactor_aux.
+    
+Admitted.
+
+Theorem refactoring_preserves_evaluation' :
+  forall ae : arithmetic_expression,
+    evaluate (refactor ae) = evaluate ae.
+Proof.
+  intro ae.
+  unfold refactor.
+  case (evaluate ae) as [ n | s ] eqn:E_ae;
+    remember (refactoring_preserves_evaluation_aux' ae) as H_ae;
+    destruct H_ae as [ E_s [ E_n_s E_n_n]].
+  - Check (E_n_n n 0 E_ae (Literal 0)).
+    assert (H_a : evaluate (Literal 0) = Expressible_nat 0).
+    { rewrite -> fold_unfold_evaluate_Literal.
+      reflexivity.
+    }
+    Check (E_n_n n 0 E_ae (Literal 0) H_a).
+    rewrite -> (E_n_n n 0 E_ae (Literal 0) H_a).
+    rewrite -> Nat.add_0_r.
+    reflexivity.
+  - Check (E_s s E_ae (Literal 0)).
+    exact (E_s s E_ae (Literal 0)).
 Qed.
 
 Proposition equivalence_of_the_two_lemmas_for_refactor :
