@@ -1941,4 +1941,119 @@ Compute (test_depth_right depth_right).
 
 (* ***** *)
 
+Definition eqb_option (V : Type) (eqb_V : V -> V -> bool) (ov1 ov2 : option V) : bool :=
+  match ov1 with
+  | Some v1 =>
+      match ov2 with
+      | Some v2 =>
+          eqb_V v1 v2
+      | None =>
+          false
+      end
+  | None =>
+      match ov2 with
+      | Some v =>
+          false
+      | None =>
+          true
+      end
+  end.
+
+
+Inductive result_of_decoding_and_execution_height : Type :=
+  OK_h : data_stack -> nat -> option nat -> result_of_decoding_and_execution_height
+| KO_h : string -> result_of_decoding_and_execution_height.
+
+Definition eqb_result_of_decoding_and_execution_height (rde1 rde2 : result_of_decoding_and_execution_height) : bool :=
+  match rde1 with
+  | OK_h vs1 mh1 ch1 =>
+      match rde2 with
+      | OK_h vs2 mh2 ch2 =>
+          (eqb_list_nat vs1 vs2) && (Nat.eqb mh1 mh2) && (eqb_option nat Nat.eqb ch1 ch2) 
+      | KO_h s2 =>
+          false
+      end
+  | KO_h s1 =>
+      match rde2 with
+      | OK_h vs2 mh2 ch2 =>
+          false
+      | KO_h s2 =>
+          String.eqb s1 s2
+      end
+  end.
+
+Definition test_decode_execute_height (candidate : byte_code_instruction -> data_stack -> nat -> nat -> result_of_decoding_and_execution_height) : bool :=
+  (eqb_result_of_decoding_and_execution_height
+     (candidate (PUSH 42) (1 :: 2 :: 3 :: nil) 0 0)
+     (OK_h (42 :: 1 :: 2 :: 3 :: nil) 1 (Some 1)))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate (PUSH 42) (1 :: 2 :: 3 :: nil) 10 5)
+       (OK_h (42 :: 1 :: 2 :: 3 :: nil) 10 (Some 6)))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate ADD (1 :: 2 :: 3 :: nil) 10 5)
+       (OK_h (3 :: 3 :: nil) 10 (Some 4)))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate SUB (2 :: 3 :: 3 :: nil) 10 5)
+       (OK_h (1 :: 3 :: nil) 10 (Some 4)))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate SUB (3 :: 2 :: 3 :: nil) 10 5)
+       (KO_h "numerical underflow: -1")).
+
+Definition decode_execute_height (bci : byte_code_instruction) (ds : data_stack) (mh ch : nat) : result_of_decoding_and_execution_height :=
+  match bci with
+  | PUSH n => OK_h (n :: ds) (max mh (S ch)) (Some (S ch))
+  | ADD =>
+      match ds with
+      | nil => KO_h "ADD: stack underflow"
+      | n2 :: ds' =>
+          match ds' with
+          | n1 :: ds'' => OK_h ((n1 + n2) :: ds'') mh (match ch with
+                                                       | 0 => None
+                                                       | S ch' => Some ch'
+                                                       end)
+          | nil => KO_h "ADD: stack underflow"
+          end
+      end
+  | SUB =>
+      match ds with
+      | nil => KO_h "SUB: stack underflow"
+      | n2 :: ds' =>
+          match ds' with
+          | n1 :: ds'' =>
+              match n1 <? n2 with
+              | true =>
+                  KO_h (String.append "numerical underflow: -" (string_of_nat (n2 - n1)))
+              | false =>
+                  OK_h ((n1 - n2) :: ds'') mh (match ch with
+                                               | 0 => None
+                                               | S ch' => Some ch'
+                                               end)
+              end
+          | nil => KO_h "SUB: stack underflow"
+          end
+      end
+  end.
+
+Compute test_decode_execute_height decode_execute_height.
+
+Definition test_fetch_decode_execute_loop_height (candidate : (list byte_code_instruction) -> data_stack -> result_of_decoding_and_execution_height) :=
+  
+.
+
+Fixpoint fetch_decode_execute_loop (bcis : list byte_code_instruction) (ds : data_stack) : result_of_decoding_and_execution :=
+  match bcis with
+  | nil => OK ds
+  | bci :: bcis' =>
+    match decode_execute bci ds with
+    | OK ds' => fetch_decode_execute_loop bcis' ds'
+    | KO s => KO s
+    end
+  end.
+
+Compute (test_fetch_decode_execute_loop fetch_decode_execute_loop).
+
 (* end of week3_stack_height.v *)
