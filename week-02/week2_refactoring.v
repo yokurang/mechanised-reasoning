@@ -377,7 +377,9 @@ Lemma refactoring_preserves_evaluation_aux' :
             evaluate (refactor_aux ae a) = Expressible_nat (n1 + n2)).
 Proof.
   intro ae.
-  case ae as [ n | ae1 ae2 | ae1 ae2 ].
+  induction ae as [ n
+                  | ae1 [H11 [H12 H13]] ae2 [H21 [H22 H23]]
+                  | ae1 [H11 [H12 H13]] ae2 [H21 [H22 H23]]].
   - split.
     { intros s E_n_s a .
       rewrite -> fold_unfold_refactor_aux_Literal.
@@ -386,14 +388,28 @@ Proof.
       reflexivity.
     }
     split.
-    { intros n' s E_n_n' a E_a_s.
+    { intros n' s E_n_n' a E_a.
       rewrite -> fold_unfold_refactor_aux_Literal.
       rewrite -> fold_unfold_evaluate_Plus.
       rewrite -> fold_unfold_evaluate_Literal.
-      rewrite -> E_a_s.
+      rewrite -> E_a.
       reflexivity.
     }
-    {
+    { intros n1 n2 E_n_n a E_a.
+      rewrite -> fold_unfold_refactor_aux_Literal.
+      rewrite -> fold_unfold_evaluate_Plus.
+      rewrite -> E_n_n.
+      rewrite -> E_a.
+      reflexivity.
+    }
+  - split.
+    { intros s E_ae_s a.
+      rewrite -> fold_unfold_refactor_aux_Plus.
+      case (evaluate ae1) as [ n1 | s1 ] eqn:E_ae1.
+        case (evaluate ae2) as [ n2 | s2 ] eqn:E_ae2.  
+      + Check H12 n1 s (eq_refl (Expressible_nat n1)) (refactor_aux ae2 a).
+Admitted.
+    
 Theorem refactoring_preserves_evaluation' :
   forall ae : arithmetic_expression,
     evaluate (refactor ae) = evaluate ae.
@@ -852,7 +868,7 @@ Proof.
   destruct (super_refactoring_preserves_evaluation_aux ae) as [ H_sr H_sr_aux ].
   exact H_sr.
 Qed.
-
+        
 Proposition equivalence_of_the_two_lemmas_for_super_refactor :
   forall ae : arithmetic_expression,
     (forall s : string,
@@ -1004,6 +1020,8 @@ Qed.
 
 
 (* ********** *)
+
+(* Week 03 *)
 
 (* Preview of Week 03 (out of scope of Week 02, but maybe some of you are Very Fast): *)
 
