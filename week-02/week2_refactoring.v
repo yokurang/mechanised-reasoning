@@ -377,13 +377,23 @@ Lemma refactoring_preserves_evaluation_aux' :
             evaluate (refactor_aux ae a) = Expressible_nat (n1 + n2)).
 Proof.
   intro ae.
-  split.
-  { intros s E_ae a.
-    
-    unfold refactor_aux.
-    
-Admitted.
-
+  case ae as [ n | ae1 ae2 | ae1 ae2 ].
+  - split.
+    { intros s E_n_s a .
+      rewrite -> fold_unfold_refactor_aux_Literal.
+      rewrite -> fold_unfold_evaluate_Plus.
+      rewrite -> E_n_s.
+      reflexivity.
+    }
+    split.
+    { intros n' s E_n_n' a E_a_s.
+      rewrite -> fold_unfold_refactor_aux_Literal.
+      rewrite -> fold_unfold_evaluate_Plus.
+      rewrite -> fold_unfold_evaluate_Literal.
+      rewrite -> E_a_s.
+      reflexivity.
+    }
+    {
 Theorem refactoring_preserves_evaluation' :
   forall ae : arithmetic_expression,
     evaluate (refactor ae) = evaluate ae.
@@ -393,13 +403,8 @@ Proof.
   case (evaluate ae) as [ n | s ] eqn:E_ae;
     remember (refactoring_preserves_evaluation_aux' ae) as H_ae;
     destruct H_ae as [ E_s [ E_n_s E_n_n]].
-  - Check (E_n_n n 0 E_ae (Literal 0)).
-    assert (H_a : evaluate (Literal 0) = Expressible_nat 0).
-    { rewrite -> fold_unfold_evaluate_Literal.
-      reflexivity.
-    }
-    Check (E_n_n n 0 E_ae (Literal 0) H_a).
-    rewrite -> (E_n_n n 0 E_ae (Literal 0) H_a).
+  - Check (E_n_n n 0 E_ae (Literal 0) (fold_unfold_evaluate_Literal 0)).
+    rewrite -> (E_n_n n 0 E_ae (Literal 0) (fold_unfold_evaluate_Literal 0)).
     rewrite -> Nat.add_0_r.
     reflexivity.
   - Check (E_s s E_ae (Literal 0)).
