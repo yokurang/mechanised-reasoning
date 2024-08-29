@@ -1793,18 +1793,12 @@ Fixpoint eqb_arithmetic_expression (ae1 ae2 : arithmetic_expression) : bool :=
       end
   end.
 
-(* TODO:
-  - Reprogram super_refactor to associate to the left
-  - Pass the current size of the stack and the max size of the stack in the virtual machin
-  - Implement the depth, depth right and depth left functions
-*)
-
 Compute (super_refactor
   (Plus
     (Plus (Literal 1) (Literal 2))
     (Plus (Literal 3) (Literal 4)))).
 
-Definition test_super_refactor_left (candidate : arithmetic_expression -> arithmetic_expression) :=
+Definition test_super_refactor_left (candidate : arithmetic_expression -> arithmetic_expression) : bool :=
   let ae1 := (Plus
                (Plus (Literal 1) (Literal 2))
                (Plus (Literal 3) (Literal 4))) in
@@ -1843,6 +1837,108 @@ Compute (test_super_refactor_left super_refactor_left).
 
 (* ***** *)
 
+(* TODO:
+  - Pass the current size of the stack and the max size of the stack in the virtual machin
+  - Implement the depth, depth right and depth left functions
+*)
 
+Definition test_depth (candidate : arithmetic_expression -> nat) : bool :=
+  let ae1 := (Literal 1) in
+  let ae2 := (Plus
+                (Plus (Literal 1) (Literal 2))
+                (Plus (Literal 3) (Literal 4))) in
+  let ae3 := (Minus
+                (Minus
+                   (Minus
+                      (Minus (Literal 4) (Literal 3))
+                      (Literal 0))
+                   (Literal 0))
+                (Literal 0)) in
+  (Nat.eqb (candidate ae1) 0) &&
+    (Nat.eqb (candidate ae2) 2) &&
+    (Nat.eqb (candidate ae3) 4).
+
+Fixpoint depth (ae : arithmetic_expression) : nat :=
+  match ae with
+  | Literal n => 0
+  | Plus ae1 ae2 =>
+      let n1 := depth ae1 in
+      let n2 := depth ae2 in
+      max (n1 + 1) (n2 + 1)
+  | Minus ae1 ae2 =>
+      let n1 := depth ae1 in
+      let n2 := depth ae2 in
+      max (n1 + 1) (n2 + 1)
+end.
+
+Compute (test_depth depth).
+
+(* ***** *)
+
+Definition test_depth_left (candidate : arithmetic_expression -> nat) : bool :=
+  let ae1 := (Literal 1) in
+  let ae1 := (Literal 1) in
+  let ae2 := (Plus
+                (Plus (Literal 1) (Literal 2))
+                (Plus (Literal 3) (Literal 4))) in
+  let ae3 := (Plus (Literal 1)
+                (Plus
+                   (Plus
+                      (Plus (Literal 4) (Literal 5))
+                      (Literal 3))
+                   (Literal 2))) in
+  (Nat.eqb (candidate ae1) 0) &&
+    (Nat.eqb (candidate ae2) 2) &&
+    (Nat.eqb (candidate ae3) 3).
+
+Fixpoint depth_left (ae : arithmetic_expression) : nat :=
+  match ae with
+  | Literal n => 0
+  | Plus ae1 ae2 =>
+      let n1 := depth_left ae1 in
+      let n2 := depth_left ae2 in
+      max (n1 + 1) n2
+  | Minus ae1 ae2 =>
+      let n1 := depth_left ae1 in
+      let n2 := depth_left ae2 in
+      max (n1 + 1) n2
+end.
+
+Compute (test_depth_left depth_left).
+
+(* ***** *)
+
+Definition test_depth_right (candidate : arithmetic_expression -> nat) : bool :=
+  let ae1 := (Literal 1) in
+  let ae1 := (Literal 1) in
+  let ae2 := (Plus
+                (Plus (Literal 1) (Literal 2))
+                (Plus (Literal 3) (Literal 4))) in
+  let ae3 := (Plus (Literal 1)
+                (Plus
+                   (Plus
+                      (Plus (Literal 4) (Literal 5))
+                      (Literal 3))
+                   (Literal 2))) in
+  (Nat.eqb (candidate ae1) 0) &&
+    (Nat.eqb (candidate ae2) 2) &&
+    (Nat.eqb (candidate ae3) 2).
+
+Fixpoint depth_right (ae : arithmetic_expression) : nat :=
+  match ae with
+  | Literal n => 0
+  | Plus ae1 ae2 =>
+      let n1 := depth_right ae1 in
+      let n2 := depth_right ae2 in
+      max n1 (n2 + 1)
+  | Minus ae1 ae2 =>
+      let n1 := depth_right ae1 in
+      let n2 := depth_right ae2 in
+      max n1 (n2 + 1)
+end.
+
+Compute (test_depth_right depth_right).
+
+(* ***** *)
 
 (* end of week3_stack_height.v *)
