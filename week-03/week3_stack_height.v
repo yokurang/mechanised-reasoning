@@ -1964,7 +1964,9 @@ Definition eqb_result_of_decoding_and_execution_height (rde1 rde2 : result_of_de
   | OK_h vs1 mh1 ch1 =>
       match rde2 with
       | OK_h vs2 mh2 ch2 =>
-          (eqb_list_nat vs1 vs2) && (Nat.eqb mh1 mh2) && (eqb_option nat Nat.eqb ch1 ch2) 
+          (eqb_list_nat vs1 vs2) &&
+            (Nat.eqb mh1 mh2) &&
+            (eqb_option nat Nat.eqb ch1 ch2)
       | KO_h s2 =>
           false
       end
@@ -2040,7 +2042,17 @@ Definition test_fetch_decode_execute_loop_height (candidate : (list byte_code_in
      (candidate (PUSH 42 :: PUSH 21 :: nil) (1 :: 2 :: 3 :: nil) 0 0)
      (OK_h (21 :: 42 :: 1 :: 2 :: 3 :: nil) 2 (Some 2)))
   &&
-
+    (eqb_result_of_decoding_and_execution_height
+       (candidate (ADD :: ADD :: nil) (1 :: 2 :: 3 :: nil) 3 3)
+       (OK_h (6 :: nil) 3 (Some 1)))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate (SUB :: nil) (3 :: 2 :: nil) 2 2)
+       (OK_h (1 :: nil) 2 (Some 1)))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate (SUB :: SUB :: nil) (4 :: 3 :: 2 :: nil) 2 2)
+       (KO_h "numerical underflow: -1"))
 .
 
 Fixpoint fetch_decode_execute_loop_height (bcis : list byte_code_instruction) (ds : data_stack) (mh ch : nat): result_of_decoding_and_execution_height :=
@@ -2058,5 +2070,48 @@ Fixpoint fetch_decode_execute_loop_height (bcis : list byte_code_instruction) (d
   end.
 
 Compute (test_fetch_decode_execute_loop fetch_decode_execute_loop).
+
+Definition test_run_height (candidate : target_program -> expressible_value * nat) : bool :=
+  (let (ev1, h1) := (candidate (Target_program (PUSH 42 :: nil))) in
+   (expressible_value_eqb ev1 (Expressible_nat 42)) &&
+     (Nat.eqb h1 1))
+  &&
+    (let (ev2, h2) := (candidate (Target_program (PUSH 42 :: PUSH 1 :: ADD :: PUSH 100 :: ADD :: nil))) in
+     (expressible_value_eqb ev2 (Expressible_nat 143)) &&
+       (Nat.eqb h2 2))
+  &&
+    (let (ev3, h3) := (candidate (Target_program (PUSH 42 :: ADD :: SUB :: nil))) in
+     (expressible_value_eqb ev3 (Expressible_msg "ADD: stack underflow")) &&
+       (Nat.eqb h3 0))
+  &&
+    (let (ev4, h4) := (candidate (Target_program (PUSH 20 :: PUSH 42 :: ADD :: PUSH 20 :: PUSH 30 :: PUSH 40 :: nil))) in
+     (expressible_value_eqb ev4 (Expressible_msg "too many results on the data stack")) &&
+       (Nat.eqb h4 0))
+.
+
+Definition run_height (tp : target_program) : expressible_value * nat :=
+  match tp with
+  | Target_program bcis =>
+    match fetch_decode_execute_loop_height bcis nil 0 0 with
+    | OK_h nil _ _ => (Expressible_msg "no result on the data stack", 0)
+    | OK_h (n :: nil) mh _ => ((Expressible_nat n), mh)
+    | OK_h (n :: _ :: _)  _ _ => ((Expressible_msg "too many results on the data stack"), 0)
+    | KO_h s => ((Expressible_msg s), 0)
+    end
+  end.
+
+Compute (test_run_height run_height).
+
+(* ***** *)
+
+Theorem about_young :
+  forall (ae : arithmetic_expression)
+         (h n : nat),
+    run_height (compile (Source_program ae)) = (Expressible_nat n, h) ->
+    h = S (depth ae).
+Proof.
+  intros ae h n H_r.
+  
+Qed.
 
 (* end of week3_stack_height.v *)
