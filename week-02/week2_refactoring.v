@@ -47,7 +47,7 @@ match evaluate ae1 with
 Expressible_msg s1
       | Expressible_nat n1 =>
           match evaluate ae2 with
-          | Expressible_msg s2 =>
+| Expressible_msg s2 =>
               Expressible_msg s2
           | Expressible_nat n2 =>
               Expressible_nat (n1 + n2)
@@ -56,7 +56,7 @@ Expressible_msg s1
   | Minus ae1 ae2 =>
       match evaluate ae1 with
       | Expressible_msg s1 =>
-          Expressible_msg s1
+Expressible_msg s1
       | Expressible_nat n1 =>
           match evaluate ae2 with
           | Expressible_msg s2 =>
@@ -484,94 +484,89 @@ Proof.
             rewrite -> fold_unfold_refactor_aux_Minus.
             rewrite -> fold_unfold_evaluate_Plus.
             rewrite -> fold_unfold_evaluate_Minus.
-            Check (H_ae1_n1_n2 n1 n2 (eq_refl (Expressible_nat n1)) ae2 E_ae2).
-            (* apply (H_ae1_n1_n2 n1 n2 (eq_refl (Expressible_nat n1)) ae2). *)            
-            (*
-               1 subgoal
-(1 unfocused at this level)
-
-ae1 : arithmetic_expression
-n1 : nat
-E_ae1 : evaluate ae1 = Expressible_nat n1
-H_ae1_s : forall s : string,
-          Expressible_nat n1 = Expressible_msg s ->
-          forall a : arithmetic_expression,
-          evaluate (refactor_aux ae1 a) = Expressible_msg s
-H_ae1_n_s : forall (n : nat) (s : string),
-            Expressible_nat n1 = Expressible_nat n ->
-            forall a : arithmetic_expression,
-            evaluate a = Expressible_msg s ->
-            evaluate (refactor_aux ae1 a) = Expressible_msg s
-ae2 : arithmetic_expression
-H_ae1_n1_n2 : forall n2 n3 : nat,
-              Expressible_nat n1 = Expressible_nat n2 ->
-              forall a : arithmetic_expression,
-              evaluate a = Expressible_nat n3 ->
-              evaluate (refactor_aux ae1 a) = Expressible_nat (n2 + n3)
-n2 : nat
-E_ae2 : evaluate ae2 = Expressible_nat n2
-H_ae2_s : forall s : string,
-          Expressible_nat n2 = Expressible_msg s ->
-          forall a : arithmetic_expression,
-          evaluate (refactor_aux ae2 a) = Expressible_msg s
-H_ae2_n_s : forall (n : nat) (s : string),
-            Expressible_nat n2 = Expressible_nat n ->
-            forall a : arithmetic_expression,
-            evaluate a = Expressible_msg s ->
-            evaluate (refactor_aux ae2 a) = Expressible_msg s
-H_ae2_n1_n2 : forall n1 n3 : nat,
-              Expressible_nat n2 = Expressible_nat n1 ->
-              forall a : arithmetic_expression,
-              evaluate a = Expressible_nat n3 ->
-              evaluate (refactor_aux ae2 a) = Expressible_nat (n1 + n3)
-s : string
-H_n1_n2 : (n1 <? n2) = true
-H_err_s : Expressible_msg
-            ("numerical underflow: -" ++ string_of_nat (n2 - n1)) =
-          Expressible_msg s
-a : arithmetic_expression
-
-========================= (1 / 1)
-
-match
-  match evaluate (refactor_aux ae1 (Literal 0)) with
-  | Expressible_nat n0 =>
-      match evaluate (refactor_aux ae2 (Literal 0)) with
-      | Expressible_nat n3 =>
-          if n0 <? n3
-          then
-           Expressible_msg
-             ("numerical underflow: -" ++ string_of_nat (n3 - n0))
-          else Expressible_nat (n0 - n3)
-      | Expressible_msg s2 => Expressible_msg s2
-      end
-  | Expressible_msg s1 => Expressible_msg s1
-  end
-with
-| Expressible_nat n0 =>
-    match evaluate a with
-    | Expressible_nat n3 => Expressible_nat (n0 + n3)
-    | Expressible_msg s2 => Expressible_msg s2
-    end
-| Expressible_msg s1 => Expressible_msg s1
-end = Expressible_msg s
-
-            *)
+            Check (H_ae1_n1_n2 n1 0 (eq_refl (Expressible_nat n1))).
+            Check (H_ae1_n1_n2 n1 0 (eq_refl (Expressible_nat n1)) (Literal 0)).
+            Check (H_ae1_n1_n2 n1 0 (eq_refl (Expressible_nat n1)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+            rewrite -> (H_ae1_n1_n2 n1 0 (eq_refl (Expressible_nat n1)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+            Check (H_ae2_n1_n2 n2 0 (eq_refl (Expressible_nat n2)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+            rewrite -> (H_ae2_n1_n2 n2 0 (eq_refl (Expressible_nat n2)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+            rewrite -> 2 Nat.add_0_r.
+            rewrite -> H_n1_n2.
+            rewrite -> H_err_s.
+            reflexivity.
+          * intro H_absurd.
+            discriminate H_absurd.
+        - intros H_eq_s2_s a.
+          rewrite -> fold_unfold_refactor_aux_Minus.
+          rewrite -> fold_unfold_evaluate_Plus.
+          rewrite -> fold_unfold_evaluate_Minus.
+          Check (H_ae1_n1_n2 n1 0 (eq_refl (Expressible_nat n1))).
+          Check (H_ae1_n1_n2 n1 0 (eq_refl (Expressible_nat n1)) (Literal 0)).
+          Check (H_ae1_n1_n2 n1 0 (eq_refl (Expressible_nat n1)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+          rewrite -> (H_ae1_n1_n2 n1 0 (eq_refl (Expressible_nat n1)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+          Check (H_ae2_s s H_eq_s2_s (Literal 0)).
+          rewrite -> (H_ae2_s s H_eq_s2_s (Literal 0)).
+          reflexivity.
+      + intros H_eq_s1_s a.
+        rewrite -> fold_unfold_refactor_aux_Minus.
+        rewrite -> fold_unfold_evaluate_Plus.
+        rewrite -> fold_unfold_evaluate_Minus.
+        Check (H_ae1_s s H_eq_s1_s (Literal 0)).
+        rewrite -> (H_ae1_s s H_eq_s1_s (Literal 0)).
+        reflexivity.
     }
-  
- 
-
-
-
-
-
-
-          
-
-          
-
-Admitted.
-    
+    split.
+    { intros n s.
+      rewrite -> fold_unfold_evaluate_Minus.
+      case (evaluate ae1) as [ n1 | s1 ] eqn:E_ae1.
+      + case (evaluate ae2) as [ n2 | s2 ] eqn:E_ae2.
+        - case (n1 <? n2) as [ | ] eqn:H_n1_n2.
+          * intro H_absurd.
+            discriminate H_absurd.
+          * intros H_eq_n1_n2_n a H_eval_a_s.
+            rewrite -> fold_unfold_refactor_aux_Minus.
+            rewrite -> fold_unfold_evaluate_Plus.
+            rewrite -> fold_unfold_evaluate_Minus.
+            rewrite -> (H_ae1_n1_n2 n1 0 (eq_refl (Expressible_nat n1)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+            rewrite -> (H_ae2_n1_n2 n2 0 (eq_refl (Expressible_nat n2)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+            rewrite -> 2 Nat.add_0_r.
+            rewrite -> H_n1_n2.
+            rewrite -> H_eval_a_s.
+            reflexivity.
+        - intros H_absurd.
+          discriminate H_absurd.
+      + intro H_absurd.
+        discriminate H_absurd.
+    }
+    {
+      intros n1 n2.
+      rewrite -> fold_unfold_evaluate_Minus.
+      case (evaluate ae1) as [ n1' | s1' ] eqn:E_ae1.
+      + case (evaluate ae2) as [ n2' | s2' ] eqn:E_ae2.
+        - case (n1' <? n2') as [ | ] eqn:H_n1'_n2'.
+          * intro H_absurd.
+            discriminate H_absurd.
+          * intros H_eq_n1'_n2'_n1 a H_eval_a_n2.
+            rewrite -> fold_unfold_refactor_aux_Minus.
+            rewrite -> fold_unfold_evaluate_Plus.
+            rewrite -> fold_unfold_evaluate_Minus.
+            Check (H_ae1_n1_n2 n1' 0 (eq_refl (Expressible_nat n1'))).
+            Check (H_ae1_n1_n2 n1' 0 (eq_refl (Expressible_nat n1')) (Literal 0)).
+            Check (H_ae1_n1_n2 n1' 0 (eq_refl (Expressible_nat n1')) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+            rewrite -> (H_ae1_n1_n2 n1' 0 (eq_refl (Expressible_nat n1')) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+            Check (H_ae2_n1_n2 n2' 0 (eq_refl (Expressible_nat n2')) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+            rewrite -> (H_ae2_n1_n2 n2' 0 (eq_refl (Expressible_nat n2')) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+            rewrite -> 2 Nat.add_0_r.
+            rewrite -> H_n1'_n2'.
+            rewrite -> H_eval_a_n2.
+            injection H_eq_n1'_n2'_n1 as H_eq_n1'_n2'_n1.
+            rewrite -> H_eq_n1'_n2'_n1.
+            reflexivity.
+        - intro H_absurd.
+          discriminate H_absurd.
+      + intro H_absurd.
+        discriminate H_absurd.
+Qed.
 Theorem refactoring_preserves_evaluation' :
   forall ae : arithmetic_expression,
     evaluate (refactor ae) = evaluate ae.
