@@ -1837,11 +1837,6 @@ Compute (test_super_refactor_left super_refactor_left).
 
 (* ***** *)
 
-(* TODO:
-  - Pass the current size of the stack and the max size of the stack in the virtual machin
-  - Implement the depth, depth right and depth left functions
-*)
-
 Definition test_depth (candidate : arithmetic_expression -> nat) : bool :=
   let ae1 := (Literal 1) in
   let ae2 := (Plus
@@ -2040,17 +2035,25 @@ Definition decode_execute_height (bci : byte_code_instruction) (ds : data_stack)
 
 Compute test_decode_execute_height decode_execute_height.
 
-Definition test_fetch_decode_execute_loop_height (candidate : (list byte_code_instruction) -> data_stack -> result_of_decoding_and_execution_height) :=
-  
+Definition test_fetch_decode_execute_loop_height (candidate : (list byte_code_instruction) -> data_stack -> nat -> nat -> result_of_decoding_and_execution_height) :=
+  (eqb_result_of_decoding_and_execution_height
+     (candidate (PUSH 42 :: PUSH 21 :: nil) (1 :: 2 :: 3 :: nil) 0 0)
+     (OK_h (21 :: 42 :: 1 :: 2 :: 3 :: nil) 2 (Some 2)))
+  &&
+
 .
 
-Fixpoint fetch_decode_execute_loop (bcis : list byte_code_instruction) (ds : data_stack) : result_of_decoding_and_execution :=
+Fixpoint fetch_decode_execute_loop_height (bcis : list byte_code_instruction) (ds : data_stack) (mh ch : nat): result_of_decoding_and_execution_height :=
   match bcis with
-  | nil => OK ds
+  | nil => OK_h ds mh (Some ch)
   | bci :: bcis' =>
-    match decode_execute bci ds with
-    | OK ds' => fetch_decode_execute_loop bcis' ds'
-    | KO s => KO s
+    match decode_execute_height bci ds mh ch with
+    | OK_h ds' mh' ch' => fetch_decode_execute_loop_height bcis' ds' mh'
+                            (match ch' with
+                             | None => 0
+                             | Some ch'' => ch''
+                             end)
+    | KO_h s => KO_h s
     end
   end.
 
