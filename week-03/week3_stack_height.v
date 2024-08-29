@@ -1772,4 +1772,77 @@ Qed.
 
 (* ***** *)
 
+Fixpoint eqb_arithmetic_expression (ae1 ae2 : arithmetic_expression) : bool :=
+  match ae1 with
+  | Literal n1 =>
+      match ae2 with
+      | Literal n2 => Nat.eqb n1 n2
+      | _ => false
+      end
+  | Plus ae11 ae12 =>
+      match ae2 with
+      | Plus ae21 ae22 =>
+          eqb_arithmetic_expression ae11 ae21 && eqb_arithmetic_expression ae12 ae22
+      | _ => false
+      end
+  | Minus ae11 ae12 =>
+      match ae2 with
+      | Minus ae21 ae22 =>
+          eqb_arithmetic_expression ae11 ae21 && eqb_arithmetic_expression ae12 ae22
+      | _ => false
+      end
+  end.
+
+(* TODO:
+  - Reprogram super_refactor to associate to the left
+  - Pass the current size of the stack and the max size of the stack in the virtual machin
+  - Implement the depth, depth right and depth left functions
+*)
+
+Compute (super_refactor
+  (Plus
+    (Plus (Literal 1) (Literal 2))
+    (Plus (Literal 3) (Literal 4)))).
+
+Definition test_super_refactor_left (candidate : arithmetic_expression -> arithmetic_expression) :=
+  let ae1 := (Plus
+               (Plus (Literal 1) (Literal 2))
+               (Plus (Literal 3) (Literal 4))) in
+  let ae2 := (Minus
+                (Plus (Literal 15) (Plus (Literal 4) (Literal 5)))
+                (Plus (Literal 1) (Literal 2))) in
+  (eqb_arithmetic_expression
+     (candidate ae1)
+     (Plus (Plus (Plus (Literal 1) (Literal 2)) (Literal 3)) (Literal 4))) &&
+    (eqb_arithmetic_expression
+       (candidate ae2)
+       (Minus
+          (Plus (Plus (Literal 15) (Literal 4)) (Literal 5))
+          (Plus (Literal 1) (Literal 2)))).
+
+Fixpoint super_refactor_left (ae : arithmetic_expression) : arithmetic_expression :=
+  match ae with
+  | Literal n =>
+    Literal n
+  | Plus ae1 ae2 =>
+    super_refactor_aux_left (super_refactor_left ae1) ae2
+  | Minus ae1 ae2 =>
+    Minus (super_refactor_left ae1) (super_refactor_left ae2)
+  end
+  with super_refactor_aux_left (a ae1 : arithmetic_expression) : arithmetic_expression :=
+    match ae1 with
+    | Literal n =>
+      Plus a (Literal n)
+    | Plus ae1 ae2 =>
+      super_refactor_aux_left (super_refactor_aux_left a ae1) ae2
+    | Minus ae1 ae2 =>
+      Plus a (Minus (super_refactor_left ae1) (super_refactor_left ae2))
+    end.
+
+Compute (test_super_refactor_left super_refactor_left).
+
+(* ***** *)
+
+
+
 (* end of week3_stack_height.v *)
