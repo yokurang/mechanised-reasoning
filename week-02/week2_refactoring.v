@@ -45,13 +45,13 @@ Fixpoint evaluate (ae : arithmetic_expression) : expressible_value :=
 match evaluate ae1 with
 | Expressible_msg s1 =>
 Expressible_msg s1
-      | Expressible_nat n1 =>
+| Expressible_nat n1 =>
           match evaluate ae2 with
 | Expressible_msg s2 =>
               Expressible_msg s2
-          | Expressible_nat n2 =>
+| Expressible_nat n2 =>
               Expressible_nat (n1 + n2)
-          end
+end
       end
   | Minus ae1 ae2 =>
       match evaluate ae1 with
@@ -59,7 +59,7 @@ Expressible_msg s1
 Expressible_msg s1
       | Expressible_nat n1 =>
           match evaluate ae2 with
-          | Expressible_msg s2 =>
+| Expressible_msg s2 =>
               Expressible_msg s2
           | Expressible_nat n2 =>
               if n1 <? n2
@@ -70,7 +70,7 @@ Expressible_msg s1
   end.
 
 Lemma fold_unfold_evaluate_Literal :
-  forall (n : nat),
+forall (n : nat),
     evaluate (Literal n) =
       Expressible_nat n.
 Proof.
@@ -466,7 +466,7 @@ Proof.
     { intro s.
       rewrite -> fold_unfold_evaluate_Minus.
       case (evaluate ae1) as [ n1 | s1 ] eqn:E_ae1.
-      + case (evaluate ae2) as [ n2 | s2 ] eqn:E_ae2.
++ case (evaluate ae2) as [ n2 | s2 ] eqn:E_ae2.
         * case (n1 <? n2) as [ | ] eqn:H_n1_n2.
           -- intros H_err_s a.
              rewrite -> fold_unfold_refactor_aux_Minus.
@@ -1261,7 +1261,146 @@ Proof.
         + discriminate H_eval.
       }
     }
-  -         
+  - split.
+    {
+      intro s.
+      rewrite -> fold_unfold_evaluate_Minus.
+      case (evaluate ae1) as [ n1 | s1 ] eqn:E_ae1.
+      + case (evaluate ae2) as [ n2 | s2 ] eqn:E_ae2.
+        * case (n1 <? n2) as [ | ] eqn:H_n1_n2.
+          -- intros H_err_s a.
+             rewrite -> fold_unfold_super_refactor_Minus.
+             rewrite -> fold_unfold_evaluate_Minus.
+             rewrite -> fold_unfold_super_refactor_aux_Minus.
+             rewrite -> fold_unfold_evaluate_Plus.
+             rewrite -> fold_unfold_evaluate_Minus.
+             destruct IHae1 as [ _ [ _ H_ae1_n_n ]]. 
+             Check (H_ae1_n_n n1 n2
+                     (eq_refl (Expressible_nat n1)) ae2 E_ae2).
+             destruct (H_ae1_n_n n1 n2 (eq_refl (Expressible_nat n1)) ae2 E_ae2) as [E_sr_ae1_eq_n1 _].
+             rewrite -> E_sr_ae1_eq_n1.
+             destruct IHae2 as [ _ [ _ H_ae2_n_n ]].
+             Check (H_ae2_n_n n2 n1
+               (eq_refl (Expressible_nat n2)) ae1 E_ae1).
+             destruct (H_ae2_n_n n2 n1 (eq_refl (Expressible_nat n2)) ae1 E_ae1) as [E_sr_ae2_eq_n2 _].
+             rewrite -> E_sr_ae2_eq_n2.
+             rewrite -> H_n1_n2.
+             injection  H_err_s as H_err_s.
+             split.
+             ++ rewrite <- H_err_s.
+                reflexivity.
+             ++ rewrite <- H_err_s.
+                reflexivity.
+          -- intros H_absurd.
+             discriminate H_absurd.
+        * intros H_s2_s a.
+          rewrite -> fold_unfold_super_refactor_Minus.
+          rewrite -> fold_unfold_evaluate_Minus.
+          rewrite -> fold_unfold_super_refactor_aux_Minus.
+          rewrite -> fold_unfold_evaluate_Plus.
+          rewrite -> fold_unfold_evaluate_Minus.
+          destruct IHae1 as [ _ [ H_ae1_n_s _ ] ].
+          Check (H_ae1_n_s n1 s2 (eq_refl (Expressible_nat n1)) ae2 E_ae2).
+          destruct (H_ae1_n_s n1 s2 (eq_refl (Expressible_nat n1)) ae2 E_ae2) as [E_sr_ae1_eq_n1 _].
+          rewrite -> E_sr_ae1_eq_n1.
+          destruct IHae2 as [ H_ae2_s _ ].
+          Check (H_ae2_s s2 (eq_refl (Expressible_msg s2)) a).         
+          destruct (H_ae2_s s2 (eq_refl (Expressible_msg s2)) a) as [E_sr_ae2_eq_s2 _].
+          rewrite -> E_sr_ae2_eq_s2.
+          rewrite -> H_s2_s.
+          split.
+          ++ reflexivity.
+          ++ reflexivity.
+      + intros H_s1_s a.
+        rewrite -> fold_unfold_super_refactor_Minus.
+        rewrite -> fold_unfold_evaluate_Minus.
+        rewrite -> fold_unfold_super_refactor_aux_Minus.
+        rewrite -> fold_unfold_evaluate_Plus.
+        rewrite -> fold_unfold_evaluate_Minus.
+        destruct IHae1 as [ H_ae1_s _ ].
+        Check (H_ae1_s s1 (eq_refl (Expressible_msg s1)) ae2).
+        destruct (H_ae1_s s1 (eq_refl (Expressible_msg s1)) ae2) as [E_sr_ae1_eq_s1 _].
+        rewrite -> E_sr_ae1_eq_s1.
+        rewrite -> H_s1_s.
+        split.
+        ++ reflexivity.
+        ++ reflexivity.
+    }
+    split. 
+    {
+      intros n s.
+      rewrite -> fold_unfold_evaluate_Minus.
+      case (evaluate ae1) as [ n1 | s1 ] eqn:E_ae1.
+      + case (evaluate ae2) as [ n2 | s2 ] eqn:E_ae2.
+        * case (n1 <? n2) as [ | ] eqn:H_n1_n2.
+          -- intro H_absurd.
+             discriminate H_absurd.
+          -- intros H_eq_n1_n2_n a H_eval_a_s.
+             rewrite -> fold_unfold_super_refactor_Minus.
+             rewrite -> fold_unfold_evaluate_Minus.
+             rewrite -> fold_unfold_super_refactor_aux_Minus.
+             rewrite -> fold_unfold_evaluate_Plus.
+             rewrite -> fold_unfold_evaluate_Minus.
+             destruct IHae1 as [ _ [ _ H_ae1_n_n ]].
+             Check (H_ae1_n_n n1 n2
+                     (eq_refl (Expressible_nat n1)) ae2 E_ae2).
+             destruct (H_ae1_n_n n1 n2 (eq_refl (Expressible_nat n1)) ae2 E_ae2) as [E_sr_ae1_eq_n1 _].
+             rewrite -> E_sr_ae1_eq_n1.
+             destruct IHae2 as [ _ [ _ H_ae2_n_n ]].
+             Check (H_ae2_n_n n2 n1
+                     (eq_refl (Expressible_nat n2)) ae1 E_ae1).
+             destruct (H_ae2_n_n n2 n1 (eq_refl (Expressible_nat n2)) ae1 E_ae1) as [E_sr_ae2_eq_n2 _].
+             rewrite -> E_sr_ae2_eq_n2.
+             rewrite -> H_n1_n2.
+             injection H_eq_n1_n2_n as H_eq_n1_n2_n.
+             split.
+             ++ rewrite <- H_eq_n1_n2_n.
+                reflexivity.
+             ++ rewrite -> H_eval_a_s.
+                reflexivity.
+        * intro H_absurd.
+          discriminate H_absurd.
+      + intros H_absurd.
+        discriminate H_absurd.
+    }
+    {
+      intros n1 n2.
+      rewrite -> fold_unfold_evaluate_Minus.
+      case (evaluate ae1) as [ n1' | s1' ] eqn:E_ae1.
+      + case (evaluate ae2) as [ n2' | s2' ] eqn:E_ae2.
+        * case (n1' <? n2') as [ | ] eqn:H_n1_n2.
+          -- intro H_absurd.
+             discriminate H_absurd. 
+          -- intros H_eq_n1_n2_n a H_eval_a_n2.
+             rewrite -> fold_unfold_super_refactor_Minus.
+             rewrite -> fold_unfold_evaluate_Minus.
+             rewrite -> fold_unfold_super_refactor_aux_Minus.
+             rewrite -> fold_unfold_evaluate_Plus.
+             rewrite -> fold_unfold_evaluate_Minus.
+             destruct IHae1 as [ _ [ _ H_ae1_n1_n2 ]].
+             Check (H_ae1_n1_n2 n1' n2'
+                     (eq_refl (Expressible_nat n1')) ae2 E_ae2).
+             destruct (H_ae1_n1_n2 n1' n2' (eq_refl (Expressible_nat n1')) ae2 E_ae2) as [E_sr_ae1_eq_n1' _].
+             rewrite -> E_sr_ae1_eq_n1'.
+             destruct IHae2 as [ _ [ _ H_ae2_n1_n2 ]].
+             Check (H_ae2_n1_n2 n2' n1'
+               (eq_refl (Expressible_nat n2')) ae1 E_ae1).
+             destruct (H_ae2_n1_n2 n2' n1' (eq_refl (Expressible_nat n2')) ae1 E_ae1) as [E_sr_ae2_eq_n2' _].
+             rewrite -> E_sr_ae2_eq_n2'.
+             rewrite -> H_n1_n2.
+             injection H_eq_n1_n2_n as H_eq_n1_n2_n.
+             split.
+             ++ rewrite <- H_eq_n1_n2_n.
+                reflexivity.
+             ++ rewrite -> H_eval_a_n2.
+                rewrite -> H_eq_n1_n2_n.
+                reflexivity.
+        * intro H_absurd.
+          discriminate H_absurd.
+      + intros H_absurd.
+        discriminate H_absurd.
+    }
+Qed.
 
 Theorem super_refactoring_preserves_evaluation' :
   forall ae : arithmetic_expression,
