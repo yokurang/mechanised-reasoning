@@ -41,25 +41,25 @@ Fixpoint evaluate (ae : arithmetic_expression) : expressible_value :=
   match ae with
   | Literal n =>
       Expressible_nat n
-| Plus ae1 ae2 =>
-match evaluate ae1 with
-| Expressible_msg s1 =>
-Expressible_msg s1
-| Expressible_nat n1 =>
+  | Plus ae1 ae2 =>
+      match evaluate ae1 with
+      | Expressible_msg s1 =>
+          Expressible_msg s1
+      | Expressible_nat n1 =>
           match evaluate ae2 with
-| Expressible_msg s2 =>
+          | Expressible_msg s2 =>
               Expressible_msg s2
-| Expressible_nat n2 =>
+          | Expressible_nat n2 =>
               Expressible_nat (n1 + n2)
-end
+          end
       end
   | Minus ae1 ae2 =>
       match evaluate ae1 with
       | Expressible_msg s1 =>
-Expressible_msg s1
+          Expressible_msg s1
       | Expressible_nat n1 =>
           match evaluate ae2 with
-| Expressible_msg s2 =>
+          | Expressible_msg s2 =>
               Expressible_msg s2
           | Expressible_nat n2 =>
               if n1 <? n2
@@ -225,9 +225,9 @@ Compute (let ae := Minus (Literal 2) (Literal 1) in
          refactor (refactor ae)).
 
 (* Single refactor ae case :
-   Literal : (Original on LHS, accumualtor (Literal 0) on RHS) joined by Plus as parent
-   Plus : (Original ae1 on LHS, ae2 joined by accumulator (Literal 0) on RHS) joined by Plus as parent
-   Minus : ((Flattened ae1 on LHS, Flattened ae2 on RHS joined by Minus as parent) on LHS, joined by accumulator (Literal 0) on RHS), joined by Plus.
+    Literal: Creates a binary tree where Plus is the root, the left child is the original (Literal n) and the right child is the accumulator (Literal 0).
+    Plus: Creates a right-skewed binary tree where Plus is the root. The left child is ae1. The right child is the refactoring of ae2.
+    Minus: Creates a Plus node as the root. The left child is the Minus node with the refactoring of ae1 and ae2 as its children. The right child is the accumulator (Literal 0).
  *)
 
 Compute (let ae := Plus
@@ -261,9 +261,10 @@ Compute (let ae := Minus
          refactor (refactor ae)).
 
 (* Nested refactor ae case :
-   Plus : Creates a right-skewed version of the original binary tree. Accumulator (Literal 0) on the right-most leaf. Similar to flattening the original binary tree with nil case (Literal 0)
-   Minus : ((Flattened ae1 on LHS, Flattened ae2 on RHS joined by Minus as parent) on LHS, joined by accumulator (Literal 0) on RHS), joined by Plus as parent.
-   Overall effect: Plus always on the root of the resulting binary tree, right leaf is always Plus or (Literal 0) in the nil case.
+    Plus: For nested Plus operations, refactoring essentially flattens the binary tree. The flattened tree holds the values in the left leaves and a (Literal 0) is the accumulator/nil case located at the right-most child of the flattened tree.
+    Minus: For nested Minus operations, Creates a Plus node as the root. The left child is the Minus node with the refactoring of ae1 and ae2 as its children. The right child is the accumulator (Literal 0).
+    Overall effect: Plus always on the root of the resulting binary tree, 
+    right leaf is always Plus or (Literal 0) in the right-most leaf.
  *)
 
 Definition test_refactor (candidate : arithmetic_expression -> arithmetic_expression) :=
@@ -817,43 +818,50 @@ Compute (let ae := Plus (Literal 2) (Literal 1) in
 Compute (let ae := Plus (Literal 2) (Literal 1) in
          super_refactor (super_refactor ae)).
 
-Compute (let ae := Plus (Plus (Literal 1) (Literal 2))
-                     (Plus (Literal 3)(Literal 4)) in
-         super_refactor ae).
-
-Compute (let ae := Plus (Plus (Literal 1) (Literal 2))
-                     (Plus (Literal 3)(Literal 4)) in
-         super_refactor (super_refactor ae)).
-
 Compute (let ae := Minus (Literal 2) (Literal 1) in
          super_refactor ae).
 
 Compute (let ae := Minus (Literal 2) (Literal 1) in
          super_refactor (super_refactor ae)).
 
-Compute (let ae := Minus (Plus (Literal 1) (Literal 2))
-                     (Plus (Literal 3)(Literal 4)) in
+Compute (let ae := Minus (Literal 2) (Literal 3) in
          super_refactor ae).
 
-Compute (let ae := Minus (Plus (Literal 1) (Literal 2))
-                     (Plus (Literal 3)(Literal 4)) in
+Compute (let ae := Minus (Literal 2) (Literal 3) in
          super_refactor (super_refactor ae)).
 
-Compute (let ae := Minus (Minus (Literal 1) (Literal 2))
-                     (Minus (Literal 3)(Literal 4)) in
-         super_refactor ae).
-
-Compute (let ae := Minus (Minus (Literal 1) (Literal 2))
-                     (Minus (Literal 3)(Literal 4)) in
-         super_refactor (super_refactor ae)).
-
-(* Single super_refactor ae case :
+(*
+   Single super_refactor ae case :
    Literal : Nothing
    Plus : Nothing
    Minus : Nothing
 
-   So super_refactor ae = ae?
+   So super_refactor ae = ae when ae is single Literal, Plus or Minus.
  *)
+
+Compute (let ae := Plus (Plus (Literal 1) (Literal 2))
+                     (Plus (Literal 3) (Literal 4)) in
+         super_refactor ae).
+
+Compute (let ae := Plus (Plus (Literal 1) (Literal 2))
+                     (Plus (Literal 3)(Literal 4)) in
+         super_refactor (super_refactor ae)).
+
+Compute (let ae := Minus (Plus (Literal 1) (Literal 2))
+                     (Plus (Literal 3) (Literal 4)) in
+         super_refactor ae).
+
+Compute (let ae := Minus (Plus (Literal 1) (Literal 2))
+                     (Plus (Literal 3) (Literal 4)) in
+         super_refactor (super_refactor ae)).
+
+Compute (let ae := Minus (Minus (Literal 1) (Literal 2))
+                     (Minus (Literal 3) (Literal 4)) in
+         super_refactor ae).
+
+Compute (let ae := Minus (Minus (Literal 1) (Literal 2))
+                     (Minus (Literal 3) (Literal 4)) in
+         super_refactor (super_refactor ae)).
 
 Compute (let ae := Plus
                      (Plus (Literal 1) (Literal 2))
@@ -905,8 +913,8 @@ Compute (let ae := Minus
          super_refactor (super_refactor ae)).
 
 (* Nested super_refactor ae case :
-   Plus : Creates a right-skewed version of the original binary tree. Accumulator is the right-most leaf of the original binary tree. Similar to flattening the original binary tree with nil case (right-most of original tree).
-   Minus : Flattened ae1 on LHS, Flattened ae2 on RHS joined by Minus as parent.
+   Plus : Creates a right-skewed binary tree where Plus is the root. The right-most leaf of the original binary tree is the accumulator of the refactored binary tree.
+   Minus: Creates a binary tree where Minus is the root. The left child is the refactored ae1 and the right child is the refactored ae2. In both refactored children, the accumulator is the right-most leaf of the original binary tree.
    Overall effect: Unlike refactor, Literal, Plus and Minus can all lie on the root of the returned binary tree. The right-most leaf of the original binary tree is the right-most leaf of the returned binary tree (and is also the accumulator for that tree).
  *)
 
