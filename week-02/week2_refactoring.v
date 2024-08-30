@@ -379,9 +379,9 @@ Proof.
   intro ae.
   induction ae as [ n
                   | ae1 [H_ae1_s [H_ae1_n_s H_ae1_n1_n2]]
-                    ae2 [H_ae2_s [H_ae2_n_s H_ae2_n1_n2]]
+                      ae2 [H_ae2_s [H_ae2_n_s H_ae2_n1_n2]]
                   | ae1 [H_ae1_s [H_ae1_n_s H_ae1_n1_n2]]
-                    ae2 [H_ae2_s [H_ae2_n_s H_ae2_n1_n2]]].
+                      ae2 [H_ae2_s [H_ae2_n_s H_ae2_n1_n2]]].
   - split.
     { intros s.
       rewrite -> fold_unfold_evaluate_Literal.
@@ -413,9 +413,9 @@ Proof.
       rewrite -> fold_unfold_evaluate_Plus.
       case (evaluate ae1) as [ n1 | s1 ] eqn:E_ae1.
       + case (evaluate ae2) as [ n2 | s2 ] eqn:E_ae2.
-        - intro H_absurd.
-        discriminate H_absurd.
-        - intro H_eq_s2_s.
+        * intro H_absurd.
+          discriminate H_absurd.
+        * intro H_eq_s2_s.
           injection H_eq_s2_s as H_eq_s2_s.
           rewrite <- H_eq_s2_s.
           intro a.
@@ -440,13 +440,13 @@ Proof.
       rewrite -> fold_unfold_evaluate_Plus.
       case (evaluate ae1) as [ n1 | s1 ] eqn:E_ae1.
       + case (evaluate ae2) as [ n2 | s2 ] eqn:E_ae2. 
-        - intros _ a H_eval_a_s.
+        * intros _ a H_eval_a_s.
           rewrite -> fold_unfold_refactor_aux_Plus.
           Check (H_ae1_n_s n1 s (eq_refl (Expressible_nat n1)) (refactor_aux ae2 a)).
           apply (H_ae1_n_s n1 s (eq_refl (Expressible_nat n1)) (refactor_aux ae2 a)).
           Check (H_ae2_n_s n2 s (eq_refl (Expressible_nat n2)) a H_eval_a_s).
           exact (H_ae2_n_s n2 s (eq_refl (Expressible_nat n2)) a H_eval_a_s).
-        - intro H_absurd.
+        * intro H_absurd.
           discriminate H_absurd.
       + intro H_absurd.
         discriminate H_absurd.
@@ -455,7 +455,7 @@ Proof.
       rewrite -> fold_unfold_evaluate_Plus.
       case (evaluate ae1) as [ n1' | s1' ] eqn:H_ae1.
       + case (evaluate ae2) as [ n2' | s2' ] eqn:H_ae2.
-        - intro H_n1'_n2'_n1.
+        * intro H_n1'_n2'_n1.
           injection H_n1'_n2'_n1 as H_n1'_n2'_n1.
           intros a H_a_n2.
           rewrite -> fold_unfold_refactor_aux_Plus.
@@ -465,38 +465,34 @@ Proof.
           apply (H_ae1_n1_n2 n1' (n2' + n2) (eq_refl (Expressible_nat n1')) (refactor_aux ae2 a)).
           Check (H_ae2_n1_n2 n2' n2 (eq_refl (Expressible_nat n2')) a H_a_n2).
           exact (H_ae2_n1_n2 n2' n2 (eq_refl (Expressible_nat n2')) a H_a_n2).
-        - intro H_absurd.
+        * intro H_absurd.
           discriminate H_absurd.
-      + case (evaluate ae2) as [ n2' | s2' ] eqn:H_ae2.
-        - intro H_absurd.
-          discriminate H_absurd.
-        - intro H_absurd.
-          discriminate H_absurd.
+      +  intro H_absurd.
+         discriminate H_absurd.         
     }
   - split.
-    {
-      intro s.
+    { intro s.
       rewrite -> fold_unfold_evaluate_Minus.
       case (evaluate ae1) as [ n1 | s1 ] eqn:E_ae1.
       + case (evaluate ae2) as [ n2 | s2 ] eqn:E_ae2.
-        - case (n1 <? n2) as [ | ] eqn:H_n1_n2.
-          * intros H_err_s a.
-            rewrite -> fold_unfold_refactor_aux_Minus.
-            rewrite -> fold_unfold_evaluate_Plus.
-            rewrite -> fold_unfold_evaluate_Minus.
-            Check (H_ae1_n1_n2 n1 0 (eq_refl (Expressible_nat n1))).
-            Check (H_ae1_n1_n2 n1 0 (eq_refl (Expressible_nat n1)) (Literal 0)).
-            Check (H_ae1_n1_n2 n1 0 (eq_refl (Expressible_nat n1)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
-            rewrite -> (H_ae1_n1_n2 n1 0 (eq_refl (Expressible_nat n1)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
-            Check (H_ae2_n1_n2 n2 0 (eq_refl (Expressible_nat n2)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
-            rewrite -> (H_ae2_n1_n2 n2 0 (eq_refl (Expressible_nat n2)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
-            rewrite -> 2 Nat.add_0_r.
-            rewrite -> H_n1_n2.
-            rewrite -> H_err_s.
-            reflexivity.
-          * intro H_absurd.
-            discriminate H_absurd.
-        - intros H_eq_s2_s a.
+        * case (n1 <? n2) as [ | ] eqn:H_n1_n2.
+          -- intros H_err_s a.
+             rewrite -> fold_unfold_refactor_aux_Minus.
+             rewrite -> fold_unfold_evaluate_Plus.
+             rewrite -> fold_unfold_evaluate_Minus.
+             Check (H_ae1_n1_n2 n1 0 (eq_refl (Expressible_nat n1))).
+             Check (H_ae1_n1_n2 n1 0 (eq_refl (Expressible_nat n1)) (Literal 0)).
+             Check (H_ae1_n1_n2 n1 0 (eq_refl (Expressible_nat n1)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+             rewrite -> (H_ae1_n1_n2 n1 0 (eq_refl (Expressible_nat n1)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+             Check (H_ae2_n1_n2 n2 0 (eq_refl (Expressible_nat n2)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+             rewrite -> (H_ae2_n1_n2 n2 0 (eq_refl (Expressible_nat n2)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+             rewrite -> 2 Nat.add_0_r.
+             rewrite -> H_n1_n2.
+             rewrite -> H_err_s.
+             reflexivity.
+          -- intro H_absurd.
+             discriminate H_absurd.
+        * intros H_eq_s2_s a.
           rewrite -> fold_unfold_refactor_aux_Minus.
           rewrite -> fold_unfold_evaluate_Plus.
           rewrite -> fold_unfold_evaluate_Minus.
@@ -520,49 +516,48 @@ Proof.
       rewrite -> fold_unfold_evaluate_Minus.
       case (evaluate ae1) as [ n1 | s1 ] eqn:E_ae1.
       + case (evaluate ae2) as [ n2 | s2 ] eqn:E_ae2.
-        - case (n1 <? n2) as [ | ] eqn:H_n1_n2.
-          * intro H_absurd.
-            discriminate H_absurd.
-          * intros H_eq_n1_n2_n a H_eval_a_s.
-            rewrite -> fold_unfold_refactor_aux_Minus.
-            rewrite -> fold_unfold_evaluate_Plus.
-            rewrite -> fold_unfold_evaluate_Minus.
-            rewrite -> (H_ae1_n1_n2 n1 0 (eq_refl (Expressible_nat n1)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
-            rewrite -> (H_ae2_n1_n2 n2 0 (eq_refl (Expressible_nat n2)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
-            rewrite -> 2 Nat.add_0_r.
-            rewrite -> H_n1_n2.
-            rewrite -> H_eval_a_s.
-            reflexivity.
-        - intros H_absurd.
+        * case (n1 <? n2) as [ | ] eqn:H_n1_n2.
+          -- intro H_absurd.
+             discriminate H_absurd.
+          -- intros H_eq_n1_n2_n a H_eval_a_s.
+             rewrite -> fold_unfold_refactor_aux_Minus.
+             rewrite -> fold_unfold_evaluate_Plus.
+             rewrite -> fold_unfold_evaluate_Minus.
+             rewrite -> (H_ae1_n1_n2 n1 0 (eq_refl (Expressible_nat n1)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+             rewrite -> (H_ae2_n1_n2 n2 0 (eq_refl (Expressible_nat n2)) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+             rewrite -> 2 Nat.add_0_r.
+             rewrite -> H_n1_n2.
+             rewrite -> H_eval_a_s.
+             reflexivity.
+        * intros H_absurd.
           discriminate H_absurd.
       + intro H_absurd.
         discriminate H_absurd.
     }
-    {
-      intros n1 n2.
+    { intros n1 n2.
       rewrite -> fold_unfold_evaluate_Minus.
       case (evaluate ae1) as [ n1' | s1' ] eqn:E_ae1.
       + case (evaluate ae2) as [ n2' | s2' ] eqn:E_ae2.
-        - case (n1' <? n2') as [ | ] eqn:H_n1'_n2'.
-          * intro H_absurd.
-            discriminate H_absurd.
-          * intros H_eq_n1'_n2'_n1 a H_eval_a_n2.
-            rewrite -> fold_unfold_refactor_aux_Minus.
-            rewrite -> fold_unfold_evaluate_Plus.
-            rewrite -> fold_unfold_evaluate_Minus.
-            Check (H_ae1_n1_n2 n1' 0 (eq_refl (Expressible_nat n1'))).
-            Check (H_ae1_n1_n2 n1' 0 (eq_refl (Expressible_nat n1')) (Literal 0)).
-            Check (H_ae1_n1_n2 n1' 0 (eq_refl (Expressible_nat n1')) (Literal 0) (fold_unfold_evaluate_Literal 0)).
-            rewrite -> (H_ae1_n1_n2 n1' 0 (eq_refl (Expressible_nat n1')) (Literal 0) (fold_unfold_evaluate_Literal 0)).
-            Check (H_ae2_n1_n2 n2' 0 (eq_refl (Expressible_nat n2')) (Literal 0) (fold_unfold_evaluate_Literal 0)).
-            rewrite -> (H_ae2_n1_n2 n2' 0 (eq_refl (Expressible_nat n2')) (Literal 0) (fold_unfold_evaluate_Literal 0)).
-            rewrite -> 2 Nat.add_0_r.
-            rewrite -> H_n1'_n2'.
-            rewrite -> H_eval_a_n2.
-            injection H_eq_n1'_n2'_n1 as H_eq_n1'_n2'_n1.
-            rewrite -> H_eq_n1'_n2'_n1.
-            reflexivity.
-        - intro H_absurd.
+        * case (n1' <? n2') as [ | ] eqn:H_n1'_n2'.
+          -- intro H_absurd.
+             discriminate H_absurd.
+          -- intros H_eq_n1'_n2'_n1 a H_eval_a_n2.
+             rewrite -> fold_unfold_refactor_aux_Minus.
+             rewrite -> fold_unfold_evaluate_Plus.
+             rewrite -> fold_unfold_evaluate_Minus.
+             Check (H_ae1_n1_n2 n1' 0 (eq_refl (Expressible_nat n1'))).
+             Check (H_ae1_n1_n2 n1' 0 (eq_refl (Expressible_nat n1')) (Literal 0)).
+             Check (H_ae1_n1_n2 n1' 0 (eq_refl (Expressible_nat n1')) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+             rewrite -> (H_ae1_n1_n2 n1' 0 (eq_refl (Expressible_nat n1')) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+             Check (H_ae2_n1_n2 n2' 0 (eq_refl (Expressible_nat n2')) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+             rewrite -> (H_ae2_n1_n2 n2' 0 (eq_refl (Expressible_nat n2')) (Literal 0) (fold_unfold_evaluate_Literal 0)).
+             rewrite -> 2 Nat.add_0_r.
+             rewrite -> H_n1'_n2'.
+             rewrite -> H_eval_a_n2.
+             injection H_eq_n1'_n2'_n1 as H_eq_n1'_n2'_n1.
+             rewrite -> H_eq_n1'_n2'_n1.
+             reflexivity.
+        * intro H_absurd.
           discriminate H_absurd.
       + intro H_absurd.
         discriminate H_absurd.
