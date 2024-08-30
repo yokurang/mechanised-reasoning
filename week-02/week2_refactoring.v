@@ -386,28 +386,20 @@ Proof.
     { intros s.
       rewrite -> fold_unfold_evaluate_Literal.
       intro H_absurd.
-      discriminate H_absurd.
-    }
+      discriminate H_absurd. }
     split.
-    { intros n' s.
-      rewrite -> fold_unfold_evaluate_Literal.
-      intro H_eq_n_n'.
-      intros a H_a_s.
+    { intros n' s E_n_eq_n' a E_a_eq_s.
       rewrite -> fold_unfold_refactor_aux_Literal.
       rewrite -> fold_unfold_evaluate_Plus.
       rewrite -> fold_unfold_evaluate_Literal.
-      rewrite -> H_a_s.
-      reflexivity.
-    }
-    { intros n1 n2.
-      intro H_eq_n1_n2.
-      intros a H_eq_n2_s.
+      rewrite -> E_a_eq_s.
+      reflexivity. }
+    { intros n1 n2 E_n_n1 a E_a_eq_n2.
       rewrite -> fold_unfold_refactor_aux_Literal.
       rewrite -> fold_unfold_evaluate_Plus.
-      rewrite -> H_eq_n1_n2.
-      rewrite -> H_eq_n2_s.
-      reflexivity.
-    }
+      rewrite -> E_n_n1.
+      rewrite -> E_a_eq_n2.
+      reflexivity. }
   - split.
     { intros s.
       rewrite -> fold_unfold_evaluate_Plus.
@@ -572,7 +564,7 @@ Proof.
   unfold refactor.
   case (evaluate ae) as [ n | s ] eqn:E_ae;
     remember (refactoring_preserves_evaluation_aux' ae) as H_ae;
-    destruct H_ae as [ E_s [ E_n_s E_n_n]].
+    destruct H_ae as [ E_s [ E_n_s E_n_n ]].
   - Check (E_n_n n 0 E_ae (Literal 0) (fold_unfold_evaluate_Literal 0)).
     rewrite -> (E_n_n n 0 E_ae (Literal 0) (fold_unfold_evaluate_Literal 0)).
     rewrite -> Nat.add_0_r.
@@ -1024,7 +1016,7 @@ Proof.
 Qed.
         
 Lemma super_refactoring_preserves_evaluation_aux' :
-    forall ae : arithmetic_expression,
+  forall ae : arithmetic_expression,
     (forall s : string,
         evaluate ae = Expressible_msg s ->
         forall a : arithmetic_expression,
@@ -1048,15 +1040,242 @@ Lemma super_refactoring_preserves_evaluation_aux' :
             (evaluate (super_refactor ae) = Expressible_nat n1)
             /\
               evaluate (super_refactor_aux ae a) = Expressible_nat (n1 + n2)).
-Admitted.
+Proof.
+  intro ae.
+  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
+  - split.
+    { intro s.
+      rewrite -> fold_unfold_evaluate_Literal.
+      intro H_absurd.
+      discriminate H_absurd.
+    }
+    split.
+    { intros n1 s E_n_eq_n1 a E_a_eq_s.
+      split.
+      { rewrite -> fold_unfold_super_refactor_Literal.
+        exact E_n_eq_n1.
+      }
+      { rewrite -> fold_unfold_super_refactor_aux_Literal.
+        rewrite -> fold_unfold_evaluate_Plus.
+        rewrite -> E_n_eq_n1.
+        rewrite -> E_a_eq_s.
+        reflexivity.
+      }
+    }
+    { intros n1 n2 E_n_eq_n1 a E_a_eq_n2.
+      split.
+      { rewrite -> fold_unfold_super_refactor_Literal.
+        exact E_n_eq_n1.
+      }
+      { rewrite -> fold_unfold_super_refactor_aux_Literal.
+        rewrite -> fold_unfold_evaluate_Plus.
+        rewrite -> E_n_eq_n1.
+        rewrite -> E_a_eq_n2.
+        reflexivity.
+      }
+    }
+  - split.
+    { intro s.
+      rewrite -> fold_unfold_evaluate_Plus.
+      intro H_eval.
+      split.
+      { case (evaluate ae1) as [ n1 | s1 ] eqn:E_ae1.
+        + case (evaluate ae2) as [ n2 | s2 ] eqn:E_ae2.
+          * discriminate H_eval.
+          * rewrite -> fold_unfold_super_refactor_Plus.
+            destruct IHae1 as [ _ [ H_ae1_n_s _ ]].
+            Check (H_ae1_n_s n1 s
+                     (eq_refl (Expressible_nat n1))
+                     (super_refactor ae2)).
+            destruct IHae2 as [ H_ae2_s _ ].
+            destruct (H_ae2_s s H_eval a) as [ E_sr_ae2_eq_s _ ].
+            Check (H_ae1_n_s n1 s
+                     (eq_refl (Expressible_nat n1))
+                     (super_refactor ae2)
+                     E_sr_ae2_eq_s).
+            destruct (H_ae1_n_s n1 s
+                        (eq_refl (Expressible_nat n1))
+                        (super_refactor ae2)
+                        E_sr_ae2_eq_s) as [_ ly].
+            exact ly.
+        + rewrite -> fold_unfold_super_refactor_Plus.
+          destruct IHae1 as [ H_ae1_s _ ].
+          clear IHae2.
+          Check (H_ae1_s s
+                   H_eval
+                   (super_refactor ae2)).
+          destruct (H_ae1_s s
+                      H_eval
+                      (super_refactor ae2)) as [_ ly].
+          exact ly.
+      }
+      { rewrite -> fold_unfold_super_refactor_aux_Plus.
+        case (evaluate ae1) as [ n1 | s1 ] eqn:E_ae1.
+        + case (evaluate ae2) as [ n2 | s2 ] eqn:E_ae2.
+          * discriminate H_eval.
+          * destruct IHae1 as [ _ [ H_ae1_n_s _ ]].
+            Check (H_ae1_n_s n1 s
+                     (eq_refl (Expressible_nat n1))
+                     (super_refactor_aux ae2 a)).
+            destruct IHae2 as [ H_ae2_s _ ].
+            destruct (H_ae2_s s H_eval a) as [ _ E_sr_aux_ae2_eq_s ].
+            Check (H_ae1_n_s n1 s
+                     (eq_refl (Expressible_nat n1))
+                     (super_refactor_aux ae2 a)
+                     E_sr_aux_ae2_eq_s).
+            destruct (H_ae1_n_s n1 s
+                     (eq_refl (Expressible_nat n1))
+                     (super_refactor_aux ae2 a)
+                     E_sr_aux_ae2_eq_s) as [_ ly].
+            exact ly.
+        + destruct IHae1 as [ H_ae1_s _ ].
+          clear IHae2.
+          Check (H_ae1_s s
+                   H_eval
+                   (super_refactor_aux ae2 a)).
+          destruct (H_ae1_s s
+                      H_eval
+                      (super_refactor_aux ae2 a)) as [_ ly].
+          exact ly.
+      }
+    }
+    { split.
+      { intros n s.
+        rewrite -> fold_unfold_evaluate_Plus.
+        rewrite -> fold_unfold_super_refactor_Plus.
+        intros H_eval a E_a.
+        split.
+        { case (evaluate ae1) as [ n1 | s1 ] eqn:E_ae1.
+          + case (evaluate ae2) as [ n2 | s2 ] eqn:E_ae2.
+            * destruct IHae1 as [ _ [ _ H_ae1_n_n ]].
+              injection H_eval as H_eval.
+              rewrite <- H_eval.
+              Check (H_ae1_n_n n1 n2
+                       (eq_refl (Expressible_nat n1))
+                      (super_refactor ae2)).
+              destruct IHae2 as [ _ [_ H_ae2_n_n ]].
+              Check (H_ae2_n_n n2 n2
+                       (eq_refl (Expressible_nat n2))
+                       ae2 E_ae2).
+              destruct (H_ae2_n_n n2 n2
+                          (eq_refl (Expressible_nat n2))
+                          ae2 E_ae2) as [E_sr_ae2_eq_n2 _].
+              Check (H_ae1_n_n n1 n2
+                       (eq_refl (Expressible_nat n1))
+                       (super_refactor ae2)
+                       E_sr_ae2_eq_n2).
+              destruct (H_ae1_n_n n1 n2
+                          (eq_refl (Expressible_nat n1))
+                          (super_refactor ae2)
+                          E_sr_ae2_eq_n2) as [_ ly].
+              exact ly.
+            * discriminate H_eval.
+          + discriminate H_eval.
+        }
+        { rewrite -> fold_unfold_super_refactor_aux_Plus.
+          case (evaluate ae1) as [ n1 | s1 ] eqn:E_ae1.
+          + case (evaluate ae2) as [ n2 | s2 ] eqn:E_ae2.
+            * destruct IHae1 as [ _ [ H_ae1_n_s _ ]].
+              Check (H_ae1_n_s n1 s
+                       (eq_refl (Expressible_nat n1))
+                      (super_refactor_aux ae2 a)).
+              destruct IHae2 as [ _ [ H_ae2_n_s _ ]].
+              Check (H_ae2_n_s n2 s
+                       (eq_refl (Expressible_nat n2))
+                       a E_a).
+              destruct (H_ae2_n_s n2 s
+                       (eq_refl (Expressible_nat n2))
+                       a E_a) as [_ E_sr_aux_ae2_eq_s].
+              Check (H_ae1_n_s n1 s
+                       (eq_refl (Expressible_nat n1))
+                       (super_refactor_aux ae2 a)
+                       E_sr_aux_ae2_eq_s).
+              destruct (H_ae1_n_s n1 s
+                       (eq_refl (Expressible_nat n1))
+                       (super_refactor_aux ae2 a)
+                       E_sr_aux_ae2_eq_s) as [_ ly].
+              exact ly.
+            * discriminate H_eval.
+          + discriminate H_eval.
+        }
+      }
+      intros n1 n2.
+      rewrite -> fold_unfold_evaluate_Plus.
+      rewrite -> fold_unfold_super_refactor_Plus.
+      intros H_eval a E_a.
+      split.
+      { case (evaluate ae1) as [ n1' | s1' ] eqn:E_ae1.
+        + case (evaluate ae2) as [ n2' | s2' ] eqn:E_ae2.
+          * injection H_eval as H_eval.
+            rewrite <- H_eval.
+            destruct IHae1 as [ _ [ _ H_ae1_n1_n2 ]].
+            Check (H_ae1_n1_n2 n1' n2'
+                     (eq_refl (Expressible_nat n1'))
+                     (super_refactor ae2)).
+            destruct IHae2 as [ _ [ _ H_ae2_n1_n2 ]].
+            Check (H_ae2_n1_n2 n2' n2
+                     (eq_refl (Expressible_nat n2'))
+                     a E_a).
+            destruct (H_ae2_n1_n2 n2' n2
+                     (eq_refl (Expressible_nat n2'))
+                     a E_a) as [E_sr_ae2_eq_n2' _].
+            Check (H_ae1_n1_n2 n1' n2'
+                     (eq_refl (Expressible_nat n1'))
+                     (super_refactor ae2)
+                     E_sr_ae2_eq_n2').
+            destruct (H_ae1_n1_n2 n1' n2'
+                     (eq_refl (Expressible_nat n1'))
+                     (super_refactor ae2)
+                     E_sr_ae2_eq_n2') as [_ ly].
+            exact ly.
+          * discriminate H_eval.
+        + discriminate H_eval.
+      }
+      { case (evaluate ae1) as [ n1' | s1' ] eqn:E_ae1.
+        + case (evaluate ae2) as [ n2' | s2' ] eqn:E_ae2.
+          * rewrite -> fold_unfold_super_refactor_aux_Plus.
+            injection H_eval as H_eval.
+            rewrite <- H_eval.
+            destruct IHae1 as [ _ [ _ H_ae1_n1_n2 ]].
+            Check (H_ae1_n1_n2 n1' (n2' + n2)
+                     (eq_refl (Expressible_nat n1'))
+                     (super_refactor_aux ae2 a)).
+            destruct IHae2 as [ _ [ _ H_ae2_n1_n2 ]].
+            Check (H_ae2_n1_n2 n2' n2
+                     (eq_refl (Expressible_nat n2'))
+                     a E_a).
+            destruct (H_ae2_n1_n2 n2' n2
+                     (eq_refl (Expressible_nat n2'))
+                     a E_a) as [_ E_sr_aux_ae2_eq_n2'].
+            Check (H_ae1_n1_n2 n1' (n2' + n2)
+                     (eq_refl (Expressible_nat n1'))
+                     (super_refactor_aux ae2 a)
+                     E_sr_aux_ae2_eq_n2').
+            destruct (H_ae1_n1_n2 n1' (n2' + n2)
+                     (eq_refl (Expressible_nat n1'))
+                     (super_refactor_aux ae2 a)
+                     E_sr_aux_ae2_eq_n2') as [_ ly].
+            rewrite -> Nat.add_assoc in ly. (* Aha! Moment *)
+            exact ly.
+          * discriminate H_eval.
+        + discriminate H_eval.
+      }
+    }
+  -         
 
 Theorem super_refactoring_preserves_evaluation' :
   forall ae : arithmetic_expression,
     evaluate (super_refactor ae) = evaluate ae.
 Proof.
   intro ae.
-  unfold super_refactor.
-Admitted.
+  case (evaluate ae) as [ n | s ] eqn:E_ae;
+    remember (super_refactoring_preserves_evaluation_aux' ae) as H_ae;
+    destruct H_ae as [ E_s [ E_n_s E_n_n ]].
+  - destruct (E_n_n n 0 E_ae (Literal 0) (fold_unfold_evaluate_Literal 0)) as [E_sr_n _].
+    exact E_sr_n.
+  - destruct (E_s s E_ae (Literal 0)) as [E_sr_s _].
+    exact E_sr_s.
+Qed.
 
 Proposition equivalence_of_the_two_lemmas_for_super_refactor :
   forall ae : arithmetic_expression,
