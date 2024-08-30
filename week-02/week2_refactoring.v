@@ -566,7 +566,9 @@ Proof.
           discriminate H_absurd.
       + intro H_absurd.
         discriminate H_absurd.
+    }
 Qed.
+
 Theorem refactoring_preserves_evaluation' :
   forall ae : arithmetic_expression,
     evaluate (refactor ae) = evaluate ae.
@@ -1026,6 +1028,41 @@ Proof.
   exact H_sr.
 Qed.
         
+Lemma super_refactoring_preserves_evaluation_aux' :
+    forall ae : arithmetic_expression,
+    (forall s : string,
+        evaluate ae = Expressible_msg s ->
+        forall a : arithmetic_expression,
+          (evaluate (super_refactor ae) = Expressible_msg s)
+          /\
+            evaluate (super_refactor_aux ae a) = Expressible_msg s)
+    /\
+      (forall (n : nat)
+              (s : string),
+          evaluate ae = Expressible_nat n ->
+          forall a : arithmetic_expression,
+            evaluate a = Expressible_msg s ->
+            (evaluate (super_refactor ae) = Expressible_nat n)
+            /\
+              evaluate (super_refactor_aux ae a) = Expressible_msg s)
+    /\
+      (forall n1 n2 : nat,
+          evaluate ae = Expressible_nat n1 ->
+          forall a : arithmetic_expression,
+            evaluate a = Expressible_nat n2 ->
+            (evaluate (super_refactor ae) = Expressible_nat n1)
+            /\
+              evaluate (super_refactor_aux ae a) = Expressible_nat (n1 + n2)).
+Admitted.
+
+Theorem super_refactoring_preserves_evaluation' :
+  forall ae : arithmetic_expression,
+    evaluate (super_refactor ae) = evaluate ae.
+Proof.
+  intro ae.
+  unfold super_refactor.
+Admitted.
+
 Proposition equivalence_of_the_two_lemmas_for_super_refactor :
   forall ae : arithmetic_expression,
     (forall s : string,
