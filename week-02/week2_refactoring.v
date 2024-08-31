@@ -444,20 +444,20 @@ Proof.
       + intro H_absurd.
         discriminate H_absurd.
     }
-    { intros n1 n2.
+    { intros n n3.
       rewrite -> fold_unfold_evaluate_Plus.
-      case (evaluate ae1) as [ n1' | s1' ] eqn:H_ae1.
-      + case (evaluate ae2) as [ n2' | s2' ] eqn:H_ae2.
-        * intro H_n1'_n2'_n1.
-          injection H_n1'_n2'_n1 as H_n1'_n2'_n1.
-          intros a H_a_n2.
+      case (evaluate ae1) as [ n1 | s1 ] eqn:H_ae1.
+      + case (evaluate ae2) as [ n2 | s2 ] eqn:H_ae2.
+        * intro H_n1_n2_n.
+          injection H_n1_n2_n as H_n1_n2_n.
+          intros a H_a_n3.
           rewrite -> fold_unfold_refactor_aux_Plus.
-          rewrite <- H_n1'_n2'_n1.
+          rewrite <- H_n1_n2_n.
           rewrite <- Nat.add_assoc.
-          Check (H_ae1_n1_n2 n1' (n2' + n2) (eq_refl (Expressible_nat n1')) (refactor_aux ae2 a)).
-          apply (H_ae1_n1_n2 n1' (n2' + n2) (eq_refl (Expressible_nat n1')) (refactor_aux ae2 a)).
-          Check (H_ae2_n1_n2 n2' n2 (eq_refl (Expressible_nat n2')) a H_a_n2).
-          exact (H_ae2_n1_n2 n2' n2 (eq_refl (Expressible_nat n2')) a H_a_n2).
+          Check (H_ae1_n1_n2 n1 (n2 + n3) (eq_refl (Expressible_nat n1)) (refactor_aux ae2 a)).
+          apply (H_ae1_n1_n2 n1 (n2 + n3) (eq_refl (Expressible_nat n1)) (refactor_aux ae2 a)).
+          Check (H_ae2_n1_n2 n2 n3 (eq_refl (Expressible_nat n2)) a H_a_n3).
+          exact (H_ae2_n1_n2 n2 n3 (eq_refl (Expressible_nat n2)) a H_a_n3).
         * intro H_absurd.
           discriminate H_absurd.
       +  intro H_absurd.
@@ -565,7 +565,7 @@ Proof.
   unfold refactor.
   case (evaluate ae) as [ n | s ] eqn:E_ae;
     remember (refactoring_preserves_evaluation_aux' ae) as H_ae;
-    destruct H_ae as [ E_s [ E_n_s E_n_n ]].
+    destruct H_ae as [ E_s [  E_n_s E_n_n ]].
   - Check (E_n_n n 0 E_ae (Literal 0) (fold_unfold_evaluate_Literal 0)).
     rewrite -> (E_n_n n 0 E_ae (Literal 0) (fold_unfold_evaluate_Literal 0)).
     rewrite -> Nat.add_0_r.
@@ -1438,7 +1438,8 @@ Proof.
   case (evaluate ae) as [ n | s ] eqn:E_ae;
     remember (super_refactoring_preserves_evaluation_aux' ae) as H_ae;
     destruct H_ae as [ E_s [ E_n_s E_n_n ]].
-  - destruct (E_n_n n 0 E_ae (Literal 0) (fold_unfold_evaluate_Literal 0)) as [E_sr_n _].
+  - Check (E_n_n n 0).
+    destruct (E_n_n n 0 E_ae (Literal 0) (fold_unfold_evaluate_Literal 0)) as [E_sr_n _].
     exact E_sr_n.
   - destruct (E_s s E_ae (Literal 0)) as [E_sr_s _].
     exact E_sr_s.
