@@ -1868,6 +1868,27 @@ end.
 
 Compute (test_depth depth).
 
+Lemma fold_unfold_depth_Literal :
+  forall (n : nat),
+    depth (Literal n) = 0.
+Proof.
+  fold_unfold_tactic depth.
+Qed.
+
+Lemma fold_unfold_depth_Plus :
+  forall (ae1 ae2: arithmetic_expression),
+    depth (Plus ae1 ae2) = max ((depth ae1) + 1) ((depth ae2) + 1).
+Proof.
+  fold_unfold_tactic depth.
+Qed.
+
+Lemma fold_unfold_depth_Minus :
+  forall (ae1 ae2: arithmetic_expression),
+    depth (Minus ae1 ae2) = max ((depth ae1) + 1) ((depth ae2) + 1).
+Proof.
+  fold_unfold_tactic depth.
+Qed.
+
 (* ***** *)
 
 Definition test_depth_left (candidate : arithmetic_expression -> nat) : bool :=
@@ -1900,6 +1921,27 @@ Fixpoint depth_left (ae : arithmetic_expression) : nat :=
 end.
 
 Compute (test_depth_left depth_left).
+
+Lemma fold_unfold_depth_left_Literal :
+  forall (n : nat),
+    depth_left (Literal n) = 0.
+Proof.
+  fold_unfold_tactic depth_left.
+Qed.
+
+Lemma fold_unfold_depth_left_Plus :
+  forall (ae1 ae2: arithmetic_expression),
+    depth_left (Plus ae1 ae2) = max ((depth_left ae1) + 1) (depth_left ae2).
+Proof.
+  fold_unfold_tactic depth_left.
+Qed.
+
+Lemma fold_unfold_depth_left_Minus :
+  forall (ae1 ae2: arithmetic_expression),
+    depth_left (Minus ae1 ae2) = max ((depth_left ae1) + 1) (depth_left ae2).
+Proof.
+  fold_unfold_tactic depth_left.
+Qed.
 
 (* ***** *)
 
@@ -1934,6 +1976,27 @@ end.
 
 Compute (test_depth_right depth_right).
 
+Lemma fold_unfold_depth_right_Literal :
+  forall (n : nat),
+    depth_right (Literal n) = 0.
+Proof.
+  fold_unfold_tactic depth_right.
+Qed.
+
+Lemma fold_unfold_depth_right_Plus :
+  forall (ae1 ae2: arithmetic_expression),
+    depth_right (Plus ae1 ae2) = max (depth_right ae1) ((depth_right ae2) + 1).
+Proof.
+  fold_unfold_tactic depth_right.
+Qed.
+
+Lemma fold_unfold_depth_right_Minus :
+  forall (ae1 ae2: arithmetic_expression),
+    depth_right (Minus ae1 ae2) = max (depth_right ae1) ((depth_right ae2) + 1).
+Proof.
+  fold_unfold_tactic depth_right.
+Qed.
+
 (* ***** *)
 
 Definition eqb_option (V : Type) (eqb_V : V -> V -> bool) (ov1 ov2 : option V) : bool :=
@@ -1953,7 +2016,6 @@ Definition eqb_option (V : Type) (eqb_V : V -> V -> bool) (ov1 ov2 : option V) :
           true
       end
   end.
-
 
 Inductive result_of_decoding_and_execution_height : Type :=
   OK_h : data_stack -> nat -> option nat -> result_of_decoding_and_execution_height
@@ -2047,7 +2109,7 @@ Definition test_fetch_decode_execute_loop_height (candidate : (list byte_code_in
        (OK_h (6 :: nil) 3 (Some 1)))
   &&
     (eqb_result_of_decoding_and_execution_height
-       (candidate (SUB :: nil) (3 :: 2 :: nil) 2 2)
+       (candidate (SUB :: nil) (2 :: 3 :: nil) 2 2)
        (OK_h (1 :: nil) 2 (Some 1)))
   &&
     (eqb_result_of_decoding_and_execution_height
@@ -2069,7 +2131,34 @@ Fixpoint fetch_decode_execute_loop_height (bcis : list byte_code_instruction) (d
     end
   end.
 
-Compute (test_fetch_decode_execute_loop fetch_decode_execute_loop).
+Compute (test_fetch_decode_execute_loop_height fetch_decode_execute_loop_height).
+
+Lemma fold_unfold_fetch_decode_execute_loop_height_nil :
+  forall (ds: data_stack)
+         (mh ch : nat),
+    fetch_decode_execute_loop_height nil ds mh ch =
+      OK_h ds mh (Some ch).
+Proof.
+  fold_unfold_tactic fetch_decode_execute_loop_height.
+Qed.
+
+Lemma fold_unfold_fetch_decode_execute_loop_height_cons :
+  forall (bci : byte_code_instruction)
+         (bcis' : list byte_code_instruction)
+         (ds : data_stack)
+         (mh ch : nat),
+    fetch_decode_execute_loop_height (bci :: bcis') ds mh ch =
+      match decode_execute_height bci ds mh ch with
+      | OK_h ds' mh' ch' => fetch_decode_execute_loop_height bcis' ds' mh'
+                              (match ch' with
+                               | None => 0
+                               | Some ch'' => ch''
+                               end)
+      | KO_h s => KO_h s
+      end.
+Proof.
+  fold_unfold_tactic fetch_decode_execute_loop_height.
+Qed.
 
 Definition test_run_height (candidate : target_program -> expressible_value * nat) : bool :=
   (let (ev1, h1) := (candidate (Target_program (PUSH 42 :: nil))) in
@@ -2086,8 +2175,7 @@ Definition test_run_height (candidate : target_program -> expressible_value * na
   &&
     (let (ev4, h4) := (candidate (Target_program (PUSH 20 :: PUSH 42 :: ADD :: PUSH 20 :: PUSH 30 :: PUSH 40 :: nil))) in
      (expressible_value_eqb ev4 (Expressible_msg "too many results on the data stack")) &&
-       (Nat.eqb h4 0))
-.
+       (Nat.eqb h4 0)).
 
 Definition run_height (tp : target_program) : expressible_value * nat :=
   match tp with
@@ -2104,13 +2192,24 @@ Compute (test_run_height run_height).
 
 (* ***** *)
 
-Theorem about_young :
+Theorem about_height_and_depth_of_ae :
   forall (ae : arithmetic_expression)
          (h n : nat),
     run_height (compile (Source_program ae)) = (Expressible_nat n, h) ->
-    h = S (depth ae).
+    S (depth ae) = h.
 Proof.
-  intros ae h n H_r.
+  intros ae h n'.
+  unfold compile.
+  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intro H_run.
+  - rewrite -> fold_unfold_compile_aux_Literal in H_run.
+    unfold run_height in H_run.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons in H_run.
+    unfold decode_execute_height in H_run.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil in H_run.
+    injection H_run as _ h_eq_1.
+    rewrite -> fold_unfold_depth_Literal.
+    exact h_eq_1.
+  - 
   
 Qed.
 
