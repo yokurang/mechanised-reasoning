@@ -2229,19 +2229,54 @@ Theorem about_height_and_depth_of_ae_aux :
 Proof.
   intros ae h n'.
   intro H_run.
+  unfold run_height in H_run.
   induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
   - rewrite -> fold_unfold_depth_Literal.
     rewrite -> fold_unfold_compile_aux_Literal in H_run.
-    unfold run_height in H_run.
     rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons in H_run.
     unfold decode_execute_height in H_run.
     rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil in H_run.
-    injection H_run as _ h_eq_1.
-    exact h_eq_1.
+    injection H_run as _ H_eq_1.
+    exact H_eq_1.
   - rewrite -> fold_unfold_depth_Plus.
     rewrite -> fold_unfold_compile_aux_Plus in H_run.
-    unfold run_height in H_run.
-    rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons in H_run.
+    destruct (fetch_decode_execute_loop_height (compile_aux ae1 ++ compile_aux ae2 ++ ADD :: nil) nil 0 0) as  [ds mh ch | s] eqn:H_run'.
+    
+(*
+1 subgoal
+(1 unfocused at this level)
+
+ae1, ae2 : arithmetic_expression
+h, n' : nat
+H_run : match
+          fetch_decode_execute_loop_height
+            (compile_aux ae1 ++ compile_aux ae2 ++ ADD :: nil) nil 0 0
+        with
+        | OK_h nil _ _ => (Expressible_msg "no result on the data stack", 0)
+        | OK_h (n :: nil) mh _ => (Expressible_nat n, mh)
+        | OK_h (n :: _ :: _) _ _ =>
+            (Expressible_msg "too many results on the data stack", 0)
+        | KO_h s => (Expressible_msg s, 0)
+        end = (Expressible_nat n', h)
+IHae1 : match fetch_decode_execute_loop_height (compile_aux ae1) nil 0 0 with
+        | OK_h nil _ _ => (Expressible_msg "no result on the data stack", 0)
+        | OK_h (n :: nil) mh _ => (Expressible_nat n, mh)
+        | OK_h (n :: _ :: _) _ _ =>
+            (Expressible_msg "too many results on the data stack", 0)
+        | KO_h s => (Expressible_msg s, 0)
+        end = (Expressible_nat n', h) -> S (depth ae1) = h
+IHae2 : match fetch_decode_execute_loop_height (compile_aux ae2) nil 0 0 with
+        | OK_h nil _ _ => (Expressible_msg "no result on the data stack", 0)
+        | OK_h (n :: nil) mh _ => (Expressible_nat n, mh)
+        | OK_h (n :: _ :: _) _ _ =>
+            (Expressible_msg "too many results on the data stack", 0)
+        | KO_h s => (Expressible_msg s, 0)
+        end = (Expressible_nat n', h) -> S (depth ae2) = h
+
+========================= (1 / 1)
+
+S (Init.Nat.max (depth ae1 + 1) (depth ae2 + 1)) = h
+*)
 Admitted.
 
 Theorem about_height_and_depth_of_ae :
