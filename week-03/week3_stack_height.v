@@ -1581,6 +1581,7 @@ Proof.
     rewrite -> eq_n'_n.
     reflexivity.
   - rewrite -> fold_unfold_compile_aux_Plus.
+    Check (fetch_decode_execute_loop_concatenation_v1).
     rewrite -> fetch_decode_execute_loop_concatenation_v1.
     rewrite -> fold_unfold_evaluate_Plus in H_ae.
     case (evaluate ae1) as [ n1 | s1 ] eqn:H_ev_ae1.
@@ -2209,18 +2210,116 @@ Compute (let ae1 := (Plus
         | (Expressible_msg s, _) => (Expressible_msg s, 0)
          end)).
 
+Theorem fetch_decode_execute_loop_concatenation_height :
+  forall (bci1s bci2s : list byte_code_instruction)
+         (ds : data_stack)
+         (mh ch : nat),
+    fetch_decode_execute_loop_height (bci1s ++ bci2s) ds mh ch =
+    match fetch_decode_execute_loop_height bci1s ds mh ch with
+    | OK_h ds' mh' ch' => fetch_decode_execute_loop_height bci2s ds' mh'
+                            ( match ch' with
+                              | None => 0
+                              | Some ch'' => ch''
+                              end)
+    | KO_h s => KO_h s
+    end.
+Proof.
+  intros bci1s.
+  induction bci1s as [ | bci1 bci1s' IHbci1s'].
+  - intros bci2s ds mh ch.
+    rewrite -> fold_unfold_list_append_nil.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil.
+    reflexivity.
+  - intros [ | bci2 bci2s'].
+    + intros ds mh ch.
+      rewrite -> (app_nil_r).
+      rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons.
+      case (decode_execute_height bci1 ds mh ch) as [ds1' | s1] eqn:deh_bci1.
+      * Check (IHbci1s' nil ds1' mh ch).
+        rewrite <- (app_nil_r bci1s') at 1.
+        Check (IHbci1s' nil ds1' n (match o with
+                                    | Some ch'' => ch''
+                                    | None => 0
+                                    end )).
+        exact (IHbci1s' nil ds1' n (match o with
+                                    | Some ch'' => ch''
+                                    | None => 0
+                                    end )).        
+      * reflexivity.
+    + intros ds mh ch.
+      rewrite -> fold_unfold_list_append_cons.
+      rewrite -> 2 fold_unfold_fetch_decode_execute_loop_height_cons.
+      case (decode_execute_height bci1 ds mh ch) as [ds1' | s1].
+      * Check (IHbci1s' (bci2 :: bci2s') ds1' n ( match o with
+                                                  | Some ch'' => ch''
+                                                  | None => 0
+                                                  end)).
+        exact (IHbci1s' (bci2 :: bci2s') ds1' n ( match o with
+                                                  | Some ch'' => ch''
+                                                  | None => 0
+                                                  end)).
+      * reflexivity.
+Qed.
+
 Lemma about_ae_OK_h :
   forall (ae : arithmetic_expression)
          (ds : data_stack),
     (forall (n mh ch : nat),
     evaluate ae = Expressible_nat n ->
     fetch_decode_execute_loop_height (compile_aux ae) ds mh ch =
-      OK_h (n :: ds) (max mh (S ch)) (match ch with
-                                      | 0 => None
-                                      | S ch' => Some ch'
-                                      end)).
-Admitted.
+      OK_h (n :: ds) (max mh (S ch)) (Some (S ch))).
+Proof.
+  intro ae.
+  induction ae as [ n' | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intros ds n mh ch H_ae.
+  - rewrite -> fold_unfold_compile_aux_Literal.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons.
+    unfold decode_execute_height.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil.
+    rewrite -> fold_unfold_evaluate_Literal in H_ae.
+    injection H_ae as eq_n'_n.
+    rewrite -> eq_n'_n.
+    reflexivity.
+  - rewrite -> fold_unfold_compile_aux_Plus.
+    Check (fetch_decode_execute_loop_concatenation_height
+             (compile_aux ae1)
+             (compile_aux ae2 ++ ADD :: nil) ds mh ch).
+    rewrite -> fetch_decode_execute_loop_concatenation_height.
+    rewrite -> fold_unfold_evaluate_Plus in H_ae.
+    case (evaluate ae1) as [ n1 | s1 ] eqn:E_ae1.
+    + case (evaluate ae2) as [ n2 | s2 ] eqn:E_ae2.
+      * rewrite -> (IHae1 ds n1 mh ch eq_refl).
+        rewrite -> fetch_decode_execute_loop_concatenation_height.
+        rewrite -> (IHae2 (n1 :: ds) n2 (Init.Nat.max mh (S ch)) (S ch) eq_refl).
+        rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons.
+        unfold decode_execute_height.
+        rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil.
+        injection H_ae as eq_sum_n1_n2_n.
+        rewrite -> eq_sum_n1_n2_n.
+        admit.
+      * discriminate H_ae.
+    + discriminate H_ae.
+  - rewrite -> fold_unfold_compile_aux_Minus.
+    rewrite -> fetch_decode_execute_loop_concatenation_height.
+    rewrite -> fold_unfold_evaluate_Minus in H_ae.
+    case (evaluate ae1) as [ n1 | s1 ] eqn:E_ae1.
+    + case (evaluate ae2) as [ n2 | s2 ] eqn:E_ae2.
+    * case (n1 <? n2) as [ | ] eqn:H_n1_n2.
+      -- discriminate H_ae.
+      -- rewrite -> (IHae1 ds n1 mh ch eq_refl).
+         rewrite -> fetch_decode_execute_loop_concatenation_height.
+         rewrite -> (IHae2 (n1 :: ds) n2 (Init.Nat.max mh (S ch)) (S ch) eq_refl).
+         rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons.
+         unfold decode_execute_height.
+         rewrite -> H_n1_n2.
+         rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil.
+         injection H_ae as eq_sub_n1_n2_n.
+         rewrite -> eq_sub_n1_n2_n.
+        reflexivity.
+    + discriminate H_ae.
+    + discriminate H_ae.
+Qed.
 
+    
 Theorem about_height_and_depth_of_ae_aux :
   forall (ae : arithmetic_expression)
          (h n : nat),
@@ -2240,11 +2339,9 @@ Proof.
     exact H_eq_1.
   - rewrite -> fold_unfold_depth_Plus.
     rewrite -> fold_unfold_compile_aux_Plus in H_run.
-    destruct (fetch_decode_execute_loop_height (compile_aux ae1 ++ compile_aux ae2 ++ ADD :: nil) nil 0 0) as  [ds mh ch | s] eqn:H_run'.
-    case ds  as [ | ae2' ds'] eqn:H_ds.
-    + discriminate H_run.
-    + case ds' as [ | ae1' ds''] eqn:H_ds'.
-      *
+    case (evaluate ae1) as [ n1 | s1 ] eqn:E_ae1.
+    + Check (about_ae_OK_h ae1 nil n1 0 0 E_ae1).
+      rewrite -> (about_ae_OK_h ae1 nil n1 0 0 E_ae1) in IHae1.
         (* 1 subgoal *)
         (* (1 unfocused at this level) *)
         (**)
