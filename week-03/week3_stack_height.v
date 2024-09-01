@@ -2209,14 +2209,25 @@ Compute (let ae1 := (Plus
         | (Expressible_msg s, _) => (Expressible_msg s, 0)
          end)).
 
-Theorem about_height_and_depth_of_ae :
+Lemma about_ae_OK_h :
+  forall (ae : arithmetic_expression)
+         (ds : data_stack),
+    (forall (n mh ch : nat),
+    evaluate ae = Expressible_nat n ->
+    fetch_decode_execute_loop_height (compile_aux ae) ds mh ch =
+      OK_h (n :: ds) (max mh (S ch)) (match ch with
+                                      | 0 => None
+                                      | S ch' => Some ch'
+                                      end)).
+Admitted.
+
+Theorem about_height_and_depth_of_ae_aux :
   forall (ae : arithmetic_expression)
          (h n : nat),
-    run_height (compile (Source_program ae)) = (Expressible_nat n, h) ->
-    S (depth ae) = h.
+         run_height (Target_program (compile_aux ae)) = (Expressible_nat n, h) ->
+         S (depth ae) = h.
 Proof.
   intros ae h n'.
-  unfold compile.
   intro H_run.
   induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
   - rewrite -> fold_unfold_depth_Literal.
@@ -2231,6 +2242,17 @@ Proof.
     rewrite -> fold_unfold_compile_aux_Plus in H_run.
     unfold run_height in H_run.
     rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons in H_run.
-Abort.
+Admitted.
+
+Theorem about_height_and_depth_of_ae :
+  forall (ae : arithmetic_expression)
+         (h n : nat),
+    run_height (compile (Source_program ae)) = (Expressible_nat n, h) ->
+    S (depth ae) = h.
+Proof.
+  intros ae h n'.
+  unfold compile.
+  exact (about_height_and_depth_of_ae_aux ae h n').
+Qed.
 
 (* end of week3_stack_height.v *)
