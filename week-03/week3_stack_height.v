@@ -2241,7 +2241,10 @@ Proof.
   - rewrite -> fold_unfold_depth_Plus.
     rewrite -> fold_unfold_compile_aux_Plus in H_run.
     destruct (fetch_decode_execute_loop_height (compile_aux ae1 ++ compile_aux ae2 ++ ADD :: nil) nil 0 0) as  [ds mh ch | s] eqn:H_run'.
-    
+    case ds  as [ | ae2' ds'] eqn:H_ds.
+    + discriminate H_run.
+    + case ds' as [ | ae1' ds''] eqn:H_ds'.
+      *
 (*
 1 subgoal
 (1 unfocused at this level)
