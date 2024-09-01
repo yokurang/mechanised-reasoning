@@ -482,7 +482,7 @@ Proof.
     reflexivity.
   - split.
     + split.
-      { 
+      {
         intros ae1 ae2 s1 H_ae1.
         rewrite -> fold_unfold_evaluate_Plus.
         rewrite -> H_ae1.
@@ -495,7 +495,7 @@ Proof.
         reflexivity.
 
     + split.
-      { 
+      {
         intros ae1 ae2 s1 H_ae1.
         rewrite -> fold_unfold_evaluate_Minus.
         rewrite -> H_ae1.
@@ -503,7 +503,7 @@ Proof.
        }
 
       split.
-      { 
+      {
         intros ae1 ae2 n1 s2 H_ae1 H_ae2.
         rewrite -> fold_unfold_evaluate_Minus, H_ae1, H_ae2.
         reflexivity.
@@ -2192,6 +2192,23 @@ Compute (test_run_height run_height).
 
 (* ***** *)
 
+Compute (let ae1 := (Plus
+                       (Plus (Literal 1) (Literal 2))
+                       (Plus (Literal 1) (Literal 2))) in
+         let ae2 := (Plus
+                       (Plus (Literal 1) (Literal 2))
+                       (Plus (Literal 1) (Literal 2))) in
+         (run_height (Target_program (compile_aux (Plus ae1 ae2)))) =
+        (match run_height (Target_program (compile_aux ae1)) with
+        | (Expressible_nat n1, h1) =>
+            (match run_height (Target_program (compile_aux ae2)) with
+             | (Expressible_nat n2, h2) =>
+                 (Expressible_nat (n1 + n2), (max h1 h2) + 1)
+             | (Expressible_msg s, _) => (Expressible_msg s, 0)
+             end)
+        | (Expressible_msg s, _) => (Expressible_msg s, 0)
+         end)).
+
 Theorem about_height_and_depth_of_ae :
   forall (ae : arithmetic_expression)
          (h n : nat),
@@ -2200,17 +2217,20 @@ Theorem about_height_and_depth_of_ae :
 Proof.
   intros ae h n'.
   unfold compile.
-  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intro H_run.
-  - rewrite -> fold_unfold_compile_aux_Literal in H_run.
+  intro H_run.
+  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
+  - rewrite -> fold_unfold_depth_Literal.
+    rewrite -> fold_unfold_compile_aux_Literal in H_run.
     unfold run_height in H_run.
     rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons in H_run.
     unfold decode_execute_height in H_run.
     rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil in H_run.
     injection H_run as _ h_eq_1.
-    rewrite -> fold_unfold_depth_Literal.
     exact h_eq_1.
-  - 
-  
-Qed.
+  - rewrite -> fold_unfold_depth_Plus.
+    rewrite -> fold_unfold_compile_aux_Plus in H_run.
+    unfold run_height in H_run.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons in H_run.
+Abort.
 
 (* end of week3_stack_height.v *)
