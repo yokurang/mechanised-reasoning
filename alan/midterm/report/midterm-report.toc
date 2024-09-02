@@ -1,0 +1,183 @@
+\babel@toc {english}{}\relax 
+\contentsline {section}{\numberline {1}Introduction}{7}{section.1}%
+\contentsline {section}{\numberline {2}Task 1: A Predicate for Comparing Polymorphic Lists}{7}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Question}{7}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Answer}{7}{subsection.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.1}Soundness of \texttt {eqb\_list}}{7}{subsubsection.2.2.1}%
+\contentsline {subsubsection}{\numberline {2.2.2}Completeness of \texttt {eqb\_list}}{11}{subsubsection.2.2.2}%
+\contentsline {subsection}{\numberline {2.3}Conclusion}{13}{subsection.2.3}%
+\contentsline {section}{\numberline {3}Task 2: The Length of a Polymporphic List}{14}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Question}{14}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Answer}{14}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Conclusion}{17}{subsection.3.3}%
+\contentsline {section}{\numberline {4}Task 3: Copying a Polymorphic List}{18}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Tasks 3a - 3c}{18}{subsection.4.1}%
+\contentsline {subsubsection}{\numberline {4.1.1}Question}{18}{subsubsection.4.1.1}%
+\contentsline {subsubsection}{\numberline {4.1.2}Answer}{18}{subsubsection.4.1.2}%
+\contentsline {subsubsection}{\numberline {4.1.3}Conclusion}{19}{subsubsection.4.1.3}%
+\contentsline {subsection}{\numberline {4.2}Task 3d}{19}{subsection.4.2}%
+\contentsline {subsubsection}{\numberline {4.2.1}Question}{19}{subsubsection.4.2.1}%
+\contentsline {subsubsection}{\numberline {4.2.2}Answer}{19}{subsubsection.4.2.2}%
+\contentsline {subsubsection}{\numberline {4.2.3}Conclusion}{19}{subsubsection.4.2.3}%
+\contentsline {subsection}{\numberline {4.3}Task 3e}{19}{subsection.4.3}%
+\contentsline {subsubsection}{\numberline {4.3.1}Question}{19}{subsubsection.4.3.1}%
+\contentsline {subsubsection}{\numberline {4.3.2}Answer}{19}{subsubsection.4.3.2}%
+\contentsline {subsubsection}{\numberline {4.3.3}Conclusion}{20}{subsubsection.4.3.3}%
+\contentsline {subsection}{\numberline {4.4}Task 3f}{20}{subsection.4.4}%
+\contentsline {subsubsection}{\numberline {4.4.1}Question}{20}{subsubsection.4.4.1}%
+\contentsline {subsubsection}{\numberline {4.4.2}Answer}{20}{subsubsection.4.4.2}%
+\contentsline {subsubsection}{\numberline {4.4.3}Conclusion}{20}{subsubsection.4.4.3}%
+\contentsline {subsection}{\numberline {4.5}Task 3g}{20}{subsection.4.5}%
+\contentsline {subsubsection}{\numberline {4.5.1}Question}{20}{subsubsection.4.5.1}%
+\contentsline {subsubsection}{\numberline {4.5.2}Answer}{20}{subsubsection.4.5.2}%
+\contentsline {subsubsection}{\numberline {4.5.3}Conclusion}{22}{subsubsection.4.5.3}%
+\contentsline {section}{\numberline {5}Task 4: Appending Two Polymorphic Lists}{23}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Tasks 4a - 4c}{23}{subsection.5.1}%
+\contentsline {subsubsection}{\numberline {5.1.1}Question}{23}{subsubsection.5.1.1}%
+\contentsline {subsubsection}{\numberline {5.1.2}Answer}{23}{subsubsection.5.1.2}%
+\contentsline {subsubsection}{\numberline {5.1.3}Conclusion}{23}{subsubsection.5.1.3}%
+\contentsline {subsection}{\numberline {5.2}Task 4d}{24}{subsection.5.2}%
+\contentsline {subsubsection}{\numberline {5.2.1}Question}{24}{subsubsection.5.2.1}%
+\contentsline {subsubsection}{\numberline {5.2.2}Answer}{24}{subsubsection.5.2.2}%
+\contentsline {subsubsection}{\numberline {5.2.3}Conclusion}{24}{subsubsection.5.2.3}%
+\contentsline {subsection}{\numberline {5.3}Task 4e}{24}{subsection.5.3}%
+\contentsline {subsubsection}{\numberline {5.3.1}Question}{24}{subsubsection.5.3.1}%
+\contentsline {subsubsection}{\numberline {5.3.2}Answer}{24}{subsubsection.5.3.2}%
+\contentsline {subsubsection}{\numberline {5.3.3}Conclusion}{24}{subsubsection.5.3.3}%
+\contentsline {subsection}{\numberline {5.4}Task 4f}{24}{subsection.5.4}%
+\contentsline {subsubsection}{\numberline {5.4.1}Question}{24}{subsubsection.5.4.1}%
+\contentsline {subsubsection}{\numberline {5.4.2}Answer}{24}{subsubsection.5.4.2}%
+\contentsline {subsubsection}{\numberline {5.4.3}Conclusion}{25}{subsubsection.5.4.3}%
+\contentsline {subsection}{\numberline {5.5}Task 4g}{25}{subsection.5.5}%
+\contentsline {subsubsection}{\numberline {5.5.1}Question}{25}{subsubsection.5.5.1}%
+\contentsline {subsubsection}{\numberline {5.5.2}Answer}{25}{subsubsection.5.5.2}%
+\contentsline {subsubsection}{\numberline {5.5.3}Conclusion}{25}{subsubsection.5.5.3}%
+\contentsline {subsection}{\numberline {5.6}Task 4h}{25}{subsection.5.6}%
+\contentsline {subsubsection}{\numberline {5.6.1}Question}{25}{subsubsection.5.6.1}%
+\contentsline {subsubsection}{\numberline {5.6.2}Answer}{25}{subsubsection.5.6.2}%
+\contentsline {subsubsection}{\numberline {5.6.3}Conclusion}{26}{subsubsection.5.6.3}%
+\contentsline {subsection}{\numberline {5.7}Task 4i}{26}{subsection.5.7}%
+\contentsline {subsubsection}{\numberline {5.7.1}Question}{26}{subsubsection.5.7.1}%
+\contentsline {subsubsection}{\numberline {5.7.2}Answer}{26}{subsubsection.5.7.2}%
+\contentsline {subsubsection}{\numberline {5.7.3}Conclusion}{26}{subsubsection.5.7.3}%
+\contentsline {subsection}{\numberline {5.8}Task 4j}{26}{subsection.5.8}%
+\contentsline {subsubsection}{\numberline {5.8.1}Question}{26}{subsubsection.5.8.1}%
+\contentsline {subsubsection}{\numberline {5.8.2}Answer}{26}{subsubsection.5.8.2}%
+\contentsline {subsubsection}{\numberline {5.8.3}Conclusion}{27}{subsubsection.5.8.3}%
+\contentsline {section}{\numberline {6}Task 5: Reversing Polymorphic Lists}{28}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Tasks 5a - 5c}{28}{subsection.6.1}%
+\contentsline {subsubsection}{\numberline {6.1.1}Question}{28}{subsubsection.6.1.1}%
+\contentsline {subsubsection}{\numberline {6.1.2}Answer}{28}{subsubsection.6.1.2}%
+\contentsline {subsection}{\numberline {6.2}Task 5d}{29}{subsection.6.2}%
+\contentsline {subsubsection}{\numberline {6.2.1}Question}{29}{subsubsection.6.2.1}%
+\contentsline {subsubsection}{\numberline {6.2.2}Answer}{29}{subsubsection.6.2.2}%
+\contentsline {subsection}{\numberline {6.3}Task 5e}{29}{subsection.6.3}%
+\contentsline {subsubsection}{\numberline {6.3.1}Question}{29}{subsubsection.6.3.1}%
+\contentsline {subsubsection}{\numberline {6.3.2}Answer}{29}{subsubsection.6.3.2}%
+\contentsline {subsubsection}{\numberline {6.3.3}Conclusion}{31}{subsubsection.6.3.3}%
+\contentsline {subsection}{\numberline {6.4}Task 5f}{31}{subsection.6.4}%
+\contentsline {subsubsection}{\numberline {6.4.1}Question}{31}{subsubsection.6.4.1}%
+\contentsline {subsubsection}{\numberline {6.4.2}Answer}{31}{subsubsection.6.4.2}%
+\contentsline {subsubsection}{\numberline {6.4.3}Conclusion}{32}{subsubsection.6.4.3}%
+\contentsline {subsection}{\numberline {6.5}Task 5g}{32}{subsection.6.5}%
+\contentsline {subsubsection}{\numberline {6.5.1}Question}{32}{subsubsection.6.5.1}%
+\contentsline {subsubsection}{\numberline {6.5.2}Answer}{32}{subsubsection.6.5.2}%
+\contentsline {subsubsection}{\numberline {6.5.3}Conclusion}{32}{subsubsection.6.5.3}%
+\contentsline {subsection}{\numberline {6.6}Task 5h}{32}{subsection.6.6}%
+\contentsline {subsubsection}{\numberline {6.6.1}Question}{32}{subsubsection.6.6.1}%
+\contentsline {subsubsection}{\numberline {6.6.2}Answer}{33}{subsubsection.6.6.2}%
+\contentsline {subsubsection}{\numberline {6.6.3}Conclusion}{33}{subsubsection.6.6.3}%
+\contentsline {subsection}{\numberline {6.7}Task 5i}{33}{subsection.6.7}%
+\contentsline {subsubsection}{\numberline {6.7.1}Question}{33}{subsubsection.6.7.1}%
+\contentsline {subsubsection}{\numberline {6.7.2}Answer}{34}{subsubsection.6.7.2}%
+\contentsline {section}{\numberline {7}Task 6: The Polymorphic Map Function for Lists}{36}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Task 6a}{36}{subsection.7.1}%
+\contentsline {subsubsection}{\numberline {7.1.1}Question}{36}{subsubsection.7.1.1}%
+\contentsline {subsubsection}{\numberline {7.1.2}Answer}{36}{subsubsection.7.1.2}%
+\contentsline {subsubsection}{\numberline {7.1.3}Conclusion}{36}{subsubsection.7.1.3}%
+\contentsline {subsection}{\numberline {7.2}Task 6b-d}{36}{subsection.7.2}%
+\contentsline {subsubsection}{\numberline {7.2.1}Question}{36}{subsubsection.7.2.1}%
+\contentsline {subsubsection}{\numberline {7.2.2}Answer}{36}{subsubsection.7.2.2}%
+\contentsline {subsubsection}{\numberline {7.2.3}Conclusion}{37}{subsubsection.7.2.3}%
+\contentsline {subsection}{\numberline {7.3}Task 6e}{37}{subsection.7.3}%
+\contentsline {subsubsection}{\numberline {7.3.1}Question}{37}{subsubsection.7.3.1}%
+\contentsline {subsubsection}{\numberline {7.3.2}Answer}{37}{subsubsection.7.3.2}%
+\contentsline {subsubsection}{\numberline {7.3.3}Conclusion}{38}{subsubsection.7.3.3}%
+\contentsline {subsection}{\numberline {7.4}Task 6f}{38}{subsection.7.4}%
+\contentsline {subsubsection}{\numberline {7.4.1}Question}{38}{subsubsection.7.4.1}%
+\contentsline {subsubsection}{\numberline {7.4.2}Answer}{38}{subsubsection.7.4.2}%
+\contentsline {subsubsection}{\numberline {7.4.3}Conclusion}{38}{subsubsection.7.4.3}%
+\contentsline {subsection}{\numberline {7.5}Task 6g}{38}{subsection.7.5}%
+\contentsline {subsubsection}{\numberline {7.5.1}Question}{38}{subsubsection.7.5.1}%
+\contentsline {subsubsection}{\numberline {7.5.2}Answer}{38}{subsubsection.7.5.2}%
+\contentsline {subsubsection}{\numberline {7.5.3}Conclusion}{39}{subsubsection.7.5.3}%
+\contentsline {subsection}{\numberline {7.6}Task 6h}{39}{subsection.7.6}%
+\contentsline {subsubsection}{\numberline {7.6.1}Question}{39}{subsubsection.7.6.1}%
+\contentsline {subsubsection}{\numberline {7.6.2}Answer}{39}{subsubsection.7.6.2}%
+\contentsline {subsubsection}{\numberline {7.6.3}Conclusion}{40}{subsubsection.7.6.3}%
+\contentsline {subsection}{\numberline {7.7}Task 6i}{40}{subsection.7.7}%
+\contentsline {subsubsection}{\numberline {7.7.1}Question}{40}{subsubsection.7.7.1}%
+\contentsline {subsubsection}{\numberline {7.7.2}Answer}{40}{subsubsection.7.7.2}%
+\contentsline {subsubsection}{\numberline {7.7.3}Conclusion}{41}{subsubsection.7.7.3}%
+\contentsline {subsection}{\numberline {7.8}Task 6j}{41}{subsection.7.8}%
+\contentsline {subsubsection}{\numberline {7.8.1}Question}{41}{subsubsection.7.8.1}%
+\contentsline {subsubsection}{\numberline {7.8.2}Answer}{41}{subsubsection.7.8.2}%
+\contentsline {subsubsection}{\numberline {7.8.3}Conclusion}{42}{subsubsection.7.8.3}%
+\contentsline {section}{\numberline {8}Task 7: Using Polymorphic Fold-right and Fold-left Functions}{43}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Task 7a}{43}{subsection.8.1}%
+\contentsline {subsubsection}{\numberline {8.1.1}Question}{43}{subsubsection.8.1.1}%
+\contentsline {subsubsection}{\numberline {8.1.2}Answer}{43}{subsubsection.8.1.2}%
+\contentsline {subsubsection}{\numberline {8.1.3}Conclusion}{44}{subsubsection.8.1.3}%
+\contentsline {subsection}{\numberline {8.2}Task 7d}{44}{subsection.8.2}%
+\contentsline {subsubsection}{\numberline {8.2.1}Question}{44}{subsubsection.8.2.1}%
+\contentsline {subsubsection}{\numberline {8.2.2}Answer}{44}{subsubsection.8.2.2}%
+\contentsline {subsubsection}{\numberline {8.2.3}Conclusion}{44}{subsubsection.8.2.3}%
+\contentsline {subsection}{\numberline {8.3}Task 7e}{44}{subsection.8.3}%
+\contentsline {subsubsection}{\numberline {8.3.1}Question}{44}{subsubsection.8.3.1}%
+\contentsline {subsubsection}{\numberline {8.3.2}Answer}{45}{subsubsection.8.3.2}%
+\contentsline {subsubsection}{\numberline {8.3.3}Conclusion}{46}{subsubsection.8.3.3}%
+\contentsline {subsection}{\numberline {8.4}Task 7f}{46}{subsection.8.4}%
+\contentsline {subsubsection}{\numberline {8.4.1}Question}{46}{subsubsection.8.4.1}%
+\contentsline {subsubsection}{\numberline {8.4.2}Answer}{46}{subsubsection.8.4.2}%
+\contentsline {subsubsection}{\numberline {8.4.3}Conclusion}{47}{subsubsection.8.4.3}%
+\contentsline {subsection}{\numberline {8.5}Task 7g}{47}{subsection.8.5}%
+\contentsline {subsubsection}{\numberline {8.5.1}Question}{47}{subsubsection.8.5.1}%
+\contentsline {subsubsection}{\numberline {8.5.2}Answer}{48}{subsubsection.8.5.2}%
+\contentsline {subsubsection}{\numberline {8.5.3}Conclusion}{48}{subsubsection.8.5.3}%
+\contentsline {subsection}{\numberline {8.6}Task 7h}{48}{subsection.8.6}%
+\contentsline {subsubsection}{\numberline {8.6.1}Question}{48}{subsubsection.8.6.1}%
+\contentsline {subsubsection}{\numberline {8.6.2}Answer}{48}{subsubsection.8.6.2}%
+\contentsline {subsubsection}{\numberline {8.6.3}Conclusion}{48}{subsubsection.8.6.3}%
+\contentsline {subsection}{\numberline {8.7}Task 7i}{49}{subsection.8.7}%
+\contentsline {subsubsection}{\numberline {8.7.1}Question}{49}{subsubsection.8.7.1}%
+\contentsline {subsubsection}{\numberline {8.7.2}Answer}{49}{subsubsection.8.7.2}%
+\contentsline {subsubsection}{\numberline {8.7.3}Conclusion}{49}{subsubsection.8.7.3}%
+\contentsline {subsection}{\numberline {8.8}Task 7j}{49}{subsection.8.8}%
+\contentsline {subsubsection}{\numberline {8.8.1}Question}{49}{subsubsection.8.8.1}%
+\contentsline {subsubsection}{\numberline {8.8.2}Answer}{49}{subsubsection.8.8.2}%
+\contentsline {subsubsection}{\numberline {8.8.3}Conclusion}{50}{subsubsection.8.8.3}%
+\contentsline {subsection}{\numberline {8.9}Task 7k}{50}{subsection.8.9}%
+\contentsline {subsubsection}{\numberline {8.9.1}Question}{50}{subsubsection.8.9.1}%
+\contentsline {subsubsection}{\numberline {8.9.2}Answer}{50}{subsubsection.8.9.2}%
+\contentsline {subsubsection}{\numberline {8.9.3}Conclusion}{51}{subsubsection.8.9.3}%
+\contentsline {subsection}{\numberline {8.10}Task 7l}{52}{subsection.8.10}%
+\contentsline {subsubsection}{\numberline {8.10.1}Question}{52}{subsubsection.8.10.1}%
+\contentsline {subsubsection}{\numberline {8.10.2}Answer}{52}{subsubsection.8.10.2}%
+\contentsline {subsubsection}{\numberline {8.10.3}Conclusion}{53}{subsubsection.8.10.3}%
+\contentsline {subsection}{\numberline {8.11}Task 7m}{53}{subsection.8.11}%
+\contentsline {subsubsection}{\numberline {8.11.1}Question}{53}{subsubsection.8.11.1}%
+\contentsline {subsubsection}{\numberline {8.11.2}Answer}{53}{subsubsection.8.11.2}%
+\contentsline {subsubsection}{\numberline {8.11.3}Conclusion}{54}{subsubsection.8.11.3}%
+\contentsline {subsection}{\numberline {8.12}Task 7n}{54}{subsection.8.12}%
+\contentsline {subsubsection}{\numberline {8.12.1}Question}{54}{subsubsection.8.12.1}%
+\contentsline {subsubsection}{\numberline {8.12.2}Answer}{55}{subsubsection.8.12.2}%
+\contentsline {subsubsection}{\numberline {8.12.3}Conclusion}{56}{subsubsection.8.12.3}%
+\contentsline {subsection}{\numberline {8.13}Task 7o}{56}{subsection.8.13}%
+\contentsline {subsubsection}{\numberline {8.13.1}Question}{56}{subsubsection.8.13.1}%
+\contentsline {subsubsection}{\numberline {8.13.2}Answer}{56}{subsubsection.8.13.2}%
+\contentsline {subsubsection}{\numberline {8.13.3}Conclusion}{57}{subsubsection.8.13.3}%
+\contentsline {subsection}{\numberline {8.14}Task 7p}{58}{subsection.8.14}%
+\contentsline {subsubsection}{\numberline {8.14.1}Question}{58}{subsubsection.8.14.1}%
+\contentsline {subsubsection}{\numberline {8.14.2}Answer}{58}{subsubsection.8.14.2}%
+\contentsline {subsubsection}{\numberline {8.14.3}Conclusion}{58}{subsubsection.8.14.3}%
+\contentsline {section}{\numberline {9}Conclusion}{59}{section.9}%

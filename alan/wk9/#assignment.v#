@@ -1,0 +1,28 @@
+Require Import Arith Bool.
+
+Theorem express_nat_n_as_q_and_r:
+  forall d : nat,
+    d > 0 ->
+    forall n : nat,
+    exists q r : nat,
+      (r < d) /\ (n = q * d + r).
+Proof.
+  intros d H_d.
+  intro n.
+  induction n as [ | n' IHn'].
+  + 
+  
+  
+  
+(*
+Theorem there_exists_a_natural_number_q_and_a_natural_number_r_such_that_n_is_expressed_as_q_and_r:
+  forall n d : nat,
+  forall q1 r1 : nat,
+    n = q1 * d + r1 ->
+    r1 < d ->
+    forall q2 r2 : nat,
+      n = q2 * d + r2 ->
+      r2 < d ->
+      r1 = r2 /\ q1 = q2.
+*)
+       

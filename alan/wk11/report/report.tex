@@ -1,0 +1,975 @@
+\documentclass{article}
+
+\usepackage[english]{babel}
+
+% Encoding and Fonts
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern} % Modern LaTeX font
+
+% Page layout and typography
+\usepackage[margin=0.7in]{geometry} % More balanced margin settings
+\usepackage{microtype} % Subtle improvements in word spacing for aesthetics
+\usepackage[parfill]{parskip}  % Space between paragraphs instead of indents
+
+% Graphics and Colors
+% \usepackage{minted}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{xcolor}
+\definecolor{LightGray}{gray}{0.95}
+\definecolor{colorSection}{RGB}{0, 0, 0}         
+\definecolor{colorSubsection}{RGB}{0, 0, 255}     
+\definecolor{colorSubsubsection}{RGB}{255, 0, 0}  
+\definecolor{colorSubsubsubsection}{RGB}{0, 128, 0} 
+
+% Hyperlinks
+\usepackage[hidelinks]{hyperref} 
+
+% Headers and Footers
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhead{} 
+\fancyfoot[C]{\thepage} 
+\renewcommand{\headrulewidth}{0.5pt} 
+\renewcommand{\footrulewidth}{0.5pt} 
+
+% Math Support
+\usepackage{amsmath}
+
+% Codeblocks using listings
+\usepackage{listings}
+\lstdefinelanguage{Coq}{
+  keywords={Definition, Inductive, Fixpoint, match, with, end, as, return, forall, exists, if, then, else, fun, Lemma, Proof, Qed, intro, intros, Theorem},
+  morecomment=[s]{(*}{*)}
+}
+\lstdefinestyle{customc}{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=L,
+  xleftmargin=\parindent,
+  language=Coq,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\bfseries\color{green!40!black},
+  commentstyle=\itshape\color{purple!40!black},
+  identifierstyle=\color{blue},
+  stringstyle=\color{orange},
+  backgroundcolor=\color{LightGray},
+}
+
+\definecolor{draculaBackground}{RGB}{40,42,54}
+\definecolor{draculaForeground}{RGB}{248,248,242}
+\definecolor{draculaComment}{RGB}{98,114,164}
+\definecolor{draculaKeyword}{RGB}{139,233,253}
+\definecolor{draculaFunction}{RGB}{80,250,123}
+\definecolor{draculaNumber}{RGB}{189,147,249}
+\definecolor{draculaString}{RGB}{241,250,140}
+
+\lstdefinestyle{dracula}{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=L,
+  xleftmargin=\parindent,
+  language=Coq,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily\color{draculaForeground},
+  keywordstyle=\bfseries\color{draculaKeyword},
+  commentstyle=\itshape\color{draculaComment},
+  identifierstyle=\color{draculaFunction},
+  numberstyle=\color{draculaNumber},
+  stringstyle=\color{draculaString},
+  backgroundcolor=\color{draculaBackground},
+}
+
+\lstset{style=dracula}
+
+% Lists and Enumerations
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=*} 
+
+% Other utility packages
+\usepackage{spverbatim}
+\usepackage{cprotect}
+\usepackage{lipsum}
+
+% Title sectioning with color
+\usepackage{titlesec}
+\titleformat*{\section}{\large\bfseries\color{colorSection}}
+\titleformat*{\subsection}{\normalsize\bfseries\color{colorSubsection}}
+\titleformat*{\subsubsection}{\small\bfseries\color{colorSubsubsection}}
+\titleformat{\subsubsubsection}
+{\normalsize\bfseries\color{colorSubsubsubsection}}{\thesubsubsubsection}{1em}{}
+
+\title{
+        \fontfamily{ebgaramond}\selectfont Week 11 : Programs from Proofs and Bisimilarity \\
+    \vspace{1cm}
+}
+\author{YSC3236: Functional Programming and Proving}
+\date{%
+    \vspace{1cm}
+    \today
+}
+\begin{document}
+\maketitle
+
+\begin{center}
+  \includegraphics[width=14cm]{logo.png}    
+\end{center}
+
+\begin{quote}
+  "You will be surprised to find out how many things in FPP are of the same elephant."
+\end{quote}
+\hfill--- Alan Matthew
+
+
+% Group member details
+\newpage
+\section*{Group Member Details}
+\begin{itemize}
+    \item Alan Matthew \\
+    Email: alan.matthew@u.yale-nus.edu.sg \\
+    Matriculation ID: A0224197B
+
+    \item Jingyi Hou \\
+    Email: jingyi.hou@u.yale-nus.edu.sg \\
+    Matriculation ID: A0242429E
+
+    \item Sean Lim \\
+    Email: sean.lim@u.yale-nus.edu.sg \\
+    Matriculation ID: A0230369E
+
+    \item Zhu Wentao \\
+    Email: zhu.wentao@u.yale-nus.edu.sg \\
+    Matriculation ID: A0224190N
+\end{itemize}
+\newpage
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+\section{Exercise 00}
+
+\subsection{Introduction}
+As usual, we begin this week's exercises by checking the index of concepts and the lecture notes' updates.
+
+In terms of the index of concepts, we are first introduced to the notion of \texttt{bisimilarity}. More specifically, according to the lecture notes, structural equality is an inductive notion that only applies to data that are constructed inductively. For streams, the corresponding \texttt{coinductive} notion is known as \texttt{bisimilarity}. 
+
+While lists are constructed inductively, \texttt{streams} are constructed \texttt{co-inductively} from beginning to the end. Moreover, the end is constructed on demand. The corresponding Gallina keyword in tCPA is \texttt{CoInductive}. Similar to \texttt{streams}, \texttt{lazy lists} are also constructed \texttt{co-inductively}.
+
+Last but not least, a key concept in this week's lecture is \texttt{programs from proofs}. This means that we can extract the implementation of a program from a relevant proof. We will see this in greater detail in Exercise 01 and Exercise 03 of this week. 
+
+For the lecture notes' updates, we see that the lecturer has added ``a family of programming puzzles about lists''. We will treat this section in the optional exercises this week. 
+
+\section{Exercise 01}
+
+\subsection{Introduction}
+In this exercise, we extract from the proof of even\_or\_odd a program that divides its input by two. We are provided with a skeleton which we flesh out.
+
+Here is the proof:
+
+\begin{lstlisting}
+Lemma even_or_odd :
+  forall n : nat,
+    exists q : nat,
+      n = 2 * q \/ n = S (2 * q).
+Proof.
+  intro n.
+  induction n as [ | n' IHn'].
+  - exists 0.
+    rewrite -> Nat.mul_0_r.
+    left.
+    reflexivity.
+  - destruct IHn' as [q [H_q | H_q]].
+    + rewrite -> H_q.
+      exists q.
+      right.
+      reflexivity.
+    + rewrite -> H_q.
+      rewrite -> twice_S.
+      exists (S q).
+      left.
+      reflexivity.
+  Show Proof.
+Qed.
+\end{lstlisting}
+
+\subsection{Answer}
+ 
+In the base case we wrote exists 0 and left. In the induction step we wrote exists q when n is even and exists S q when n is odd. So the corresponding program reads:
+
+\begin{lstlisting}
+Definition half_rect (n : nat) : nat :=
+  match nat_rect
+          (fun _ : nat => left_or_right)  
+          (Left 0)                        
+          (fun _ ih =>                   
+             match ih with
+             | Left q =>
+                 Right q          
+             | Right q =>
+                 Left (S q)      
+             end)
+          n
+  with
+  | Left q =>
+      q
+  | Right q =>
+      q
+  end.
+\end{lstlisting}
+
+As in the lecture notes, we can observe that since the first argument of the succ\_case parameter in the call to nat\_rect is unused, the definition of half\_rect is primitive iterative. That means we can rewrite half\_rect with nat\_fold\_right:
+
+\begin{lstlisting}
+Definition half_fold_right (n : nat) : nat :=
+  match nat_fold_right
+          left_or_right
+          (Left 0)
+          (fun ih =>                   
+             match ih with
+             | Left q =>
+                 Right q          
+             | Right q =>
+                 Left (S q)
+             end)
+          n
+  with
+  | Left q =>
+      q
+  | Right q =>
+      q
+  end.
+\end{lstlisting}
+
+And of course, since fold\_left and fold\_right are functionally equal, we can also rewrite half\_fold\_right with nat\_fold\_left:
+
+\begin{lstlisting}
+Definition half_fold_left (n : nat) : nat :=
+  match nat_fold_left
+          left_or_right
+          (Left 0)
+          (fun ih =>                   
+             match ih with
+             | Left q =>
+                 Right q          
+             | Right q =>
+                 Left (S q)
+             end)
+          n
+  with
+  | Left q =>
+      q
+  | Right q =>
+      q
+  end.
+\end{lstlisting}
+
+And following the lecture notes, we can also inline our call to nat\_fold\_left to get a tail-recursive implementation:
+
+\begin{lstlisting}
+Definition half_iterative (n : nat) : nat :=
+  let fix visit n acc :=
+    match n, acc with
+    | 0, _ =>
+        acc
+    | S n', Left q =>
+        visit n' (Right q)
+    | S n', Right q =>
+        visit n' (Left (S q))
+    end
+  in match visit n (Left 0) with
+     | Left q =>
+         q
+     | Right q =>
+         q
+     end.
+\end{lstlisting}
+ 
+\subsection{Conclusion}
+
+In this exercise we get our feet wet with extracting programs are proofs, echoing the mantra of FPP that proofs are programs and programs are proofs. We also see that there is a methodical way to do so through studying the structure of our proof and mapping that onto primitive iterative and recursive fold functions. We also saw how to convert between them or in and out of them, i.e., via in-lining the call.
+ 
+
+\section{Exercise 03}
+
+\subsection{Introduction}
+In this exercise, we prove the lemma about the square-root function and extract a program that computes it from the proof. The lemma states that for any natural number \texttt{n}, there exists natural numbers \texttt{x} and \texttt{r} such that the square root of \texttt{n} is \texttt{x} with the remainder \texttt{r}, and \texttt{r} is less than \texttt{2x + 1}.
+
+\subsection{Answer}
+We first prove the lemma by doing an induction on \texttt{n}.
+
+\begin{lstlisting}
+Lemma square_root :
+  forall n : nat,
+    exists x r : nat,
+      n = x * x + r /\ r < S (2 * x).
+Proof.
+  intro n.
+  induction n as [ | n' [x [r [H_n H_r]]]].
+  - exists 0, 0.
+    split.
+    + compute; reflexivity.
+    + rewrite -> Nat.mul_0_r.
+      exact Nat.lt_0_1.
+\end{lstlisting}
+
+For the base case, both \texttt{x} and \texttt{r} are equal to 0. For the induction step, since we have the assumption that \texttt{r < S (2 * x)}, we have 2 cases: either \texttt{r = 2 * x} or \texttt{r < 2 * x}, and we look at them separately.
+
+\begin{lstlisting}
+  - case (le_lt_or_eq r (2 * x) (Arith_prebase.lt_n_Sm_le r (2 * x) H_r)) as [lt_2x_r | eq_2x_r].
+    + exists x, (S r).
+      split.
+      * rewrite -> H_n.
+        ring.
+      * Search (_ < _ -> S _ < S _).
+        exact (Arith_prebase.lt_n_S_stt r (2 * x) lt_2x_r).
+    + exists (S x), 0.
+      split.
+      * rewrite -> H_n.
+        rewrite -> eq_2x_r.
+        ring.
+      * exact (Nat.lt_0_succ (2 * S x)).
+Qed.
+\end{lstlisting}
+
+If \texttt{r < 2 * x}, \texttt{x} remains unchanged and the remainder increases by 1, so we have \texttt{exists x, (S r)}. If \texttt{r = 2 * x}, \texttt{S n'} becomes a square number, so 
+\texttt{x} increases by 1 while the remainder becomes 0, hence \texttt{exists (S x), 0}. 
+
+Therefore, looking at the proof of the square-root function, we have \texttt{exists 0, 0} in the base case, and in the induction step, we have \texttt{exists x, (S r)} if \texttt{r} is less than \texttt{2 * x}, and \texttt{exists (S x), 0} if \texttt{r} is equal to \texttt{2 * x}. Hence, we can write the corresponding program as follows:
+
+\begin{lstlisting}
+Definition square_root_and_remainder_rect (n : nat) : nat * nat :=
+  nat_rect
+    (fun _ : nat => (nat * nat)%type)
+    (0, 0)
+    (fun _ ih =>
+       let (x, r) := ih
+       in if r <? (2 * x)
+          then (x, S r)
+          else (S x, 0))
+    n.
+\end{lstlisting}
+
+Since the first argument of the \texttt{succ\_case} parameter in the call to \texttt{nat\_rect} is unused, the definition of \texttt{square\_root\_and\_remainder\_rect} is not primitive recursive, but primitive iterative, so we can express it in terms of \texttt{nat\_fold\_right}:
+
+\begin{lstlisting}
+Definition square_root_and_remainder_right' (n : nat) : nat * nat :=
+  nat_fold_right
+    (nat * nat)
+    (0, 0)
+    (fun ih =>
+       let (x, r) := ih
+       in if r <? (2 * x)
+          then (x, S r)
+          else (S x, 0))
+    n.
+\end{lstlisting}
+
+And since \texttt{nat\_fold\_right} and \texttt{nat\_fold\_left} are functionally equal, we can replace one by the other in the definition of \texttt{square\_root\_and\_remainder\_right}:
+
+\begin{lstlisting}
+Definition square_root_and_remainder_left (n : nat) : nat * nat :=
+  nat_fold_left
+    (nat * nat)
+    (0, 0)
+    (fun ih =>
+       let (x, r) := ih
+       in if r <? (2 * x)
+          then (x, S r)
+          else (S x, 0))
+    n.
+\end{lstlisting}
+
+If we inline the call to \texttt{nat\_fold\_left}, we end up with a tail-recursive implementation of the square-root function with accumulator.
+
+\begin{lstlisting}
+Definition square_root_and_remainder_iterative (n : nat) : (nat * nat) :=
+  let fix visit n x r :=
+    match n with
+    | O =>
+        (x, r)
+    | S n' =>
+        if r <? (2 * x)
+        then visit n' x (S r)
+        else visit n' (S x) 0
+    end
+  in visit n 0 0.
+\end{lstlisting}
+
+\subsection{Conclusion}
+Similar to what we did in Exercise 01, we extracted the program of the square-root function from its proof, reflecting the correspondence between induction proofs and recursive programs through the expression of the implementation as an instance of a fold function. If the first argument of the successor case parameter in the call to \texttt{nat\_rect} is unused, we can then express the implementation using \texttt{nat\_fold\_right} and \texttt{nat\_fold\_left} instead since the definition is primitive iterative, and we can then inline the call to \texttt{nat\_fold\_left} to write the tail-recursive implementation with accumulators.
+
+\section{Exercise 04}
+
+\subsection{Introduction}
+
+In this exercise, we are introduced to streams which are constructed "coinductively", i.e. from beginning to end where the end is constructed on demand. When working with a new recursive data structure, we need a way to compare whether two instances of the data structure are structurally the same.
+
+For streams, the corresponding notion for structural equality of two data structures is called \texttt{bisimilarity}. We are asked to prove that \texttt{bisimilarity} is an equivalence relation.
+
+\begin{lstlisting}
+CoInductive bisimilar : forall V : Type, (V -> V -> Prop) -> stream V -> stream V -> Prop :=
+| Bisimilar :
+    forall (V : Type)
+           (eq_V : V -> V -> Prop)
+           (v1 v2 : V)
+           (v1s v2s : stream V),
+    eq_V v1 v2 ->
+    bisimilar V v1s v2s ->
+    bisimilar V (Cons V v1 v1s) (Cons V v2 v2s).
+\end{lstlisting}
+
+Observing the definition of bisimilarity above, we see that it is defined inductively. Furthermore, it takes a type \texttt{V}, a relation \texttt{eq\_V}, and two streams of type \texttt{V} as arguments. Note that we use \texttt{eq\_V} to compare the heads of the two stream. So, the definition of \texttt{bisimilarity} is as follows: two streams \texttt{v1s} and \texttt{v2s} are \texttt{bisimilar} if they have the same head and their tails are \texttt{bisimilar}.
+
+Note that to prove that \texttt{bisimilarity} is an equivalence relation, we need to prove that it is reflexive, symmetric, and transitive. 
+
+Further note that we are provided with the proof for reflexivity and symmetry. We are asked to prove transitivity.
+
+\subsection{Answer}
+
+\subsubsection{Reflexivity}
+
+For a relation to be reflexive, we need to prove that for all \texttt{v1s}, \texttt{bisimilar v1s v1s} holds. We can prove this by induction on \texttt{v1s}.
+
+\begin{lstlisting}
+Proposition bisimilar_refl :
+  forall (V : Type)
+         (eq_V : V -> V -> Prop),
+    (forall v : V,
+        eq_V v v) ->
+    forall vs : stream V,
+      bisimilar V eq_V vs vs.
+\end{lstlisting}
+
+Observing the proposition above, we see that it takes a type \texttt{V}, a relation \texttt{eq\_V}, and a proof that \texttt{eq\_V} is reflexive as arguments. It then returns a proof that \texttt{bisimilar} is reflexive.  
+
+Let us introduce them into the environment.
+
+\begin{lstlisting}
+1 goal (ID 16)
+
+V : Type
+eq_V : V -> V -> Prop
+eq_V_refl : forall v : V, eq_V v v
+============================
+forall vs : stream V, bisimilar V eq_V vs vs
+\end{lstlisting}
+
+We can use the \texttt{cofix} tactic to introduce the goal we are trying to prove as a coinductive hypothesis. We do this because the goal we are trying to prove, which is a statement about the \texttt{bisimilar} relation is reflexive on streams, is a coininductive statement. 
+
+\begin{lstlisting}
+1 goal (ID 17)
+
+V : Type
+eq_V : V -> V -> Prop
+eq_V_refl : forall v : V, eq_V v v
+coIH : forall vs : stream V, bisimilar V eq_V vs vs
+============================
+forall vs : stream V, bisimilar V eq_V vs vs
+\end{lstlisting}
+
+Observe that the goal takes in \texttt{vs} which is a stream. Since a stream is defined by its head and tail, we can introduce \texttt{vs} into the environment as follows.
+
+\begin{lstlisting}
+1 goal (ID 22)
+
+V : Type
+eq_V : V -> V -> Prop
+eq_V_refl : forall v : V, eq_V v v
+coIH : forall vs : stream V, bisimilar V eq_V vs vs
+v : V
+vs' : stream V
+============================
+bisimilar V eq_V (Cons V v vs') (Cons V v vs')
+\end{lstlisting}
+
+Observing our goal, we can see that it is an application of the coinductive \texttt{BiSimilar} definition we saw earlier. We need to supply the type \texttt{V}, the relation \texttt{eq\_V}, the head \texttt{v}, and the tail \texttt{vs'}. Furthermore, we also need to supply a proof that \texttt{eq\_V v v} and a proof that \texttt{bisimilar V eq\_V vs' vs'} holds. For the latter two, we can use \texttt{eq\_V\_refl} and \texttt{coIH} from the environment respectively.
+
+Using the \texttt{Check} command, we can see that the goal is indeed an application of the \texttt{BiSimilar} definition.
+
+\begin{lstlisting}
+Check (Bisimilar V eq_V v v vs' vs' (eq_V_refl v) (coIH vs')).
+(*
+Bisimilar V eq_V v v vs' vs' (eq_V_refl v) (coIH vs')
+    : bisimilar V eq_V (Cons V v vs') (Cons V v vs')
+*)
+\end{lstlisting}
+
+We can complete the proof by using the \texttt{exact} tactic.
+
+Here is the full proof for reference.
+
+\begin{lstlisting}
+Proposition bisimilar_refl :
+  forall (V : Type)
+         (eq_V : V -> V -> Prop),
+    (forall v : V,
+        eq_V v v) ->
+    forall vs : stream V,
+      bisimilar V eq_V vs vs.
+Proof.
+  intros V eq_V eq_V_refl.
+  cofix coIH.
+  intros [v vs'].
+  Check (Bisimilar V eq_V v v vs' vs' (eq_V_refl v) (coIH vs')).
+  exact (Bisimilar V eq_V v v vs' vs' (eq_V_refl v) (coIH vs')).
+Qed.
+\end{lstlisting}
+
+\subsubsection{Symmetry}
+
+For a relation to be symmetric, we need to prove that for all \texttt{v1s} and \texttt{v2s}, if \texttt{bisimilar v1s v2s} holds, then \texttt{bisimilar v2s v1s} holds. 
+
+\begin{lstlisting}
+Proposition bisimilar_sym :
+  forall (V : Type)
+         (eq_V : V -> V -> Prop),
+    (forall v1 v2 : V,
+        eq_V v1 v2 ->
+        eq_V v2 v1) ->
+    forall v1s v2s : stream V,
+      bisimilar V eq_V v1s v2s ->
+      bisimilar V eq_V v2s v1s.
+\end{lstlisting}
+
+Observing the proposition above, we see that it takes a type \texttt{V}, and a relation \texttt{eq\_V}.
+
+Similar as above, let us introduce the arguments into the environment and use the \texttt{cofix} tactic to introduce the goal we are trying to prove as a coinductive hypothesis.
+
+\begin{lstlisting}
+1 goal (ID 18)
+
+V : Type
+eq_V : V -> V -> Prop
+eq_V_sym : forall v1 v2 : V, eq_V v1 v2 -> eq_V v2 v1
+coIH : forall v1s v2s : stream V, bisimilar V eq_V v1s v2s -> bisimilar V eq_V v2s v1s
+============================
+forall v1s v2s : stream V, bisimilar V eq_V v1s v2s -> bisimilar V eq_V v2s v1s
+\end{lstlisting}
+
+Observe that the goal takes in \texttt{v1s} and \texttt{v2s} which are streams. Since a stream is defined by its head and tail, we can introduce \texttt{v1s} and \texttt{v2s} in the same way as above. Furthermore, we also need to introduce the implication in the goal, i.e. \texttt{bisimilar V eq\_V v1s v2s}.
+
+\begin{lstlisting}
+1 goal (ID 29)
+
+V : Type
+eq_V : V -> V -> Prop
+eq_V_sym : forall v1 v2 : V, eq_V v1 v2 -> eq_V v2 v1
+coIH : forall v1s v2s : stream V, bisimilar V eq_V v1s v2s -> bisimilar V eq_V v2s v1s
+v1 : V
+v1s' : stream V
+v2 : V
+v2s' : stream V
+bs_v1s_v2s : bisimilar V eq_V (Cons V v1 v1s') (Cons V v2 v2s')
+============================
+bisimilar V eq_V (Cons V v2 v2s') (Cons V v1 v1s')
+\end{lstlisting}
+
+The goal is now an instance of the \texttt{Bisimilar} definition. However, we also need to supply the proofs that \texttt{eq\_V v2 v1} and \texttt{bisimilar V eq\_V v2s' v1s'} holds. However, observing the environment, we see that we have \texttt{eq\_V\_sym} and \texttt{coIH} which are proofs of the two statements respectively, but require us to supply the proof of \texttt{eq\_V v1 v2} and \texttt{bisimilar V eq\_V v1s' v2s'} respectively.
+
+So the next step in our proof is to obtain the proofs for \texttt{eq\_V v1 v2} and \texttt{bisimilar V eq\_V v1s' v2s'}. We can use this using the lemma for the converse of bisimilarity which is provided to us as \texttt{Bisimilar\_3\_12} which given the proof for \texttt{bisimilar V eq\_V (Cons V v1 v1s') (Cons V v2 v2s')}, returns the conjunction of \texttt{eq\_V v1 v2 /\ bisimilar V eq\_V v1s' v2s'.}
+
+Let us use this to our advantage to prove the goal and use the \texttt{destruct} tactic. Since we can already prove the implication of \texttt{Bisimilar\_3\_12} using \texttt{b\_v1s\_v2s} in our environment and obtainL 
+
+\begin{lstlisting}
+Check (Bisimilar_3_12 V eq_V v1 v2 v1s' v2s' bs_v1s_v2s).
+(* 
+Bisimilar_3_12 V eq_V v1 v2 v1s' v2s' bs_v1s_v2s
+    : eq_V v1 v2 /\ bisimilar V eq_V v1s' v2s'
+*)
+
+1 goal (ID 35)
+
+V : Type
+eq_V : V -> V -> Prop
+eq_V_sym : forall v1 v2 : V, eq_V v1 v2 -> eq_V v2 v1
+coIH : forall v1s v2s : stream V, bisimilar V eq_V v1s v2s -> bisimilar V eq_V v2s v1s
+v1 : V
+v1s' : stream V
+v2 : V
+v2s' : stream V
+bs_v1s_v2s : bisimilar V eq_V (Cons V v1 v1s') (Cons V v2 v2s')
+eq_v1_v2 : eq_V v1 v2
+bs_v1s'_v2s' : bisimilar V eq_V v1s' v2s'
+============================
+bisimilar V eq_V (Cons V v2 v2s') (Cons V v1 v1s')
+
+\end{lstlisting}
+
+Now we have everything we need to use the \texttt{Bisimilar} definition to prove our goal, just like we did for reflexivity.
+
+\begin{lstlisting}
+Check (Bisimilar V eq_V v2 v1 v2s' v1s' (eq_V_sym v1 v2 eq_v1_v2) (coIH v1s' v2s' bs_v1s'_v2s')).
+(*
+Bisimilar V eq_V v2 v1 v2s' v1s' (eq_V_sym v1 v2 eq_v1_v2) (coIH v1s' v2s' bs_v1s'_v2s')
+    : bisimilar V eq_V (Cons V v2 v2s') (Cons V v1 v1s')
+*)
+\end{lstlisting}
+
+Here is the full proof for reference.
+
+\begin{lstlisting}
+Proposition bisimilar_sym :
+  forall (V : Type)
+         (eq_V : V -> V -> Prop),
+    (forall v1 v2 : V,
+        eq_V v1 v2 ->
+        eq_V v2 v1) ->
+    forall v1s v2s : stream V,
+      bisimilar V eq_V v1s v2s ->
+      bisimilar V eq_V v2s v1s.
+Proof.
+  intros V eq_V eq_V_sym.
+  cofix coIH.
+  intros [v1 v1s'] [v2 v2s'] bs_v1s_v2s.
+  Check (Bisimilar_3_12 V eq_V v1 v2 v1s' v2s' bs_v1s_v2s).
+  destruct (Bisimilar_3_12 V eq_V v1 v2 v1s' v2s' bs_v1s_v2s) as [eq_v1_v2 bs_v1s'_v2s'].
+  Check (Bisimilar V eq_V v2 v1 v2s' v1s').
+  Check (Bisimilar V eq_V v2 v1 v2s' v1s' (eq_V_sym v1 v2 eq_v1_v2)).
+  Check (Bisimilar V eq_V v2 v1 v2s' v1s' (eq_V_sym v1 v2 eq_v1_v2) (coIH v1s' v2s' bs_v1s'_v2s')).
+  exact (Bisimilar V eq_V v2 v1 v2s' v1s' (eq_V_sym v1 v2 eq_v1_v2) (coIH v1s' v2s' bs_v1s'_v2s')).
+Qed.
+\end{lstlisting}
+
+\subsubsection{Transitivity}
+
+For a relation to be transitive, we need to prove that for all \texttt{v1s}, \texttt{v2s}, and \texttt{v3s}, if \texttt{bisimilar v1s v2s} and \texttt{bisimilar v2s v3s} hold, then \texttt{bisimilar v1s v3s} holds.
+
+\begin{lstlisting}
+Proposition bisimilar_trans :
+  forall (V : Type)
+         (eq_V : V -> V -> Prop),
+    (forall v1 v2 v3: V,
+        eq_V v1 v2 ->
+        eq_V v2 v3 ->
+        eq_V v1 v3) ->
+    forall v1s v2s v3s: stream V,
+      bisimilar V eq_V v1s v2s ->
+      bisimilar V eq_V v2s v3s ->
+      bisimilar V eq_V v1s v3s.
+\end{lstlisting}
+
+This proof for this is similar to the proofs for reflexivity and symmetry, but with some extra steps since we are proving the relation holds for three streams instead of two.
+
+Let us proceed as routine and introduce the arguments into the environment and use the \texttt{cofix} tactic to introduce the goal we are trying to prove as a coinductive hypothesis.
+
+\begin{lstlisting}
+1 goal (ID 19)
+
+V : Type
+eq_V : V -> V -> Prop
+eq_V_trans : forall v1 v2 v3 : V, eq_V v1 v2 -> eq_V v2 v3 -> eq_V v1 v3
+coIH : forall v1s v2s v3s : stream V,
+        bisimilar V eq_V v1s v2s -> bisimilar V eq_V v2s v3s -> bisimilar V eq_V v1s v3s
+============================
+forall v1s v2s v3s : stream V,
+bisimilar V eq_V v1s v2s -> bisimilar V eq_V v2s v3s -> bisimilar V eq_V v1s v3s
+\end{lstlisting}
+
+Furthermore, we can introduce \texttt{v1s}, \texttt{v2s}, and \texttt{v3s} as well as the implication in the goal, i.e. \texttt{bisimilar V eq\_V v1s v2s} and \texttt{bisimilar V eq\_V v2s v3s}.
+
+\begin{lstlisting}
+1 goal (ID 36)
+
+V : Type
+eq_V : V -> V -> Prop
+eq_V_trans : forall v1 v2 v3 : V, eq_V v1 v2 -> eq_V v2 v3 -> eq_V v1 v3
+coIH : forall v1s v2s v3s : stream V,
+        bisimilar V eq_V v1s v2s -> bisimilar V eq_V v2s v3s -> bisimilar V eq_V v1s v3s
+v1 : V
+v1s' : stream V
+v2 : V
+v2s' : stream V
+v3 : V
+v3s' : stream V
+bs_v1s_v2s : bisimilar V eq_V (Cons V v1 v1s') (Cons V v2 v2s')
+bs_v2s_v3s : bisimilar V eq_V (Cons V v2 v2s') (Cons V v3 v3s')
+============================
+bisimilar V eq_V (Cons V v1 v1s') (Cons V v3 v3s')
+\end{lstlisting}
+
+We can see that, similar as before, we need to supply the proof for \texttt{eq\_V v1 v3} and \texttt{bisimilar V eq\_V v1s v3s} to the coininductive \texttt{BiSimilar} definition. 
+
+Observing our environment, we can obtain the necessary proofs from \texttt{eq\_V\_trans} and \texttt{coIH}. However, we also need to supply the proofs for their implications. We can notice a pattern here which is that as we increase the number of streams we are comparing in our relation, the number of implications we need to prove increases by one. This makes sense since the relation is structural equality. 
+
+Going back to the main proof, we can use the \texttt{Bisimilar\_3\_12} lemma to obtain the proofs for the implications, similar to what we did for symmetry. However, since we have two implications, we need to use the \texttt{destruct} tactic twice, one for each implication.
+
+\begin{lstlisting}
+1 goal (ID 48)
+
+V : Type
+eq_V : V -> V -> Prop
+eq_V_trans : forall v1 v2 v3 : V, eq_V v1 v2 -> eq_V v2 v3 -> eq_V v1 v3
+coIH : forall v1s v2s v3s : stream V,
+        bisimilar V eq_V v1s v2s -> bisimilar V eq_V v2s v3s -> bisimilar V eq_V v1s v3s
+v1 : V
+v1s' : stream V
+v2 : V
+v2s' : stream V
+v3 : V
+v3s' : stream V
+bs_v1s_v2s : bisimilar V eq_V (Cons V v1 v1s') (Cons V v2 v2s')
+bs_v2s_v3s : bisimilar V eq_V (Cons V v2 v2s') (Cons V v3 v3s')
+eq_v1_v2 : eq_V v1 v2
+bs_v1s'_v2s' : bisimilar V eq_V v1s' v2s'
+eq_v2_v3 : eq_V v2 v3
+bs_v2s'_v3s' : bisimilar V eq_V v2s' v3s'
+============================
+bisimilar V eq_V (Cons V v1 v1s') (Cons V v3 v3s')
+\end{lstlisting}
+
+Now we have everything we need to use the \texttt{Bisimilar} definition and \texttt{exact} tactic to prove our goal, just like we did for reflexivity and symmetry.
+
+Here is the full proof for reference.
+
+\begin{lstlisting}
+Proposition bisimilar_trans :
+  forall (V : Type)
+         (eq_V : V -> V -> Prop),
+    (forall v1 v2 v3: V,
+        eq_V v1 v2 ->
+        eq_V v2 v3 ->
+        eq_V v1 v3) ->
+    forall v1s v2s v3s: stream V,
+      bisimilar V eq_V v1s v2s ->
+      bisimilar V eq_V v2s v3s ->
+      bisimilar V eq_V v1s v3s.
+Proof.
+  intros V eq_V eq_V_trans.
+  cofix coIH.
+  intros [v1 v1s'] [v2 v2s'] [v3 v3s'] bs_v1s_v2s bs_v2s_v3s.
+  Check (Bisimilar_3_12 V eq_V v2 v3 v2s' v3s' bs_v2s_v3s).
+  destruct (Bisimilar_3_12 V eq_V v1 v2 v1s' v2s' bs_v1s_v2s) as [eq_v1_v2 bs_v1s'_v2s'].
+  destruct (Bisimilar_3_12 V eq_V v2 v3 v2s' v3s' bs_v2s_v3s) as [eq_v2_v3 bs_v2s'_v3s'].
+  Check (Bisimilar V eq_V v2 v3 v2s' v3s').
+  Check (Bisimilar V eq_V v1 v3 v1s' v3s' (eq_V_trans v1 v2 v3 eq_v1_v2 eq_v2_v3)).
+  Check (Bisimilar V eq_V v1 v3 v1s' v3s' (eq_V_trans v1 v2 v3 eq_v1_v2 eq_v2_v3)
+           (coIH v1s' v2s' v3s' bs_v1s'_v2s' bs_v2s'_v3s')).
+  exact (Bisimilar V eq_V v1 v3 v1s' v3s' (eq_V_trans v1 v2 v3 eq_v1_v2 eq_v2_v3)
+           (coIH v1s' v2s' v3s' bs_v1s'_v2s' bs_v2s'_v3s')).
+Qed.
+\end{lstlisting}
+
+\subsection{Conclusion}
+
+In this exercise, we are introduced to streams which are constructed "coinductively", i.e. from beginning to end where the end is constructed on demand. Through this exercise, we become familiar with the notion of \texttt{bisimilarity}, coinduction, and the \texttt{cofix} tactic. Furthermore, by proving the transitivity of \texttt{bisimilarity}, we became familiar with how we can using the converse of a relation to prove properties about the relation.
+
+\newpage
+
+\section{Optional exercises}
+
+\subsection{Introduction}
+In the optional exercises this week, we are invited to consider a family of programming puzzles about lists. Specifically, we are given a series of puzzles which use the same recursion pattern. As such, their solutions can be expressed using a fold function over lists. In particular, we consider the problem of indexing a list from right to left in this section. We are going to implement this using \texttt{list\_fold\_left}.
+
+\subsection{Answer}
+The implementation using \texttt{list\_fold\_left} is as follows: 
+
+\begin{lstlisting}
+Definition list_index_rtl_left (V : Type) (vs : list V) (n : nat) : option V :=
+  list_fold_left V (nat -> option V) (fun _ => None)
+    (fun a ih v =>
+       match v with
+       | O => Some a
+       | S n' => ih n'
+       end
+    ) vs n.
+\end{lstlisting}
+
+To test our implementation, we can look at the test \texttt{test\_list\_index\_rtl\_nat} given above in the file. 
+
+\begin{lstlisting}
+Compute (test_list_index_rtl_nat (fun ns n => list_index_rtl_left nat ns n)).
+\end{lstlisting}
+
+This implementation passes the test. 
+
+To prove the correctness of our implementation, we need to look at how indexing a list from left to right is implemented in the same file.
+
+\begin{lstlisting}
+Fixpoint list_index_ltr (V : Type) (vs : list V) (n : nat) : option V :=
+  match vs with
+  | nil =>
+    None
+  | v :: vs' =>
+    match n with
+    | O =>
+      Some v
+    | S n' =>
+      list_index_ltr V vs' n'
+    end
+  end.
+\end{lstlisting}
+
+We then observe another test:
+
+\begin{lstlisting}
+Compute (test_list_index_rtl_nat (fun ns n => list_index_ltr nat (list_reverse nat ns) n)).
+\end{lstlisting}
+
+Here we see that indexing a list from left to right and indexing a list from right to left can be related using the \texttt{list\_reverse} function. As such, we can formalise the correctness of \texttt{list\_index\_rtl\_left} in the following manner:
+
+\begin{lstlisting}
+Theorem correctness_of_list_index_rtl_left :
+  forall (V : Type)
+         (vs : list V)
+         (n : nat),
+    list_index_rtl_left V vs n = list_index_ltr V (list_reverse V vs) n.
+\end{lstlisting}
+
+The theorem is stating that indexing a list from right to left should yield the same result as indexing the reverse of that list from left to right, given the same natural number \texttt{n}. This concurs with our intuitive understanding as well.
+
+Before we proceed with the proof, it is critical to set up the relevant infrastructure. In particular, we need to investigate the recursive functions and write the relevant fold-unfold lemmas. 
+
+In the theorem, there are three recursive functions: \texttt{list\_index\_rtl\_left}, \texttt{list\_index\_ltr} and \texttt{list\_reverse}. Specifically, \texttt{list\_index\_ltr} and \texttt{list\_reverse} are recursive functions with the \texttt{Fixpoint} notation. \texttt{list\_index\_rtl\_left} is recursive as it is implemented with the recursive function \texttt{list\_fold\_left}.
+
+The fold-unfold lemmas for \texttt{list\_fold\_left} and \texttt{list\_reverse} can be found in the midterm project. We will also make use of the fold-unfold lemmas for \texttt{list\_fold\_right} and \texttt{list\_append} in this proof. Here we will write the fold-unfold lemmas for \texttt{list\_index\_ltr}, carefully applying the structure we know:
+
+\begin{lstlisting}
+Lemma fold_unfold_list_index_ltr_nil :
+  forall (V : Type)
+         (n : nat),
+    list_index_ltr V nil n =
+      None.
+Proof.
+  fold_unfold_tactic list_index_ltr.
+Qed.
+
+Lemma fold_unfold_list_index_ltr_cons :
+    forall (V : Type)
+        (v : V)
+        (vs' : list V)
+        (n : nat),
+    list_index_ltr V (v :: vs') n =
+    match n with
+    | O =>
+    Some v
+    | S n' =>
+    list_index_ltr V vs' n'
+    end.
+Proof.
+    fold_unfold_tactic list_index_ltr.
+Qed.
+\end{lstlisting}
+
+Now we are ready to begin our proof. We first attempted a direct proof of the theorem, like this :
+
+\begin{lstlisting}
+           
+Theorem correctness_of_list_index_rtl_left :
+  forall (V : Type)
+         (vs : list V)
+         (n : nat),
+    list_index_rtl_left V vs n = list_index_ltr V (list_reverse V vs) n.
+Proof.
+  Compute (let V := nat in
+           let vs := 3 :: 2 :: 1 :: 0 :: nil in
+           let n := 1 in
+           list_index_rtl_left V vs n = list_index_ltr V (List.rev vs) n).
+  intros V vs.
+  induction vs as [ | v' vs' IHvs'].
+  - intros [ | n'].
+    + rewrite -> (fold_unfold_list_reverse_nil V).
+      rewrite -> (fold_unfold_list_index_ltr_nil V).
+      unfold list_index_rtl_left.
+      rewrite -> (fold_unfold_list_fold_left_nil V
+                    (nat -> option V)
+                    (fun _ : nat => None)
+                    (fun (a : V)
+                         (ih : nat -> option V)
+                         (v : nat) => match v with
+                                      | 0 => Some a
+                                      | S n' => ih n'
+                                      end)).
+      reflexivity.
+    + rewrite -> (fold_unfold_list_reverse_nil V).
+      rewrite -> (fold_unfold_list_index_ltr_nil V). 
+      unfold list_index_rtl_left.
+      rewrite -> (fold_unfold_list_fold_left_nil V
+                    (nat -> option V)
+                    (fun _ : nat => None)
+                    (fun (a : V)
+                         (ih : nat -> option V)
+                         (v : nat) => match v with
+                                      | 0 => Some a
+                                      | S n'0 => ih n'0
+                                      end)).
+      reflexivity.
+  - intros n.
+\end{lstlisting}
+
+At this point, the *goals* window reads :
+
+\begin{lstlisting}
+1 goal (ID 663)
+  
+  V : Type
+  v' : V
+  vs' : list V
+  IHvs' : forall n : nat,
+          list_index_rtl_left V vs' n =
+          list_index_ltr V (list_reverse V vs') n
+  n : nat
+  ============================
+  list_index_rtl_left V (v' :: vs') n =
+  list_index_ltr V (list_reverse V (v' :: vs')) n
+\end{lstlisting}
+
+We then formulated the following Eureka lemma by combining our goal and the induction hypothesis:
+
+\begin{lstlisting}
+Theorem about_the_correctness_of_list_index_rtl_left :
+  forall (V : Type)
+         (v' : V)
+         (vs' : list V)
+         (n : nat),
+    list_index_rtl_left V vs' n =
+      list_index_ltr V (list_reverse V vs') n ->
+    list_index_rtl_left V (v' :: vs') n =
+      list_index_ltr V (list_reverse V (v' :: vs')) n.
+\end{lstlisting}
+
+However, proving this turns out to be a big challenge. Indeed, it is quite difficult to come up with an actionable lemma that can be of help if we go down this route. We are then invited to consider an indirect proof by relating \texttt{list\_fold\_left} and \texttt{list\_fold\_right}, which is also something we investigated in the midterm project.
+
+\begin{lstlisting}
+Theorem relating_list_fold_left_and_list_fold_right_using_list_reverse :
+  forall (V W : Type)
+         (nil_case : W)
+         (cons_case : V -> W -> W)
+         (vs : list V),
+    list_fold_left  V W nil_case cons_case vs =
+      list_fold_right V W nil_case cons_case (list_reverse V vs).
+\end{lstlisting}
+
+By using this upfront, we can hopefully come up with an Eureka lemma that can be proved routinely and applied. We attempted this by first using the \texttt{unfold} and \texttt{rewrite} tactics at the beginning of our proof :
+
+\begin{lstlisting}
+unfold list_index_rtl_left.
+rewrite -> (relating_list_fold_left_and_list_fold_right_using_list_reverse V
+            (nat -> option V)
+            (fun _ : nat => None)
+            (fun (a : V)
+                    (ih : nat -> option V)
+                    (v : nat) =>
+                match v with
+                | 0 => Some a
+                | S n' => ih n'
+                end) vs).
+\end{lstlisting}
+
+Unfortunately, we ran out of the time allotted for FPP after some more failed attempts. But this is where we ended up with at the time of submission.    
+\subsection{Conclusion}
+From this exercise, we have learnt to be mindful of what we have been introduced to so far in this course, in particular the midterm project. This is especially true as we need to learn the moves properly to make meaningful progress in our proof. Otherwise, it is easy to get stuck and move in random directions. 
+
+\section{Conclusion}
+
+\begin{enumerate}
+  \item \textbf{Exercises 01 \& 03} : In these 2 exercises, we learn how to extract programs from proofs through fold functions, which furthers our understanding of the correspondence between induction proofs and recursive programs. We also learn how to write tail-recursive functions with accumulators using the proofs. If the first argument of the successor case parameter in the call to \texttt{nat\_rect} is unused, i.e., the definition is primitive iterative, we can express the implementation using \texttt{nat\_fold\_right} and \texttt{nat\_fold\_left}, which is functionally equivalent, and the job is done by inlining the call to \texttt{nat\_fold\_left}.
+
+  \item \textbf{Exercise 04} : In this exercise, we are introduced to streams which are constructed "coinductively", in Coq. This is our first introduction to inductive data structures in Coq in which the end is constructed on demand. As we prove the property of transitivity of \texttt{bisimilarity}, we become familiar with how we can using the converse of a relation to prove properties about the relation. Furthermore, we also noticed that in the proof for transitivity, the number of implications we need to prove increases by one as we increase the number of streams we are comparing in our relation. This makes sense since the relation is structural equality.
+
+  \item \textbf{Optional exercises} : For the optional exercises this week, we are invited to consider a family of programming puzzles about lists. Here we reaffirm our appreciation of folding left and right, especially their role in expressing the recursion patterns in these puzzles listed. Perhaps more importantly, we are again reminded to keep in mind the previous lemmas proved and make use of them to make further progress. Indeed, we can only do more complex stuff building on top of what we already know.
+\end{enumerate}
+
+\end{document}

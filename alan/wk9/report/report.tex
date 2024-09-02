@@ -1,0 +1,1840 @@
+\documentclass{article}
+
+\usepackage[english]{babel}
+
+% Encoding and Fonts
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern} % Modern LaTeX font
+
+% Page layout and typography
+\usepackage[margin=0.7in]{geometry} % More balanced margin settings
+\usepackage{microtype} % Subtle improvements in word spacing for aesthetics
+\usepackage[parfill]{parskip}  % Space between paragraphs instead of indents
+
+% Graphics and Colors
+% \usepackage{minted}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{xcolor}
+\definecolor{LightGray}{gray}{0.95}
+\definecolor{colorSection}{RGB}{0, 0, 0}         
+\definecolor{colorSubsection}{RGB}{0, 0, 255}     
+\definecolor{colorSubsubsection}{RGB}{255, 0, 0}  
+\definecolor{colorSubsubsubsection}{RGB}{0, 128, 0} 
+
+% Hyperlinks
+\usepackage[hidelinks]{hyperref} 
+
+% Headers and Footers
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhead{} 
+\fancyfoot[C]{\thepage} 
+\renewcommand{\headrulewidth}{0.5pt} 
+\renewcommand{\footrulewidth}{0.5pt} 
+
+% Math Support
+\usepackage{amsmath}
+
+% Codeblocks using listings
+\usepackage{listings}
+\lstdefinelanguage{Coq}{
+  keywords={Definition, Inductive, Fixpoint, match, with, end, as, return, forall, exists, if, then, else, fun, Lemma, Proof, Qed, intro, intros, Theorem},
+  morecomment=[s]{(*}{*)}
+}
+\lstdefinestyle{customc}{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=L,
+  xleftmargin=\parindent,
+  language=Coq,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\bfseries\color{green!40!black},
+  commentstyle=\itshape\color{purple!40!black},
+  identifierstyle=\color{blue},
+  stringstyle=\color{orange},
+  backgroundcolor=\color{LightGray},
+}
+
+\definecolor{draculaBackground}{RGB}{40,42,54}
+\definecolor{draculaForeground}{RGB}{248,248,242}
+\definecolor{draculaComment}{RGB}{98,114,164}
+\definecolor{draculaKeyword}{RGB}{139,233,253}
+\definecolor{draculaFunction}{RGB}{80,250,123}
+\definecolor{draculaNumber}{RGB}{189,147,249}
+\definecolor{draculaString}{RGB}{241,250,140}
+
+\lstdefinestyle{dracula}{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=L,
+  xleftmargin=\parindent,
+  language=Coq,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily\color{draculaForeground},
+  keywordstyle=\bfseries\color{draculaKeyword},
+  commentstyle=\itshape\color{draculaComment},
+  identifierstyle=\color{draculaFunction},
+  numberstyle=\color{draculaNumber},
+  stringstyle=\color{draculaString},
+  backgroundcolor=\color{draculaBackground},
+}
+
+\lstset{style=dracula}
+
+% Lists and Enumerations
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=*} 
+
+% Other utility packages
+\usepackage{spverbatim}
+\usepackage{cprotect}
+\usepackage{lipsum}
+
+% Title sectioning with color
+\usepackage{titlesec}
+\titleformat*{\section}{\large\bfseries\color{colorSection}}
+\titleformat*{\subsection}{\normalsize\bfseries\color{colorSubsection}}
+\titleformat*{\subsubsection}{\small\bfseries\color{colorSubsubsection}}
+\titleformat{\subsubsubsection}
+{\normalsize\bfseries\color{colorSubsubsubsection}}{\thesubsubsubsection}{1em}{}
+
+\title{
+    \fontfamily{ebgaramond}\selectfont Week 9 : Formalizing in tCPA \\
+    \vspace{1cm}
+    \includegraphics[width=0.8\linewidth]{download.jpeg}
+}
+\author{YSC3236: Functional Programming and Proving}
+\date{%
+    \vspace{1cm}
+    \today
+}
+\begin{document}
+\maketitle
+
+% Group member details
+\newpage
+\section*{Group Member Details}
+\begin{itemize}
+    \item Alan Matthew \\
+    Email: alan.matthew@u.yale-nus.edu.sg \\
+    Matriculation ID: A0224197B
+
+    \item Jingyi Hou \\
+    Email: jingyi.hou@u.yale-nus.edu.sg \\
+    Matriculation ID: A0242429E
+
+    \item Sean Lim \\
+    Email: sean.lim@u.yale-nus.edu.sg \\
+    Matriculation ID: A0230369E
+
+    \item Zhu Wentao \\
+    Email: zhu.wentao@u.yale-nus.edu.sg \\
+    Matriculation ID: A0224190N
+\end{itemize}
+\newpage
+\tableofcontents
+\newpage
+
+\section{Introduction}
+Moving on from the midterm project, we now revisit some of the exercises left untreated in previous weeks of the course. Moreover, we start to realise that there are certain techniques beyond the routine in tCPA to make our proofs more succinct. Nonetheless, we can only appreciate this through a rigorous training that allows us to gain muscle memory and familiarity with proof-writing in Coq. Indeed, this is what we are being tested on in the first oral exam of the course. As we were told in the lecture, it is only after we know the rules can we start to break them in a meaningful way.
+
+\section{Exercise 00}
+While there are no new tactics to learn this week, we took the time to check the lecture notes' updates and reproduce the technical content. In particular, we are introduced to how to formalise informal proofs in this week's lecture. It is shift from the previous weeks, as we were usually given the proposition to prove by the lecturer. It is thus an invitation to be systematic and understand how to translate descriptions in the natural language to formal language in a Coq program. In particular, we will see how we formalise the Euclid's lemma, summations and 2-by-2 matrices in this week's exercises. 
+
+\section{Exercise 08 in Week 07}
+
+\subsection{Introduction}
+In this exercise, we are asked to implement an equality predicate of type \texttt{option bool * list unit -> option bool * list unit -> bool}. After that, we need to prove the soundness and completeness of this equality predicate. 
+
+As a hint, we are reminded that the unit value in tCPA is written \texttt{tt} and has type \texttt{unit}.
+
+\subsection{Answer}
+As we begin, we can prove the soundness and completeness of \texttt{eqb\_bool} as a warm-up exercise:
+
+\begin{lstlisting}
+Lemma eqb_bool_is_reflexive :
+  forall b : bool,
+    eqb_bool b b = true.
+Proof.
+  intros [ | ]; unfold eqb_bool; reflexivity.
+Qed.
+
+Proposition soundness_and_completeness_of_eqb_bool :
+  is_a_sound_and_complete_equality_predicate bool eqb_bool.
+Proof.
+  unfold is_a_sound_and_complete_equality_predicate.
+  intros v1 v2.
+  split.
+  - Search (eqb _ _ = _ -> _ = _).
+    Check (eqb_prop v1 v2).
+    exact (eqb_prop v1 v2).
+  - intro H_true.
+    rewrite <- (eqb_bool_is_reflexive v1).
+    rewrite <- H_true.
+    reflexivity.
+Qed.
+\end{lstlisting}
+Since we are given an implementation of \texttt{eqb\_option} and \texttt{eqb\_bool}, we can make use of these to implement \texttt{eqb\_option\_bool}, like this:
+
+\begin{lstlisting}
+Definition eqb_option_bool (ov1 ov2 : option bool) : bool :=
+  eqb_option bool eqb_bool ov1 ov2.
+\end{lstlisting}
+
+Given the hint that the unit value in tCPA is written \texttt{tt} and has type \texttt{unit}, we can similarly implement \texttt{eqb\_unit} in a concise manner:
+
+\begin{lstlisting}
+Definition eqb_unit (u1 u2 : unit) : bool :=
+    true.
+\end{lstlisting}
+
+We also have an implementation of \texttt{eqb\_list} in the file. Combining it with \texttt{eqb\_unit}, we can implement \texttt{eqb\_list\_unit} like this:
+
+\begin{lstlisting}
+Definition eqb_list_unit (lu1 lu2 : list unit) : bool :=
+  eqb_list unit eqb_unit lu1 lu2.
+\end{lstlisting}
+
+How do we combine \texttt{eqb\_option\_bool} with \texttt{eqb\_list\_unit}? Luckily, we also have an implementation of \texttt{eqb\_pair} in the same file. We can thus implement \texttt{eqb\_option\_bool\_list\_unit} like this:
+
+\begin{lstlisting}
+Definition eqb_option_bool_list_unit (p1 p2 : option bool * list unit) : bool :=
+  eqb_pair (option bool) eqb_option_bool (list unit) eqb_list_unit p1 p2.
+\end{lstlisting}
+
+Let us now check the type of \texttt{eqb\_option\_bool\_list\_unit} using the \texttt{Check} command:
+
+\begin{lstlisting}
+Check (eqb_option_bool_list_unit).
+\end{lstlisting}
+
+The response buffer reads:
+
+\begin{lstlisting}
+eqb_option_bool_list_unit
+     : option bool * list unit ->
+       option bool * list unit -> bool
+\end{lstlisting}
+
+The type is correct! Now we can move on to prove the soundness and completeness of this equality predicate. 
+
+Since we implement \texttt{eqb\_option\_bool\_list\_unit} using \texttt{eqb\_pair}, it would be of great help if we could prove the soundness and completeness of \texttt{eqb\_pair}.
+
+We begin the proof by first carefully introducing and naming the relevant terms, like this:
+
+\begin{lstlisting}
+Proposition soundness_and_completeness_of_eqb_pair :
+  forall (V : Type)
+         (eqb_V : V -> V -> bool)
+         (W : Type)
+         (eqb_W : W -> W -> bool),
+    is_a_sound_and_complete_equality_predicate V eqb_V ->
+    is_a_sound_and_complete_equality_predicate W eqb_W ->
+    is_a_sound_and_complete_equality_predicate (V * W) (eqb_pair V eqb_V W eqb_W).
+Proof.
+  unfold is_a_sound_and_complete_equality_predicate.
+  intros V eqb_V W eqb_W.
+  intros SC_eqb_V SC_eqb_W.
+  intros [v1 w1] [v2 w2].
+  Check (SC_eqb_V v1 v2).
+  destruct (SC_eqb_V v1 v2) as [S_eqb_V C_eqb_V].
+  destruct (SC_eqb_W w1 w2) as [S_eqb_W C_eqb_W].
+\end{lstlisting}
+
+Now the *goals* window reads:
+
+\begin{lstlisting}
+1 goal (ID 69)
+  
+  V : Type
+  eqb_V : V -> V -> bool
+  W : Type
+  eqb_W : W -> W -> bool
+  SC_eqb_V : forall v1 v2 : V,
+             eqb_V v1 v2 = true <-> v1 = v2
+  SC_eqb_W : forall v1 v2 : W,
+             eqb_W v1 v2 = true <-> v1 = v2
+  v1 : V
+  w1 : W
+  v2 : V
+  w2 : W
+  S_eqb_V : eqb_V v1 v2 = true -> v1 = v2
+  C_eqb_V : v1 = v2 -> eqb_V v1 v2 = true
+  S_eqb_W : eqb_W w1 w2 = true -> w1 = w2
+  C_eqb_W : w1 = w2 -> eqb_W w1 w2 = true
+  ============================
+  eqb_pair V eqb_V W eqb_W (v1, w1) (v2, w2) = true <->
+  (v1, w1) = (v2, w2)
+\end{lstlisting}
+
+Here we can see that all the assumptions are given a telling and meaningful name. Moreover, all the assumptions have the correct type.
+
+We proceed with the proof by using the \texttt{split} tactic and prove each case. It is worth noting that in the second case, we need to use the \texttt{injection} tactic to name the equalities of the components in each pair.
+
+The entire proof is shown below:
+
+\begin{lstlisting}
+Proposition soundness_and_completeness_of_eqb_pair :
+  forall (V : Type)
+         (eqb_V : V -> V -> bool)
+         (W : Type)
+         (eqb_W : W -> W -> bool),
+    is_a_sound_and_complete_equality_predicate V eqb_V ->
+    is_a_sound_and_complete_equality_predicate W eqb_W ->
+    is_a_sound_and_complete_equality_predicate (V * W) (eqb_pair V eqb_V W eqb_W).
+Proof.
+  unfold is_a_sound_and_complete_equality_predicate.
+  intros V eqb_V W eqb_W.
+  intros SC_eqb_V SC_eqb_W.
+  intros [v1 w1] [v2 w2].
+  Check (SC_eqb_V v1 v2).
+  destruct (SC_eqb_V v1 v2) as [S_eqb_V C_eqb_V].
+  destruct (SC_eqb_W w1 w2) as [S_eqb_W C_eqb_W].
+  split.
+  - unfold eqb_pair.
+    intro eqb_VW.
+    Search (_ && _ = true -> _).
+    Check (andb_prop (eqb_V v1 v2) (eqb_W w1 w2)).
+    Check (andb_prop (eqb_V v1 v2) (eqb_W w1 w2) eqb_VW).
+    destruct (andb_prop (eqb_V v1 v2) (eqb_W w1 w2) eqb_VW) as [eqb_v1_v2 eqb_w1_w2].
+    Check (S_eqb_V eqb_v1_v2).
+    rewrite -> (S_eqb_V eqb_v1_v2).
+    Check (S_eqb_W eqb_w1_w2).
+    rewrite -> (S_eqb_W eqb_w1_w2).
+    reflexivity.
+  - unfold eqb_pair.
+    intro eqb_VW.
+    injection eqb_VW as eq_v1_v2 eq_w1_w2.
+    Check (C_eqb_V eq_v1_v2).
+    rewrite -> (C_eqb_V eq_v1_v2).
+    Check (C_eqb_W eq_w1_w2).
+    rewrite -> (C_eqb_W eq_w1_w2).
+    Search (_ && _ = _).
+    Check (andb_true_r true).
+    exact (andb_true_r true).
+Qed.
+\end{lstlisting}
+
+Due to time constraints, we are going to admit a few propositions, namely the soundness and completeness of \texttt{eqb\_list} and \texttt{eqb\_unit}. The soundness and completeness of \texttt{eqb\_option} is proved in the lecture notes. 
+
+With these, the soundness and completeness of \texttt{eqb\_option\_bool} can be proven using the \texttt{exact} tactic:
+
+\begin{lstlisting}
+Proposition soundness_and_completeness_of_eqb_option_bool :
+  is_a_sound_and_complete_equality_predicate (option bool) eqb_option_bool.
+Proof.
+  exact (soundness_and_completeness_of_eqb_option bool eqb_bool (soundness_and_completeness_of_eqb_bool)).
+Qed.
+\end{lstlisting}
+
+Similarly, the soundness and completeness of \texttt{eqb\_list\_unit} can be proven using the \texttt{exact} tactic:
+
+\begin{lstlisting}
+Proposition soundness_and_completeness_of_eqb_list_unit :
+  is_a_sound_and_complete_equality_predicate (list unit) eqb_list_unit.
+Proof.
+  exact (soundness_and_completeness_of_eqb_list unit eqb_unit (soundness_and_completeness_of_eqb_unit)).
+Qed.
+\end{lstlisting}
+
+Recall that we have proved the soundness and completeness of \texttt{eqb\_pair}. With that, we can construct a proposition about the soundness and completeness of \texttt{eqb\_option\_bool\_list\_unit}. It can be proved using the \texttt{exact} tactic:
+
+\begin{lstlisting}
+Proposition about_soundness_and_completeness_of_eqb_option_bool_list_unit :
+    is_a_sound_and_complete_equality_predicate (option bool) eqb_option_bool ->
+    is_a_sound_and_complete_equality_predicate (list unit) eqb_list_unit ->
+    is_a_sound_and_complete_equality_predicate (option bool * list unit) (eqb_pair (option bool) eqb_option_bool (list unit) eqb_list_unit).
+Proof.
+  exact (soundness_and_completeness_of_eqb_pair (option bool) eqb_option_bool (list unit) eqb_list_unit).
+Qed.
+\end{lstlisting}
+
+With these three propositions, we can prove the soundness and completeness of \texttt{eqb\_option\_bool\_list\_unit} using the \texttt{exact} tactic:
+
+\begin{lstlisting}
+Proposition soundness_and_completeness_of_eqb_option_bool_list_unit :
+  is_a_sound_and_complete_equality_predicate (option bool * list unit) (eqb_pair (option bool) eqb_option_bool (list unit) eqb_list_unit).
+Proof.
+  exact (about_soundness_and_completeness_of_eqb_option_bool_list_unit soundness_and_completeness_of_eqb_option_bool soundness_and_completeness_of_eqb_list_unit).
+Qed.
+\end{lstlisting}
+
+\subsection{Conclusion}
+To conclude, this exercise is a good summary of equality predicates and proving their soundness and completeness. We also refreshed our memory of proof techniques such as \texttt{injection}. It is also a good reminder that once we establish the right foundation, proving additional propositions can often be done in an elegant way in tCPA.
+
+\newpage
+
+\section{Exercise 01 in Week 08}
+
+\subsection{Introduction}
+Euclid's division lemma states that for any positive natural number \texttt{d} (the divisor) and for any natural number \texttt{n} (the dividend), there exists a natural number \texttt{q} (the quotient) and a natural number \texttt{r} (the remainder) such that \texttt{r < d} and \texttt{n = q * d + r}. In this exercise, we formalize the proof of Euclid's division lemma using tCPA. 
+
+\subsection{Answer}
+To formalize its proof in tCPA, we first state it as follows:
+\begin{lstlisting}
+Proposition euclids_division :
+  forall d : nat,
+    0 < d ->
+    forall n : nat,
+    exists q r : nat,
+      r < d /\ n = q * d + r.
+\end{lstlisting}
+
+Note that we put \texttt{forall d} and \texttt{forall n} in different lines because we still have the assumption that \texttt{d} is positive which does not involve \texttt{n}. 
+
+The proof is by induction on \texttt{n}, and the base case is straightforward:
+\begin{lstlisting}
+Proof.
+  intros d lt_0_d n.
+  induction n as [ | n' [q [r [lt_r_Sd' H_n]]]].
+  - exists 0, 0.
+    split.
+    + exact lt_0_d.
+    + rewrite -> Nat.add_0_r.
+      rewrite -> Nat.mul_0_l.
+      reflexivity.
+\end{lstlisting}
+
+Here the statement of the induction is a bit different because we have an \texttt{exists} in the goal. The base case is when both \texttt{q} and \texttt{r} are equal to \texttt{0}, since \texttt{0 = 0 * d + 0}.
+
+For the induction step, under the induction hypothesis that for a given \texttt{k}, there exist \texttt{q} and \texttt{r} such that \texttt{r < d} and \texttt{k = q * d + r}, we need to show that there exist \texttt{q'} and \texttt{r'} such that \texttt{r' < d} and \texttt{1 + k = q' * d + r'}. We first distinguish whether \texttt{d} denotes zero or the successor of another natural number.
+\begin{lstlisting}
+  - case d as [ | d'].
+    -- Check (Nat.nlt_0_r 0 lt_0_d).
+       contradiction (Nat.nlt_0_r 0 lt_0_d).
+\end{lstlisting}
+
+If \texttt{d} denotes zero, our assumption \texttt{lt\_0\_d} becomes \texttt{0 < 0}, which we prove to be False and use the contradiction tactic. Then we move on to the case when \texttt{d} denotes \texttt{S d'}. 
+\begin{lstlisting}
+    -- Check (le_lt_or_eq).
+       Check (lt_le_S r (S d') lt_r_Sd').
+       Check (le_S_n r d').
+       case (le_lt_or_eq r d' (le_S_n r d' (lt_le_S r (S d') lt_r_Sd'))) as [lt_r_d' | eq_r_d'].
+\end{lstlisting}
+
+According to the assumption \texttt{lt\_r\_Sd'}, \texttt{r < S d'}, so we know that either \texttt{r < d'} or \texttt{r = d'}, and we look at these two cases separately.
+\begin{lstlisting}
+       + exists q, (S r).
+         split.
+         ++  Search (S _ < S _).
+             destruct (Nat.succ_lt_mono r d') as [lt_Sr_Sd' _].
+             exact (lt_Sr_Sd' lt_r_d').
+         ++ rewrite -> H_n.
+            Search (S (_ + _)).
+            rewrite -> plus_n_Sm.
+            reflexivity.
+\end{lstlisting}
+
+If \texttt{r < d'} then \texttt{q' = q} and \texttt{r' = 1 + r} do the job, and it is proved using properties of addition and successors.
+
+\begin{lstlisting}
+       + exists (S q), 0.
+         split.
+         ++ exact lt_0_d.
+         ++ rewrite -> H_n.
+            rewrite -> plus_n_Sm.
+            rewrite -> eq_r_d'.
+            rewrite <- Nat.mul_succ_l.
+            rewrite -> Nat.add_0_r.
+            reflexivity.
+Qed.
+\end{lstlisting}
+
+If \texttt{r = d'} then \texttt{q' = 1 + q} and \texttt{r' = 0} do the job, and it is proved using properties of addition, multiplication and successors.
+
+\subsection{Conclusion}
+To prove Euclid's division lemma formally, we do induction on \texttt{n}. The base case is when both \texttt{q} and \texttt{r} are equal to zero. For the induction step, we first distinguish whether \texttt{d} denotes zero or \texttt{S d'}, and then divide into two cases: either \texttt{r < d'} or \texttt{r = d'}. In this proof, we also see how it is much easier to be able to not provide arguments when using the rewrite tactic.
+
+\newpage
+
+\section{Exercise 02 in Week 08}
+
+\subsection{Introduction}
+In this exercise, we formalize the proof for an alternative statement of Euclid’s division lemma: for any natural number \texttt{d} and for any natural number \texttt{n}, there exists a natural number \texttt{q} and a natural number \texttt{r} such that \texttt{r < S d} and \texttt{n = q * (S d) + r}. Additionally, we also prove this alternative statement as a corollary of the original statement, and vice versa.
+
+\subsection{Answer}
+\subsubsection{Exercise 2a}
+We first try to prove the proposition informally. Like the original statement, the proof is by induction on \texttt{n}. 
+For the base case, \texttt{q = 0} and \texttt{r = 0} since \texttt{0 = 0 * (S d) + 0}. 
+
+For the induction step, under the induction hypothesis that for a given \texttt{k}, there exist \texttt{q} and \texttt{r} such that \texttt{r < S d} and \texttt{k = q * (S d) + r}, we need to show that there exist \texttt{q'} and \texttt{r'} such that \texttt{r' < S d} and \texttt{1 + k = q' * (S d) + r'}.
+
+Since \texttt{r < S d}, either \texttt{r = d} or \texttt{r < d}:
+if \texttt{r = d} then \texttt{q' = 1 + q} and \texttt{r' = 0} do the job;
+if \texttt{r < d} then \texttt{q' = q} and \texttt{r' = 1 + r} do the job.
+
+\subsubsection{Exercise 2b}
+
+We see that in comparison with Exercise 2a, there is no more restriction on the value of \texttt{d}. Hence, for the induction step, we no longer need to \texttt{case d as [ | d']} because the proposition is stated in a way that matches the induction step of natural number \texttt{d}. This implies that we can directly divide it into the two cases \texttt{r = d} or \texttt{r < d}, and the rest of the proof is similar to the original one.
+
+\begin{lstlisting}
+Proposition euclids_division_alt :
+  forall d n : nat,
+  exists q r : nat,
+    r < S d /\ n = q * (S d) + r.
+Proof.
+  intros d n.
+  induction n as [ | n' [q [r [lt_r_Sd H_n]]]].
+  - exists 0, 0.
+    split.
+    + Search (0 < S _).
+      exact (Nat.lt_0_succ d).
+    + rewrite -> (Nat.add_0_r (0 * S d)).
+      rewrite -> (Nat.mul_0_l (S d)).
+      reflexivity.
+  - case (le_lt_or_eq r d (le_S_n r d (lt_le_S r (S d) lt_r_Sd))) as [lt_r_d | eq_r_d].
+    -- exists q, (S r).
+       split.
+       + destruct (Nat.succ_lt_mono r d) as [lt_Sr_Sd _].
+         exact (lt_Sr_Sd lt_r_d).
+       + rewrite -> H_n.
+         rewrite -> plus_n_Sm.
+         reflexivity.
+    -- exists (S q), 0.
+       split.
+       + exact (Nat.lt_0_succ d).
+       + rewrite -> H_n.
+         rewrite -> plus_n_Sm.
+         rewrite -> eq_r_d.
+         rewrite <- Nat.mul_succ_l.
+         rewrite -> Nat.add_0_r.
+         reflexivity.
+Qed.
+\end{lstlisting}
+
+\subsubsection{Exercise 2c}
+The proof of the alternative statement as a corollary of the original one is straightforward.
+
+\begin{lstlisting}
+Corollary euclids_division_alt_using_euclids_division :
+  forall d n : nat,
+  exists q r : nat,
+    r < S d /\ n = q * (S d) + r.
+Proof.
+  intro d.
+  exact (euclids_division (S d) (Nat.lt_0_succ d)).
+Qed.
+\end{lstlisting}
+
+We only need to denote \texttt{d} as \texttt{S d} and provide the argument that \texttt{S d > 0}, which is proved easily using a pre-exising definition in tCPA.
+
+\subsubsection{Exercise 2d}
+The proof of the original statement as a corollary of the alternative one is also quite straightforward.
+
+\begin{lstlisting}
+Corollary euclids_division_using_euclids_division_alt :
+  forall d : nat,
+    0 < d ->
+    forall n : nat,
+    exists q r : nat,
+      r < d /\ n = q * d + r.
+Proof.
+  intros d lt_0_d n.
+  case d as [ | d'].
+  - contradiction (Nat.nlt_0_r 0 lt_0_d).
+  - exact (euclids_division_alt d' n).
+Qed.
+\end{lstlisting}
+
+Since we have observed that the \texttt{euclids\_division\_alt} is stated in a way that matches the induction step of \texttt{d}, we can divide into two cases whether \texttt{d} denotes zero or \texttt{S d'}, and the successor case is exactly the alternative statement of the lemma.
+
+\subsection{Conclusion}
+We see that the proof of the alternative statement of Euclid's division is simpler than the original one since we don't need to distinguish whether \texttt{d} denotes zero or the successor of another natural number. That is because of the different way the propositions are stated, in which the qualifications are encoded. Concretely, in the original statement, for the positive natural number, we state it as \texttt{d}, which means we need the assumption that \texttt{0 < d} in the statement. However, if we state the positive natural number in question as \texttt{S d}, as in the alternative statement, we no longer need the restriction. The proofs of the two propositions as corollaries of each other also reflect this, as we can directly use \texttt{euclids\_division} when proving \texttt{euclids\_division\_alt} but need to divide \texttt{d} into two cases and use \texttt{euclids\_division\_alt} in the successor case when proving \texttt{euclids\_division}.
+
+\newpage
+
+\section{Exercise 01: Formalizing Summations}
+
+\subsection{Introduction}
+In this exercise, we prove a list of properties of Summations. Here is what we have to start with:
+
+\begin{lstlisting}
+Fixpoint Sigma (n : nat) (f : nat -> nat) : nat :=
+  match n with
+  | O =>
+    f 0
+  | S n' =>
+    Sigma n' f + f n
+  end.
+
+Lemma fold_unfold_Sigma_O :
+  forall (f : nat -> nat),
+    Sigma 0 f =
+    f 0.
+Proof.
+  fold_unfold_tactic Sigma.
+Qed.
+
+Lemma fold_unfold_Sigma_S :
+  forall (n' : nat)
+         (f : nat -> nat),
+    Sigma (S n') f =
+    Sigma n' f + f (S n').
+Proof.
+  fold_unfold_tactic Sigma.
+Qed.
+\end{lstlisting}
+
+\subsection{Answer}
+\subsubsection{Factoring a Multiplicative Constant}
+Here prove the result of factoring out a multiplicative constant in the function passed into the summation.
+
+\paragraph{On the Right}
+We first prove the case where the constant is on the right. The proof is routine through induction on x.
+
+\begin{lstlisting}
+Lemma about_factoring_a_multiplicative_constant_on_the_right_in_Sigma :
+  forall (x c : nat)
+         (f : nat -> nat),
+    Sigma x (fun i => f i * c) = Sigma x f * c.
+Proof.
+  intros x c f.
+  induction x as [ | x' IHx'].
+  - Check fold_unfold_Sigma_O (fun i : nat => f i * c).
+    rewrite (fold_unfold_Sigma_O (fun i : nat => f i * c)).
+    unfold Sigma.
+    reflexivity.
+  - Check fold_unfold_Sigma_S.
+    rewrite -> (fold_unfold_Sigma_S x' (fun i : nat => f i * c)).
+    rewrite -> (fold_unfold_Sigma_S x' f).
+    rewrite -> IHx'.
+    Check mult_plus_distr_r.
+    rewrite -> (mult_plus_distr_r (Sigma x' f) (f (S x')) c).
+    reflexivity.
+Qed.
+\end{lstlisting}
+
+\paragraph{On the Left}
+Then likewise where the constant is on the left. The proof is routine through induction on x as well. The only difference is in the the use of \textit{mult\_plus\_distr\_l} instead of \textit{mult\_plus\_distr\_r}.
+
+\begin{lstlisting}
+Lemma about_factoring_a_multiplicative_constant_on_the_left_in_Sigma :
+  forall (x c : nat)
+         (f : nat -> nat),
+    Sigma x (fun i => c * f i) = c * Sigma x f.
+Proof.
+  intros x c f.
+  induction x as [ | x' IHx'].
+  - Check fold_unfold_Sigma_O (fun i : nat => f i * c).
+    rewrite -> (fold_unfold_Sigma_O (fun i : nat => c * f i)).
+    unfold Sigma.
+    reflexivity.
+  - Check fold_unfold_Sigma_S.
+    rewrite -> (fold_unfold_Sigma_S x' (fun i : nat => c * f i)).
+    rewrite -> (fold_unfold_Sigma_S x' f).
+    rewrite -> IHx'.
+    Check mult_plus_distr_l.
+    rewrite -> (mult_plus_distr_l c (Sigma x' f) (f (S x'))).
+    reflexivity.
+Qed.
+\end{lstlisting}
+
+\subsubsection{Swapping Summations}
+Here we show that the result of one summation nested within another is the same as when they are flipped. After many a fruitless attempt, it was realised, thanks to Prof., that a nested induction is required since both sides of the equality concern different variables. As the proof progresses the goal gets notably messy, which is where we employ a series of cancellation to simply it. After which we note that the RHS and LHS are the same save a different arrangement of terms, which our resident addition lemmas take care of.
+
+\begin{lstlisting}
+Lemma about_swapping_Sigma :
+  forall (x y : nat)
+         (f : nat -> nat -> nat),
+    Sigma x (fun i => Sigma y (fun j => f i j)) = Sigma y (fun j => Sigma x (fun i => f i j)).
+Proof.
+intros x y f.
+  revert y.
+  induction x as [ | x' IHx']; intro y.
+  - induction y as [ | y' IHy'].
+    -- reflexivity. 
+    -- rewrite -> fold_unfold_Sigma_O.
+       rewrite ->2 fold_unfold_Sigma_S.
+       rewrite -> fold_unfold_Sigma_O.
+       rewrite -> Nat.add_cancel_r.
+       rewrite <- IHy'.
+       rewrite -> fold_unfold_Sigma_O.
+       reflexivity.
+  - rewrite -> fold_unfold_Sigma_S.
+    induction y as [ | y' IHy']. 
+    -- rewrite -> IHx'.
+       rewrite ->3 fold_unfold_Sigma_O.
+       rewrite -> fold_unfold_Sigma_S.
+       reflexivity.
+    -- rewrite ->2 fold_unfold_Sigma_S.
+       rewrite -> fold_unfold_Sigma_S.
+       rewrite -> (IHx' (S y')).
+       rewrite -> fold_unfold_Sigma_S.
+       rewrite <- IHy'.
+       rewrite -> (IHx' y').
+       rewrite <-2 Nat.add_assoc.
+       Check (Nat.add_cancel_l
+                (Sigma x' (fun i : nat => f i (S y')) +
+                   (Sigma y' (fun j : nat => f (S x') j) + f (S x') (S y')))
+                (Sigma y' (fun j : nat => f (S x') j) +
+   (Sigma x' (fun i : nat => f i (S y')) + f (S x') (S y')))
+                (Sigma y' (fun j : nat => Sigma x' (fun i : nat => f i j)))).
+       rewrite (Nat.add_cancel_l
+                (Sigma x' (fun i : nat => f i (S y')) +
+                   (Sigma y' (fun j : nat => f (S x') j) + f (S x') (S y')))
+                (Sigma y' (fun j : nat => f (S x') j) +
+   (Sigma x' (fun i : nat => f i (S y')) + f (S x') (S y')))
+                (Sigma y' (fun j : nat => Sigma x' (fun i : nat => f i j)))).
+       rewrite ->2 Nat.add_assoc.
+       rewrite Nat.add_cancel_r.
+       rewrite Nat.add_comm.
+       reflexivity.
+Qed.
+\end{lstlisting}
+ 
+
+\subsubsection{With Two Equivalent Functions}
+Here we show that the summation of \textit{x} over two functions \textit{f} and \textit{g} are equal if \textit{f i = g i}. The proof is routine with an induction on x.
+
+\begin{lstlisting}
+Lemma about_Sigma_with_two_equivalent_functions :
+  forall (x : nat)
+         (f g : nat -> nat),
+    (forall i : nat,
+        f i = g i) ->
+    Sigma x f = Sigma x g.
+Proof.
+  intros x f g.
+  intro i.
+  induction x as [ | x' IHx'].
+  - rewrite -> fold_unfold_Sigma_O.
+    rewrite -> fold_unfold_Sigma_O.
+    apply i.
+  - rewrite -> (fold_unfold_Sigma_S x' f).
+    rewrite -> (fold_unfold_Sigma_S x' g).
+    rewrite -> IHx'.
+    rewrite -> (i (S x')). 
+    reflexivity.
+Qed.
+\end{lstlisting}
+ 
+\subsubsection{With Two Equivalent Functions Up to a Bound}
+Here we show that the summation of \textit{x} over two functions \textit{f} and \textit{g} are equal when \textit{f i = g i} where \textit{i} <= \textit{x}. The proof is routine with an induction on x. Perhaps somewhat new is the use of resident lemmas relating to inqualities. Even though could use reflexivity to prove 0 <= 0, we want to minimise using it for non-Leibniz equalities.
+
+\begin{lstlisting}
+Lemma about_Sigma_with_two_equivalent_functions_up_to_the_bound :
+  forall (x : nat)
+         (f g : nat -> nat),
+    (forall i : nat,
+        i <= x ->
+        f i = g i) ->
+    Sigma x f = Sigma x g.
+Proof.
+  intros x f g.
+  intro i.
+  induction x as [ | x' IHx'].
+  - rewrite -> fold_unfold_Sigma_O.
+    rewrite -> fold_unfold_Sigma_O.
+    apply i.
+    reflexivity.
+  - rewrite -> (fold_unfold_Sigma_S x' f).
+    rewrite -> (fold_unfold_Sigma_S x' g).
+    rewrite -> IHx'.
+    -- rewrite (i (S x')).
+       --- reflexivity.
+       --- reflexivity.
+    -- intros i0. 
+       intros H_i0_less_than_x'.
+       apply (i (i0)).
+       rewrite -> H_i0_less_than_x'.
+       Search (_ <= S _).
+       exact (Nat.le_succ_diag_r x').
+Qed.
+\end{lstlisting}
+
+\subsubsection{With an Addition Function}
+Here we prove the distribution of summation over addition. The proof is routine and highly mechanical, and we see the convenience of using multiplied rewrites to simplify the goals rapidly. In the S case, it comes down rearranging the goal with the help of resident lemmas on addition (though there is probably a quicker way to the end here).
+
+\begin{lstlisting}
+Lemma about_Sigma_with_an_additive_function :
+  forall (x : nat)
+         (f g : nat -> nat),
+    Sigma x (fun i => f i + g i) = Sigma x f + Sigma x g.
+Proof.
+  intros x f g.
+  induction x as [ | x' IHx'].
+  - rewrite ->3 fold_unfold_Sigma_O. 
+    reflexivity.
+  - rewrite ->3 fold_unfold_Sigma_S.
+    rewrite -> IHx'.
+    Search (_ + (_ +_) = _ + _ + _).
+    rewrite -> Nat.add_assoc.
+    rewrite -> Nat.add_shuffle1.
+    rewrite <- Nat.add_assoc.
+    reflexivity.
+Qed.
+\end{lstlisting}
+
+\subsubsection{With a Constant Function}
+Here we prove the behaviour of summation over a constant function. The proof is routine and the heavy lifting is done by multiplied rewrites on resident lemmas.
+
+\begin{lstlisting}
+Lemma about_Sigma_with_a_constant_function :
+  forall x y : nat,
+    Sigma x (fun _ => y) = y * (S x).
+Proof.
+  intros x y.
+  induction x as [ | x' IHx'].
+  - unfold Sigma. 
+    Search (_ * 1 = _).
+    symmetry.
+    exact (Nat.mul_1_r y).
+  - rewrite -> fold_unfold_Sigma_S.
+    rewrite -> IHx'.
+    Search (_ * S _ = _).
+    rewrite ->3 Nat.mul_succ_r.
+    reflexivity.
+Qed.
+
+\end{lstlisting}
+
+\subsubsection{With Two Small a Function}
+Here we prove the behaviour of summation over a function that returns zero when under a bound. The proof is largely routine, save perhaps the heavy use of apply to replace consequent with antecedents that are then proved by resident inequality lemmas.
+
+\begin{lstlisting}
+Lemma about_Sigma_with_two_small_a_function :
+  forall (x : nat)
+         (f : nat -> nat),
+    (forall i : nat,
+        i <= x ->
+        f i = 0) ->
+    Sigma x f = 0.
+Proof.
+  intros x f.
+  intro H_f_i.
+  induction x as [ | x' IHx'].
+  - rewrite -> fold_unfold_Sigma_O.
+    apply H_f_i.
+    Search (_ <= _).
+    exact (Nat.le_refl 0).
+  - rewrite -> fold_unfold_Sigma_S.     
+    rewrite -> IHx'.
+    -- apply (H_f_i (S x')). 
+       exact (Nat.le_refl (S x')).
+    -- intros i H_i_x'.    
+       apply H_f_i.
+       rewrite -> Nat.le_succ_diag_r.
+       Search (S _ <= S  _).
+       apply le_n_S.
+       exact H_i_x'.
+Qed.
+\end{lstlisting}
+
+\subsubsection{Up to a Positive Sum}
+Here we prove the behaviour of summation wherein the range comprises of a sum of \textit{x + S y}. The proof is routine but this time the induction is on y as that is the variable of interest.
+
+\begin{lstlisting}
+Lemma about_Sigma_up_to_a_positive_sum :
+  forall (x y : nat)
+         (f : nat -> nat),
+    Sigma (x + S y) f = Sigma x f + Sigma y (fun i => f (x + S i)).
+Proof.
+  intros x y f.
+  induction y as [ | y' IHy'].
+  - Search (_ + 1 = S _).
+    rewrite -> Nat.add_1_r. 
+    rewrite -> fold_unfold_Sigma_S.
+    rewrite -> fold_unfold_Sigma_O.
+    rewrite <- Nat.add_1_r.
+    reflexivity.
+  - rewrite -> Nat.add_succ_r. 
+    rewrite ->2 fold_unfold_Sigma_S.
+    rewrite -> IHy'.
+    Search (_ + _ + _ = _ + (_ + _)).
+    rewrite -> plus_assoc_reverse.
+    rewrite <- Nat.add_succ_r.
+    reflexivity.
+Qed.
+\end{lstlisting}
+
+\subsubsection{Relating Sigma and Sigma1}
+Here we consider \textit{Sigma1}, a specialised version of \textit{Sigma}, that returns zero when given passed the index zero. We first write the requisite fold-unfold lemmas based on the given definition.
+
+\begin{lstlisting}
+Definition Sigma1 (n : nat) (f : nat -> nat) : nat :=
+  match n with
+    O =>
+    0
+  | S n' =>
+    Sigma (S n') f
+  end.
+
+Lemma fold_unfold_Sigma1_O :
+  forall (f : nat -> nat),
+    Sigma1 0 f =
+    0.
+Proof.
+  fold_unfold_tactic Sigma1.
+Qed.
+
+Lemma fold_unfold_Sigma1_S :
+  forall (n' : nat)
+         (f : nat -> nat),
+    Sigma1 (S n') f =
+    Sigma (S n') f.
+Proof.
+  fold_unfold_tactic Sigma1.
+Qed.
+\end{lstlisting}
+
+Then we prove that given a function f which when based zero will return zero, Sigma and Sigma1 are equivalent. The proof is routine by induction on n.
+
+\begin{lstlisting}
+Lemma fold_unfold_Sigma1_S :
+  forall (n' : nat)
+         (f : nat -> nat),
+    Sigma1 (S n') f =
+    Sigma (S n') f.
+Proof.
+  fold_unfold_tactic Sigma1.
+Qed.
+
+(* ***** *)
+
+Property about_Sigma1 :
+  forall f : nat -> nat,
+    f 0 = 0 ->
+    forall n : nat,
+      Sigma1 n f = Sigma n f.
+Proof.
+  intros f H_f.
+  intro n.
+  induction n as [ | n' IHn'].
+  - rewrite -> fold_unfold_Sigma1_O.
+    rewrite -> fold_unfold_Sigma_O.
+    symmetry.
+    exact H_f.
+  - rewrite -> fold_unfold_Sigma_S. 
+    Check fold_unfold_Sigma1_S.
+    rewrite -> fold_unfold_Sigma1_S.
+    rewrite -> fold_unfold_Sigma_S.
+    reflexivity.
+Qed.
+\end{lstlisting}
+ 
+ 
+\section{Exercise 02 in Week 9}
+
+\subsection{Introduction}
+
+The goal of this exercise is to formalize several properties of the 2-by-2 matrices. 
+
+\begin{lstlisting}
+Inductive m22 : Type :=
+| M22 : nat -> nat -> nat -> nat -> m22.
+\end{lstlisting}
+
+The idea is evaluating \texttt{M22 x11 x12 x21 x22} yields a representation of the following 2-by-2 matrix of natural numbers:
+
+\begin{lstlisting}
++-       -+
+| x11 x12 |
+|         |
+| x21 x22 |
++-       -+
+\end{lstlisting}
+
+\subsection{Answer}
+
+\subsubsection{Formalize Definition 9 in Coq}
+
+Here we are asked to formalize the definition for matrix multiplication between two 2-by-2 matrices. The definition is as follows:
+\begin{lstlisting}
+Definition mul_m22 (x y : m22) : m22 :=
+  match (x, y) with
+  | (M22 x11 x12
+          x21 x22,
+      M22 y11 y12
+          y21 y22) =>
+      M22 (x11 * y11 + x12 * y21) (x11 * y12 + x12 * y22)
+          (x21 * y11 + x22 * y21) (x21 * y12 + x22 * y22)
+  end.
+\end{lstlisting}
+
+Here, the only challenge is being constantly vigilant about typing out the correct elements. Otherwise, it is a straightforward definition.
+
+\subsubsection{Formalize and Prove Proposition 10 in Coq}
+Here, we must prove that matrix multiplication is associative. The proposition is as follows:
+
+\begin{lstlisting}
+Lemma mul_m22_assoc :
+forall x y z : m22,
+  mul_m22 x (mul_m22 y z) =
+    mul_m22 (mul_m22 x y) z.
+\end{lstlisting}
+
+Here, the key to solving this proof is to be constantly vigilant to not get lost in the details. We first begin by unfolding the definition of \texttt{mul\_m22}.
+
+\begin{lstlisting}
+1 goal (ID 42)
+
+x11, x12, x21, x22, y11, y12, y21, y22, z11, z12, z21, z22 : nat
+============================
+M22 (x11 * (y11 * z11 + y12 * z21) + x12 * (y21 * z11 + y22 * z21))
+  (x11 * (y11 * z12 + y12 * z22) + x12 * (y21 * z12 + y22 * z22))
+  (x21 * (y11 * z11 + y12 * z21) + x22 * (y21 * z11 + y22 * z21))
+  (x21 * (y11 * z12 + y12 * z22) + x22 * (y21 * z12 + y22 * z22)) =
+M22 ((x11 * y11 + x12 * y21) * z11 + (x11 * y12 + x12 * y22) * z21)
+  ((x11 * y11 + x12 * y21) * z12 + (x11 * y12 + x12 * y22) * z22)
+  ((x21 * y11 + x22 * y21) * z11 + (x21 * y12 + x22 * y22) * z21)
+  ((x21 * y11 + x22 * y21) * z12 + (x21 * y12 + x22 * y22) * z22)
+\end{lstlisting}
+
+Here, we focus on the LHS and notice that we can unfold the multiplication on the left and distribute it, specifically 8 times.
+
+\begin{lstlisting}
+1 goal (ID 50)
+
+x11, x12, x21, x22, y11, y12, y21, y22, z11, z12, z21, z22 : nat
+============================
+M22 (x11 * (y11 * z11) + x11 * (y12 * z21) + (x12 * (y21 * z11) + x12 * (y22 * z21)))
+  (x11 * (y11 * z12) + x11 * (y12 * z22) + (x12 * (y21 * z12) + x12 * (y22 * z22)))
+  (x21 * (y11 * z11) + x21 * (y12 * z21) + (x22 * (y21 * z11) + x22 * (y22 * z21)))
+  (x21 * (y11 * z12) + x21 * (y12 * z22) + (x22 * (y21 * z12) + x22 * (y22 * z22))) =
+M22 ((x11 * y11 + x12 * y21) * z11 + (x11 * y12 + x12 * y22) * z21)
+  ((x11 * y11 + x12 * y21) * z12 + (x11 * y12 + x12 * y22) * z22)
+  ((x21 * y11 + x22 * y21) * z11 + (x21 * y12 + x22 * y22) * z21)
+  ((x21 * y11 + x22 * y21) * z12 + (x21 * y12 + x22 * y22) * z22)
+\end{lstlisting}
+
+Let us open up the multiplication brackets so we can match variables on the LHS with the variables on the RHS.
+
+\begin{lstlisting}
+1 goal (ID 66)
+
+x11, x12, x21, x22, y11, y12, y21, y22, z11, z12, z21, z22 : nat
+============================
+M22 (x11 * y11 * z11 + x11 * y12 * z21 + (x12 * y21 * z11 + x12 * y22 * z21))
+  (x11 * y11 * z12 + x11 * y12 * z22 + (x12 * y21 * z12 + x12 * y22 * z22))
+  (x21 * y11 * z11 + x21 * y12 * z21 + (x22 * y21 * z11 + x22 * y22 * z21))
+  (x21 * y11 * z12 + x21 * y12 * z22 + (x22 * y21 * z12 + x22 * y22 * z22)) =
+M22 ((x11 * y11 + x12 * y21) * z11 + (x11 * y12 + x12 * y22) * z21)
+  ((x11 * y11 + x12 * y21) * z12 + (x11 * y12 + x12 * y22) * z22)
+  ((x21 * y11 + x22 * y21) * z11 + (x21 * y12 + x22 * y22) * z21)
+  ((x21 * y11 + x22 * y21) * z12 + (x21 * y12 + x22 * y22) * z22)
+\end{lstlisting}
+
+Let us distribute the multiplication on the RHS.
+
+\begin{lstlisting}
+1 goal (ID 74)
+
+x11, x12, x21, x22, y11, y12, y21, y22, z11, z12, z21, z22 : nat
+============================
+M22 (x11 * y11 * z11 + x11 * y12 * z21 + (x12 * y21 * z11 + x12 * y22 * z21))
+  (x11 * y11 * z12 + x11 * y12 * z22 + (x12 * y21 * z12 + x12 * y22 * z22))
+  (x21 * y11 * z11 + x21 * y12 * z21 + (x22 * y21 * z11 + x22 * y22 * z21))
+  (x21 * y11 * z12 + x21 * y12 * z22 + (x22 * y21 * z12 + x22 * y22 * z22)) =
+M22 (x11 * y11 * z11 + x12 * y21 * z11 + (x11 * y12 * z21 + x12 * y22 * z21))
+  (x11 * y11 * z12 + x12 * y21 * z12 + (x11 * y12 * z22 + x12 * y22 * z22))
+  (x21 * y11 * z11 + x22 * y21 * z11 + (x21 * y12 * z21 + x22 * y22 * z21))
+  (x21 * y11 * z12 + x22 * y21 * z12 + (x21 * y12 * z22 + x22 * y22 * z22))
+\end{lstlisting}
+
+Afterwards, we can use the \texttt{Nat.add\_shuffle1} to match the expressions on the LHS with the RHS. However, as \texttt{Nat.add\_shuffle1} is idempotent, we need to supply the exact arguments.
+
+With that, the proof is complete. Here is the complete proof:
+
+\begin{lstlisting}
+Lemma nat_add_shuffle1 :
+  forall n m p q : nat,
+    n + m + (p + q) = n + p + (m + q).
+Proof.
+  intros n m p q.
+  Check (Nat.add_assoc).
+  rewrite -> (Nat.add_assoc (n + m) p q).
+  rewrite <- (Nat.add_assoc n m p).
+  Check (Nat.add_comm).
+  rewrite -> (Nat.add_comm m p).
+  rewrite -> (Nat.add_assoc n p m).
+  rewrite <- (Nat.add_assoc (n + p) m q).
+  reflexivity.
+Qed.
+
+Lemma mul_m22_assoc :
+  forall x y z : m22,
+    mul_m22 x (mul_m22 y z) =
+      mul_m22 (mul_m22 x y) z.
+Proof.
+  intros [x11 x12
+          x21 x22]
+         [y11 y12
+          y21 y22]
+         [z11 z12
+          z21 z22].
+  unfold mul_m22.
+  rewrite -> 8 Nat.mul_add_distr_l.
+  rewrite -> 16 Nat.mul_assoc.
+  rewrite -> 8 Nat.mul_add_distr_r.
+  rewrite -> (nat_add_shuffle1 (x11 * y11 * z11) (x11 * y12 * z21) (x12 * y21 * z11) (x12 * y22 * z21)).
+  rewrite -> (nat_add_shuffle1 (x11 * y11 * z12) (x11 * y12 * z22) (x12 * y21 * z12) (x12 * y22 * z22)).
+  rewrite -> (nat_add_shuffle1 (x21 * y11 * z11) (x21 * y12 * z21) (x22 * y21 * z11) (x22 * y22 * z21)).
+  rewrite -> (nat_add_shuffle1 (x21 * y11 * z12) (x21 * y12 * z22) (x22 * y21 * z12) (x22 * y22 * z22)).
+  reflexivity.
+
+  Restart. 
+
+(*
+  A simpler solution showed by Prof Danvy in which instead of supplying every particular argument to nat_add_shuffle1,
+  we provide the more general structure / shape we want the rewrite to apply to. 
+ *)  
+
+  intros [x11 x12
+          x21 x22]
+         [y11 y12
+          y21 y22]
+         [z11 z12
+          z21 z22].
+  unfold mul_m22.
+  rewrite -> 8 Nat.mul_add_distr_l.
+  rewrite -> 16 Nat.mul_assoc.
+  rewrite -> 8 Nat.mul_add_distr_r.
+  rewrite ->2 (nat_add_shuffle1 _ (x12 * _ * _) _).
+  rewrite ->2 (nat_add_shuffle1 _ (x21 * _ * _) _).
+  reflexivity.
+Qed.
+\end{lstlisting}
+
+Furthermore, we can also prove this proof more simply when rewriting using \texttt{nat\_add\_shuffle1} using \texttt{rewrite ->2 (nat\_add\_shuffle1 \_ (x12 * \_ * \_) \_).} and \texttt{rewrite ->2 (nat\_add\_shuffle1 \_ (x21 * \_ * \_) \_)}. This rewriting works because we supply the more general structure / shape we want to apply \texttt{nat\_add\_shuffle1}, but not so general that the 
+rewriting is reverted each time we apply \texttt{nat\_add\_shuffle1} again. Here, abstracting just the right amount is key. 
+
+\subsubsection{Formalize and Prove Proposition 12 in Coq}
+
+In this exercise, we must prove that the identity function is left and right neutral with respect to matrix multiplication. The proof is as follows:
+
+\begin{lstlisting}
+Definition identity_m22 := M22 1 0
+                               0 1.
+
+Lemma mul_m22_identity_l :
+  forall x : m22,
+    mul_m22 identity_m22 x =
+      x.
+Proof.
+  intros [x11 x12
+          x21 x22].
+  unfold mul_m22, identity_m22.
+  rewrite -> 4 Nat.mul_1_l.
+  rewrite -> 4 Nat.mul_0_l.
+  rewrite -> 2 Nat.add_0_r.
+  rewrite -> 2 Nat.add_0_l.
+  reflexivity.
+Qed.
+
+Lemma mul_m22_identity_r :
+  forall x : m22,
+    mul_m22 x identity_m22 =
+      x.
+Proof.
+  intros [x11 x12
+          x21 x22].
+  unfold mul_m22, identity_m22.
+  rewrite -> 4 Nat.mul_1_r.
+  rewrite -> 4 Nat.mul_0_r.
+  rewrite -> 2 Nat.add_0_l.
+  rewrite -> 2 Nat.add_0_r.
+  reflexivity.
+Qed.
+\end{lstlisting}
+
+As observed above, the proof is routine. We were also able to get more practice with applying several of the same rewrites in one line. 
+
+\subsubsection{Formalize Definition 13 in Coq}
+
+Here, we must formalize the definition of exponentiation of a 2-by-2 matrix. The definition is as follows:
+
+\begin{lstlisting}
+Fixpoint pow_m22_l (x : m22) (n : nat) : m22 :=
+  match n with
+  | 0 =>
+      identity_m22
+  | S n =>
+      mul_m22 (pow_m22_l x n) x
+  end.
+\end{lstlisting}
+
+Note that I named the function \texttt{pow\_m22\_l} as the recursive call is on the left. Furthermore, though some might disagree, I believe \texttt{pow} is an appropriate name for the function as it is a common mathematical notation for exponentiation.
+
+Let us also include the fold-unfold lemmas, which is routine:
+
+\begin{lstlisting}
+Lemma fold_unfold_pow_m22_l_O :
+  forall (x : m22),
+    pow_m22_l x 0 =
+      identity_m22.
+Proof.
+  fold_unfold_tactic pow_m22_l.
+Qed.
+
+Lemma fold_unfold_pow_m22_l_S :
+  forall (x : m22)
+         (n : nat),
+    pow_m22_l x (S n) =
+      mul_m22 (pow_m22_l x n) x.
+Proof.
+  fold_unfold_tactic pow_m22_l.
+Qed.
+\end{lstlisting}
+
+\subsection{Formalize and Prove Proposition 14 in Coq}
+We are tasked with proving the following proposition:
+
+\begin{lstlisting}
+Proposition about_pow_m22_l :
+  forall n : nat,
+    pow_m22_l (M22 1 1
+                   0 1) n =
+      M22 1 n
+          0 1.
+\end{lstlisting}
+
+Here, the proposition states that, for the particular matrix \texttt{M22 1 1 0 1}, the exponentiation of it to the power of \texttt{n} is equal to the matrix \texttt{M22 1 n 0 1}.
+
+With the help of our fold-unfold lemmas, the proof here is a routine induction proof. 
+
+\begin{lstlisting}
+Proposition about_pow_m22_l :
+  forall n : nat,
+    pow_m22_l (M22 1 1
+                   0 1) n =
+      M22 1 n
+          0 1.
+Proof. 
+  intro n.
+  induction n as [ | n' IHn'].
+  + rewrite -> (fold_unfold_pow_m22_l_O (M22 1 1 0 1)).
+    unfold identity_m22.
+    reflexivity.
+  + rewrite -> (fold_unfold_pow_m22_l_S (M22 1 1 0 1) n').
+    rewrite -> IHn'.
+    unfold mul_m22.
+    rewrite -> 2 Nat.mul_1_l.
+    rewrite -> (Nat.mul_0_r n').
+    rewrite -> (Nat.add_1_l 0).
+    rewrite -> (Nat.mul_1_r n').
+    Search (1 + _ = S _).
+    rewrite -> (Nat.add_1_l n').
+    rewrite -> (Nat.mul_0_l 1).
+    rewrite -> (Nat.add_0_r 0).
+    rewrite -> (Nat.add_1_r 0).
+    reflexivity.
+Qed.    
+\end{lstlisting}
+
+Here, the key to the proof is to be constantly vigilant about the unfolding of the definitions. Otherwise, the proof is routine. My main take away from this exercise was familiarizing myself with using tCPA to work with matrices. 
+
+\subsubsection{How does your formalization of Proposition 14 compare with the informal proof of Proposition 14?}
+
+Here, my formal proof is the proof for Proposition 14 above, and I reference the informal proof in the given lecture notes.
+
+Both proofs are similar in that they both use induction. Furthermore, it shows that that tCPA gives us a domain-specific language for writing proofs.
+
+\textbf{Base Case:} 
+In both proofs, the left-hand side (LHS) is simplified to the identity matrix when considering the zeroth power. The LHS becomes the identity matrix either by defining the power function of a matrix, as in the formal proof, or using the definition of matrix exponentiation, as in the informal proof. By comparing with the right-hand side (RHS), both proofs deduce that LHS is equivalent to the RHS for this case.
+
+\textbf{Inductive Case:}
+Both proofs use the induction hypothesis: $F^k = M22(1, k, 0, 1)$. They then extend this to $k + 1$ by evaluating:
+\[ F^{k+1} = F^k \times F \Rightarrow M22(1, k, 0, 1) \times M22(1, 1, 0, 1) = M22(1, k + 1, 0, 1). \]
+
+While the informal proof straightforwardly applies this multiplication, the formal proof specifies the use of the fold-unfold lemma for \texttt{pow\_m22\_l} and subsequently applies the induction hypothesis. The final step in both proofs is the matrix multiplication, which is carried out using established rules or rewrites.
+
+In essence, the core methodology and reasoning behind both proofs align closely, highlighting their congruence. In fact, I dare say that they are the same. Hence, we see that tCPA provides a domain-specific language for writing proofs.
+
+\subsubsection{Solve Exercise 25}
+
+Let $\mathrm{F} \equiv\left[\begin{array}{ll}1 & 1 \\ 1 & 0\end{array}\right]$
+Calculate, by hand or using a Scheme program, the 8 first successive powers of $\mathrm{F}$, i.e., $\mathrm{F}^0, \mathrm{~F}^1, \mathrm{~F}^2, \mathrm{~F}^3$, $\mathrm{F}^4, \mathrm{~F}^5, \mathrm{~F}^6$, and $\mathrm{F}^7$. What do you observe? Could you prove it, and if so how?
+
+To solve this, let us first compute the first several instances of the matrix exponentiation of \texttt{F}.
+
+\begin{lstlisting}
+Definition F := M22 1 1
+  1 0.
+
+Compute (pow_m22_l F 0, pow_m22_l F 1, pow_m22_l F 2, pow_m22_l F 3, pow_m22_l F 4, pow_m22_l F 5, pow_m22_l F 6, pow_m22_l F 7, pow_m22_l F 8).
+= (M22 1 0 0 1, M22 1 1 1 0, M22 2 1 1 1, M22 3 2 2 1, M22 5 3 3 2, 
+        M22 8 5 5 3, M22 13 8 8 5, M22 21 13 13 8, M22 34 21 21 13)
+     : m22 * m22 * m22 * m22 * m22 * m22 * m22 * m22 * m22
+\end{lstlisting}
+
+We can notice that the base case is the identity matrix. All other instances follow the pattern of the Fibonacci sequence where:
+\begin{enumerate}
+  \item The first entry is an instance of \texttt{fib (n + 1)}.
+  \item The second and third entry is an instance of \texttt{fib n}.
+  \item The last entry is an instance of \texttt{fib (n - 1)}.
+\end{enumerate}
+
+Let us first write and prove the \texttt{fib} function.
+
+\begin{lstlisting}
+Fixpoint aux_fib (n : nat) (a : nat) (b : nat) : nat :=
+  match n with
+  | 0 => a
+  | S n' => aux_fib n' b (a + b)
+  end.
+
+Definition fib (n : nat) : nat :=
+  aux_fib n 0 1.
+
+Lemma fold_unfold_aux_fib_O :
+  forall (a b : nat),
+  aux_fib 0 a b = a.
+Proof.
+  fold_unfold_tactic aux_fib.
+Qed.
+
+Lemma fold_unfold_aux_fib_S :
+  forall (n : nat)
+         (a b : nat),
+    aux_fib (S n) a b = aux_fib n b (a + b).
+Proof.
+  fold_unfold_tactic aux_fib.
+Qed.
+
+Definition test_fib (candidate : nat -> nat) : bool :=
+  (Nat.eqb (candidate 0) 0) &&
+    (Nat.eqb (candidate 1) 1) &&
+    (Nat.eqb (candidate 2) 1) &&
+    (Nat.eqb (candidate 3) 2) &&
+    (Nat.eqb (candidate 4) 3) &&
+    (Nat.eqb (candidate 5) 5) &&
+    (Nat.eqb (candidate 6) 8) &&
+    (Nat.eqb (candidate 7) 13) &&
+    (Nat.eqb (candidate 8) 21) &&
+    (Nat.eqb (candidate 9) 34) &&
+    (Nat.eqb (candidate 10) 55).
+
+Compute (test_fib fib).
+= true
+: bool
+\end{lstlisting}
+
+Here, our \texttt{fib} function uses two accumulators. This way, exponentiating F is done in linear time and therefore makes it possible to compute Fibonacci numbers in linear time.
+
+However, we can also implement the canonical definition of the Fibonacci sequence. 
+
+\begin{lstlisting}
+Fixpoint fib' (n : nat) : nat :=
+  match n with
+  | 0 => 0
+  |  S n' =>
+       match n' with
+       | O => 1
+       | S n'' =>  fib' n' + fib' n''
+       end
+  end.
+
+Lemma fold_unfold_fib'_O :
+  fib' 0 = 0.
+Proof.
+  fold_unfold_tactic fib'.
+Qed.
+
+Lemma fold_unfold_fib'_S :
+  forall (n' : nat),
+    fib' (S (S n')) = fib' (S n') + fib' n'.
+Proof.
+  fold_unfold_tactic fib'.
+Qed.
+
+Compute (test_fib fib').
+(* 
+  = true
+  : bool
+*)
+\end{lstlisting}
+
+The implementation of \texttt{fib'} is more straightforward. However, it is exponential in time. With regards to its fold-unfold lemmas, it is routine. Furthermore, we see that it also passes the unit test.
+
+Now, let us prove that the matrix exponentiation of \texttt{F} follows the Fibonacci sequence based on the specification we observed above.
+
+This is the first proof using the two accumulator implementation \texttt{fib}.
+
+\begin{lstlisting}
+Lemma function_abstraction_and_instantiation :
+  (pow_m22_l F 0 =
+     identity_m22)
+  /\
+    (forall n' : nat,
+        pow_m22_l F (S n') =
+          M22 (fib (S (S n'))) (fib (S n'))    
+              (fib (S n'))     (fib n')).
+
+Proof.
+  split.
+  + rewrite -> (fold_unfold_pow_m22_l_O F).
+    reflexivity.
+  + intro n'.
+
+    induction n' as [ | n' IHn''].
+    ++ unfold F, fib.
+       rewrite -> (fold_unfold_pow_m22_l_S (M22 1 1 1 0) 0).
+       rewrite -> (fold_unfold_pow_m22_l_O (M22 1 1 1 0)).
+       rewrite -> (mul_m22_identity_l (M22 1 1 1 0)).
+
+       rewrite -> (fold_unfold_aux_fib_S 1 0 1).
+       rewrite -> (Nat.add_0_l 1).
+       rewrite -> (fold_unfold_aux_fib_S 0 1 1).
+       rewrite -> (Nat.add_1_l 1).
+       rewrite -> (fold_unfold_aux_fib_O 1 2).
+
+       rewrite -> (fold_unfold_aux_fib_S 0 0 1).
+       rewrite -> (Nat.add_0_l 1).
+       rewrite -> (fold_unfold_aux_fib_O 1 1).
+
+       rewrite -> (fold_unfold_aux_fib_O 0 1).
+       reflexivity.
+    ++ unfold F, fib.
+       unfold F, fib in IHn''.
+       rewrite -> (fold_unfold_pow_m22_l_S (M22 1 1 1 0) (S n')).
+       rewrite -> IHn''.
+       rewrite -> (fold_unfold_aux_fib_S (S n') 0 1).
+       rewrite -> (Nat.add_0_l 1).
+       rewrite -> (fold_unfold_aux_fib_S n' 1 1).
+       rewrite -> (Nat.add_1_l 1).
+
+       rewrite -> (fold_unfold_aux_fib_S n' 0 1).
+       rewrite -> (Nat.add_0_l 1).
+
+       unfold mul_m22.
+
+       rewrite -> 3 Nat.mul_1_r.
+       rewrite -> 2 Nat.mul_0_r.
+       rewrite -> 2 Nat.add_0_r.
+       
+       rewrite -> (fold_unfold_aux_fib_S (S (S n')) 0 1).
+       rewrite -> (Nat.add_0_l 1).
+       rewrite -> (fold_unfold_aux_fib_S (S n') 1 1).
+       rewrite -> (Nat.add_1_l 1).
+       rewrite -> (fold_unfold_aux_fib_S n' 1 2).
+       rewrite -> (Nat.add_1_l 2).
+       
+       rewrite -> (about_aux_fib_S n' 1 2 1 1).
+       rewrite -> (Nat.add_1_r 1).
+       rewrite -> (Nat.add_1_r 2).
+
+       rewrite -> (about_aux_fib_S n' 1 1 0 1).
+       rewrite -> (Nat.add_1_l 0).
+       rewrite -> (Nat.add_1_l 1).
+       reflexivity.
+Qed.
+\end{lstlisting}
+
+Here, the proof above uses induction on \texttt{n'}. Here, proving the first instance of the proposition when \texttt{n = 0} is simple. For the other case, we induct over \texttt{n'}. 
+
+Proving the base case in our induction hypothesis is routine. However, proving the inductive case requires us to develop a eureka lemma for \texttt{aux\_fib}. The lemma is as follows:
+
+\begin{lstlisting}
+Lemma about_aux_fib_S :
+  forall (n a b a' b': nat),
+    aux_fib n a b + aux_fib n a' b' =
+      aux_fib n (a + a') (b + b').
+Proof.
+  intro n.
+  induction n as [ | n' IHn'].
+  + intros a b a' b'.
+    rewrite -> (fold_unfold_aux_fib_O a b).
+    rewrite -> (fold_unfold_aux_fib_O a' b').
+    rewrite -> (fold_unfold_aux_fib_O (a + a') (b + b')).
+    reflexivity.
+  + intros a b a' b'.
+    rewrite -> (fold_unfold_aux_fib_S n' a b).
+    rewrite -> (fold_unfold_aux_fib_S n' a' b').
+    rewrite -> (IHn' b (a + b) b' (a' + b')).
+    Search (_ + _ + ( _ ) = _ + _ + _ ).
+    (*  (a + b + (a' + b')) ->
+        (a + a' + (b + b'))*)
+    rewrite -> (nat_add_shuffle1 a b a' b').
+    rewrite -> (fold_unfold_aux_fib_S n' (a + a') (b + b')).
+    reflexivity.
+Qed.
+\end{lstlisting}
+
+The eureka lemma postulates that, given our Fibonacci implementation using \texttt{aux\_fib}, the sum of two instances of \texttt{aux\_fib} is equivalent to another instance of \texttt{aux\_fib} with the sum of the arguments. The proof is by induction on \texttt{n}. With the help of our fold-unfold lemmas, the proof is routine. We have done similar proofs in the past.
+
+Going back to our main proof, we can use our eureka lemma to simplify the goal after using the induction hypothesis and our fold-unfold lemmas. Afterwards, we find that LHS is equivalent to the RHS. Thus, the proof is complete.
+
+Now, let us prove the same proposition using the canonical definition of the Fibonacci sequence.
+
+\begin{lstlisting}
+Lemma function_abstraction_and_instantiation' :
+  (pow_m22_l F 0 =
+     identity_m22)
+  /\
+    (forall n' : nat,
+        pow_m22_l F (S n') =
+          M22 (fib' (S (S n'))) (fib' (S n'))    
+              (fib' (S n'))     (fib' n')).
+
+Proof.
+  split.
+  + rewrite -> (fold_unfold_pow_m22_l_O F).
+    reflexivity.
+  + intro n'.
+    
+    induction n' as [ | n' IHn''].
+    ++ unfold F, fib'.
+       rewrite -> (fold_unfold_pow_m22_l_S (M22 1 1 1 0) 0).
+       rewrite -> (fold_unfold_pow_m22_l_O (M22 1 1 1 0)).
+       rewrite -> (mul_m22_identity_l (M22 1 1 1 0)).
+       rewrite -> Nat.add_0_r.
+       reflexivity.
+    ++ unfold F.
+       unfold F in IHn''.
+       rewrite -> (fold_unfold_pow_m22_l_S (M22 1 1 1 0) (S n')).
+       rewrite -> IHn''.
+       unfold mul_m22.
+       rewrite -> 3 Nat.mul_1_r.
+       rewrite -> 2 Nat.mul_0_r.
+       rewrite -> 2 Nat.add_0_r.
+       rewrite <- 2 fold_unfold_fib'_S.
+       reflexivity.
+Qed.
+\end{lstlisting}
+
+Here, we can first notice that the proof is shorter. 
+
+With regards to the base case of the theorem, the proof remains the same as there its structure is not dependent on the Fibonacci implementation. 
+
+However, as soon as we begin our induction proof on the RHS of the conjunction in the theorem, the proof starts to differ as that conjunct is dependent on the Fibonacci implementation.
+
+When solving the base case, the initial steps are the same in simplifying the LHS. Furthermore, we notice that the RHS is simplified to \texttt{M22 $(1 + 0) \times 1 \times 1 \times 0$} when we unfolded the definition of \texttt{fib'}. As such, we only need to rewrite using \texttt{Nat.add\_0\_r} to prove the base case.
+
+For the inductive case, we can simplify our LHS in a similar fashion with the previous proof as the LHS is not dependent on the Fibonacci implementation. However, the RHS is dependent on the Fibonacci implementation. Reading the goal, we have:
+
+\begin{lstlisting}
+1 goal (ID 86)
+
+n' : nat
+IHn'' : pow_m22_l (M22 1 1 1 0) (S n') =
+        M22 (fib' (S (S n'))) (fib' (S n')) (fib' (S n')) (fib' n')
+============================
+M22 (fib' (S (S n')) * 1 + fib' (S n') * 1) (fib' (S (S n')) * 1 + fib' (S n') * 0)
+  (fib' (S n') * 1 + fib' n' * 1) (fib' (S n') * 1 + fib' n' * 0) =
+M22 (fib' (S (S (S n')))) (fib' (S (S n'))) (fib' (S (S n'))) (fib' (S n'))
+\end{lstlisting}
+
+We can simplify the LHS using the rewrites \texttt{Nat.mul\_1\_r}, \texttt{Nat.mul\_0\_r}, and \texttt{Nat.add\_0\_r}. 
+
+\begin{lstlisting}
+1 goal (ID 93)
+
+n' : nat
+IHn'' : pow_m22_l (M22 1 1 1 0) (S n') =
+        M22 (fib' (S (S n'))) (fib' (S n')) (fib' (S n')) (fib' n')
+============================
+M22 (fib' (S (S n')) + fib' (S n')) (fib' (S (S n'))) (fib' (S n') + fib' n') (fib' (S n')) =
+M22 (fib' (S (S (S n')))) (fib' (S (S n'))) (fib' (S (S n'))) (fib' (S n'))
+\end{lstlisting}
+
+Reading the LHS, we can rewrite it using \texttt{fold\_unfold\_fib'\_S} and match the RHS. Thus, the proof is complete.
+
+\subsubsection{Formalize Definition 27 in Coq}
+
+Here, we must formalize the definition of matrix exponentiation, like before, but the recursive call is on the right. The definition is as follows:
+
+\begin{lstlisting}
+Fixpoint pow_m22_r (x : m22) (n : nat) : m22 :=
+  match n with
+  | 0 =>
+      identity_m22
+  | S n =>
+      mul_m22 x (pow_m22_r x n)
+  end.
+
+Lemma fold_unfold_pow_m22_r_O :
+  forall (x : m22),
+    pow_m22_r x 0 =
+      identity_m22.
+Proof.
+  fold_unfold_tactic pow_m22_r.
+Qed.
+
+Lemma fold_unfold_pow_m22_r_S :
+  forall (x : m22)
+         (n' : nat),
+    pow_m22_r x (S n') =
+      mul_m22 x (pow_m22_r x n').
+Proof.
+  fold_unfold_tactic pow_m22_r.
+Qed.
+\end{lstlisting}
+
+Since we have done this in a previous task, the proof is routine.
+
+\subsubsection{Are Definitions 13 and 27 equivalent?}
+
+Here, I must prove that the two definitions are equivalent. The proof is as follows:
+
+\begin{lstlisting}
+Proposition pow_m22_l_is_equivalent_wrt_pow_m22_r :
+  forall (x : m22)
+         (n : nat),
+    pow_m22_l x n =
+      pow_m22_r x n.
+Proof.
+  intros x n.
+  revert x.
+  induction n as [ | n' IHn'].
+  + intro x.
+    rewrite -> (fold_unfold_pow_m22_l_O x).
+    rewrite -> (fold_unfold_pow_m22_r_O x).
+    reflexivity.
+  + intro x.
+    rewrite -> (fold_unfold_pow_m22_l_S x n').
+    rewrite -> (fold_unfold_pow_m22_r_S x n').
+    rewrite -> (IHn' x).
+    rewrite <- (pow_m22_comm_r x n').
+    reflexivity.
+Qed.
+\end{lstlisting}
+
+Here, we can prove our proposition by induction on \texttt{n}. The base case is routine. For the inductive case, we use the induction hypothesis. However, we find ourselves stuck at this goal:
+
+\begin{lstlisting}
+1 goal (ID 82)
+
+n' : nat
+IHn' : forall x : m22, pow_m22_l x n' = pow_m22_r x n'
+x : m22
+============================
+mul_m22 (pow_m22_r x n') x = mul_m22 x (pow_m22_r x n')
+\end{lstlisting}
+
+Here, we need a lemma from Exercise 31 in the informal lecture notes from 2013. The proof is as follows:
+
+\begin{lstlisting}
+  Lemma pow_m22_comm_r :
+  forall (x : m22)
+         (n : nat),
+    mul_m22 x (pow_m22_r x n) =
+      mul_m22 (pow_m22_r x n) x.
+Proof.
+  intros x n.
+  revert x.
+  induction n as [ | n' IHn'].
+  + intro x.
+    rewrite -> (fold_unfold_pow_m22_r_O x).
+    rewrite -> (mul_m22_identity_r x).
+    rewrite -> (mul_m22_identity_l x).
+    reflexivity.
+  + intro x.
+    rewrite -> (fold_unfold_pow_m22_r_S x n').
+    rewrite -> (IHn' x).
+    rewrite -> (mul_m22_assoc x (pow_m22_r x n') x).
+    rewrite <- (IHn' x).
+    reflexivity.
+Qed.
+\end{lstlisting}
+
+For the proof above, the only tricky case is to notice that we need to make use of \texttt{mul\_m22\_assoc} to prove the goal. Otherwise, the proof is routine.
+
+Going back to our original proof, we can now prove the proposition using the lemma above. Thus, the proof is complete.
+
+\subsubsection{Formalize Definition 35 in Coq}
+
+Here, we must formalize the definition for matrix transposition. The definition is as follows:
+
+\begin{lstlisting}
+Definition transpose_m22 (x : m22) : m22 :=
+  match x with
+  | (M22 x11 x12
+         x21 x22) =>
+      M22 x11 x21
+          x12 x22
+  end.
+\end{lstlisting}
+
+\subsubsection{Prove Proposition 36 in Coq}
+
+Here we must prove that the transpose of the transpose of a matrix is the original matrix. In other words, matrix transposition is involutive. The proof is as follows:
+
+\begin{lstlisting}
+Proposition transpose_is_involutory :
+  forall (x : m22),
+    transpose_m22 (transpose_m22 x) =
+      x.
+Proof.
+  intro x.
+  unfold transpose_m22 at 2.
+  destruct x as [x11 x21 x12 x22].
+  unfold transpose_m22 at 1.
+  reflexivity.
+Qed.
+\end{lstlisting}
+
+Here, we only need to notice that we can destruct the effect of applying the inner transpose function x. Afterwards, the proof is routine as unfolding the effect of the outer transpose function matches the LHS with the RHS.
+
+\subsubsection{Prove Proposition 38 in Coq}
+
+In this exercise, we must prove that transposition and exponentiation commute with each other. 
+
+\begin{lstlisting}
+Proposition transposition_commutes_with_exponentiation :
+  forall (x : m22)
+         (n : nat),
+    transpose_m22 (pow_m22_l x n) =
+      pow_m22_l (transpose_m22 x) n.
+\end{lstlisting}
+
+The proof of this is somewhat more difficult, but it is not something we have not done before. We first need to perform induction in the form of Light of Inductil over \texttt{n}.
+
+Solving the base case is routine, but I want to highlight the following goal:
+
+\begin{lstlisting}
+1 goal (ID 87)
+
+x : m22
+============================
+transpose_m22 identity_m22 = identity_m22
+\end{lstlisting}
+
+Here, we can formulate a lemma that states that the transposition of the identity matrix is the identity matrix. The proof is as follows:
+
+\begin{lstlisting}
+Lemma transpose_identity_r :
+  transpose_m22 identity_m22 =
+    identity_m22.
+Proof.
+  unfold transpose_m22.
+  unfold identity_m22.
+  reflexivity.
+Qed.
+\end{lstlisting}
+
+Proceeding back to the base case, we can exact the lemma above to prove the goal. Afterwards, we can proceed to the inductive case.
+
+The proof for the inductive step is routine until this point:
+
+\begin{lstlisting}
+1 goal (ID 90)
+
+n' : nat
+IHn' : forall x : m22, transpose_m22 (pow_m22_l x n') = pow_m22_l (transpose_m22 x) n'
+x : m22
+============================
+transpose_m22 (mul_m22 (pow_m22_l x n') x) =
+mul_m22 (pow_m22_l (transpose_m22 x) n') (transpose_m22 x)
+\end{lstlisting}
+
+From inspection, we notice that the goal implies that transposition distributes over matrix multiplication. Thus, we can formulate a lemma that states that transposition distributes over matrix multiplication. The proof is as follows:
+
+\begin{lstlisting}
+Lemma transposition_distributes_over_mul_m22 :
+  forall (x y : m22),
+    transpose_m22 (mul_m22 x y) =
+      mul_m22 (transpose_m22 y) (transpose_m22 x).
+Proof.
+  intros x y.  
+  
+  unfold transpose_m22 at 2.
+  destruct x as [x11 x12 x21 x22].
+  unfold transpose_m22 at 2.
+  destruct y as [y11 y12 y21 y22].
+  unfold mul_m22 at 2.
+
+  unfold mul_m22.
+  unfold transpose_m22.
+
+  rewrite -> (Nat.mul_comm x11 y11). 
+  rewrite -> (Nat.mul_comm x12 y21). 
+  rewrite -> (Nat.mul_comm x21 y11).
+  rewrite -> (Nat.mul_comm x22 y21).
+  rewrite -> (Nat.mul_comm x11 y12).
+  rewrite -> (Nat.mul_comm x12 y22).
+  rewrite -> (Nat.mul_comm x21 y12).
+  rewrite -> (Nat.mul_comm x22 y22). 
+  reflexivity.
+Qed.
+\end{lstlisting}
+
+The proof for this lemma is routine. We simply need to unfold the definitions and use the commutativity of natural number multiplication. Afterwards, we can use the lemma above to proceed with our main proof and apply the induction hypothesis. Then, we are left with:
+
+\begin{lstlisting}
+1 goal (ID 92)
+
+n' : nat
+IHn' : forall x : m22, transpose_m22 (pow_m22_l x n') = pow_m22_l (transpose_m22 x) n'
+x : m22
+============================
+mul_m22 (transpose_m22 x) (pow_m22_l (transpose_m22 x) n') =
+mul_m22 (pow_m22_l (transpose_m22 x) n') (transpose_m22 x)
+\end{lstlisting}
+
+This is Proposition 29 in the informal lecture notes provided from 2013. Thus, we can formulate a lemma for this proposition. The proof is as follows:
+
+\begin{lstlisting}
+Lemma pow_m22_comm_l :
+  forall (x : m22)
+         (n : nat),
+    mul_m22 x (pow_m22_l x n) =
+      mul_m22 (pow_m22_l x n) x.
+Proof.
+  intros x n.
+  revert x.
+  induction n as [ | n' IHn'].
+  + intro x.
+    rewrite -> (fold_unfold_pow_m22_l_O x).
+    rewrite -> (mul_m22_identity_l x).
+    rewrite -> (mul_m22_identity_r x).
+    reflexivity.
+  + intro x.
+    rewrite -> (fold_unfold_pow_m22_l_S x n').
+    rewrite <- (IHn' x).
+    rewrite <- (mul_m22_assoc x (pow_m22_l x n') x).
+    rewrite -> (IHn' x).
+    reflexivity.
+Qed.
+\end{lstlisting}
+
+This is similar to the proof a the lemma \texttt{pow\_m22\_comm\_r} we proved earlier. 
+
+Going back to our main proof, we can exact using the lemma above to prove the goal. Thus, the proof is complete.
+
+\subsubsection{Solve Exercise 40}
+
+Observing that $\left[\begin{array}{ll}1 & 1 \\ 0 & 1\end{array}\right]$ and $\left[\begin{array}{ll}1 & 0 \\ 1 & 1\end{array}\right]$ are the transposed matrices of each other, formulate a new proof of Proposition 33 that does not use mathematical induction.
+
+Since $\left[\begin{array}{ll}1 & 1 \\ 0 & 1\end{array}\right]$ and $\left[\begin{array}{ll}1 & 0 \\ 1 & 1\end{array}\right]$ are transposed matrices of each other, and we have proven a similar proposition for $\left[\begin{array}{ll}1 & 1 \\ 0 & 1\end{array}\right]$, we can postulate the following proposition:
+
+\begin{lstlisting}
+Proposition ex40 :
+forall (n : nat),
+  transpose_m22 (pow_m22_l (M22 1 1
+                                0 1) n) =
+    M22 1 0
+        n 1.
+\end{lstlisting}
+
+Here, we notice that RHS of our goal in Exercise 40 is the transpose of the RHS of the previous proposition we proved earlier for \texttt{about\_pow\_m22\_l}. Thus, we can formulate a lemma that states the transpose of the LHS of the previous proposition is equivalent to the RHS of our goal in Exercise 40. 
+\begin{lstlisting}
+Proposition ex40 :
+  forall (n : nat),
+    transpose_m22 (pow_m22_l (M22 1 1
+                                  0 1) n) =
+      M22 1 0
+          n 1.
+Proof.
+  intro n.
+  rewrite -> (about_pow_m22_l n).
+  unfold transpose_m22.
+  reflexivity.
+Qed.
+\end{lstlisting}
+
+Here, we can use the proposition we proved earlier to prove the goal. Thus, the proof is complete.
+
+\section{Conclusion}
+We begin this week's exercises by first recapitulating soundness and completeness of equality predicates. Proving them requires us to constantly vigilant about our assumptions and goals in mind. Moreover, we again realise that there is no need to re-invent the wheel when doing such proofs. Rather, once the previous proofs are established, one can often prove further propositions in an elegant manner. 
+
+In the exercise on 2-by-2 matrices, I have three main takeaways:
+\begin{enumerate}
+  \item Constant vigilance is required when working with matrices, especially larger ones. It is easy to get lost in the details of the definitions and proofs.
+  \item The propositions we proved did not require any necessarily new techniques we have not learned before. It is important to be reflective on our arsenal of techniques and manipulate them appropriately.
+  \item The structure of informal proofs and formal proofs are often similar if not the same. This is because programs are proofs (The Curry-Howard Correspondence).
+\end{enumerate}
+
+\end{document}

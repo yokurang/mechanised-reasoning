@@ -1,0 +1,351 @@
+(* week-10_about-resetting-the-accumulator.v *)
+(* FPP 2023 - YSC3236 2023-2024, Sem1 *)
+(* Olivier Danvy <danvy@yale-nus.edu.sg> *)
+(* Version of 24 Oct 2023 *)
+
+(* ********** *)
+
+Ltac fold_unfold_tactic name := intros; unfold name; fold name; reflexivity.
+
+Require Import Arith Bool List.
+
+(* ********** *)
+
+Definition make_Eureka_lemma (A : Type) (id_A : A) (combine_A : A -> A -> A) (c : A -> A) (a : A) : Prop :=
+  c a = combine_A (c id_A) a.
+
+(* ********** *)
+
+Fixpoint power_alt_aux (x n a : nat) : nat :=
+  match n with
+    O =>
+    a
+  | S n' =>
+    power_alt_aux x n' (x * a)
+  end.
+
+Definition power_alt (x n : nat) : nat :=
+  power_alt_aux x n 1.
+
+Lemma fold_unfold_power_alt_aux_O :
+  forall x a : nat,
+    power_alt_aux x 0 a =
+    a.
+Proof.
+  fold_unfold_tactic power_alt_aux.
+Qed.
+
+Lemma fold_unfold_power_alt_aux_S :
+  forall x n' a : nat,
+    power_alt_aux x (S n') a =
+    power_alt_aux x n' (x * a).
+Proof.
+  fold_unfold_tactic power_alt_aux.
+Qed.
+
+Check (make_Eureka_lemma nat).
+Check (make_Eureka_lemma nat 1).
+Check (make_Eureka_lemma nat 1).
+Check (make_Eureka_lemma nat 1 Nat.mul).
+Check (forall x n a : nat, make_Eureka_lemma nat 1 Nat.mul (power_alt_aux x n) a).
+
+
+Lemma about_power_alt_aux :
+  forall x n a : nat,
+    make_Eureka_lemma nat 1 Nat.mul (power_alt_aux x n) a.
+Proof.
+(* Forall x n a : nat, power_alt_aux x n a = power_alt_aux x n 1 * a *)
+Abort.
+
+(* ********** *)
+
+Fixpoint add_alt_aux (n a : nat) : nat :=
+  match n with
+    O =>
+    a
+  | S n' =>
+    add_alt_aux n' (S a)
+  end.
+
+Definition add_alt (n m : nat) : nat :=
+  add_alt_aux n m.
+
+Lemma about_add_alt_aux :
+  forall n a : nat,
+    make_Eureka_lemma nat 0 Nat.add (add_alt_aux n) a.
+Proof.
+  unfold make_Eureka_lemma.
+(* forall n a : nat, add_alt_aux n a = add_alt_aux n 0 + a *)
+Abort.
+
+(* ********** *)
+
+(* Exercise 01 *)
+
+Fixpoint length_alt_aux (V : Type) (vs : list V) (a : nat) : nat :=
+  match vs with
+    nil =>
+    a
+  | v :: vs' =>
+    length_alt_aux V vs' (S a)
+  end.
+
+Definition length_alt (V : Type) (vs : list V) : nat :=
+  length_alt_aux V vs 0.
+
+(*
+Lemma about_length_alt_aux :
+*)
+
+(* ********** *)
+
+(* Exercise 02 *)
+
+Fixpoint list_append (V : Type) (v1s v2s : list V) : list V :=
+  match v1s with
+    nil =>
+    v2s
+  | v1 :: v1s' =>
+    v1 :: list_append V v1s' v2s
+  end.
+
+Fixpoint reverse_alt_aux (V : Type) (vs a : list V) : list V :=
+  match vs with
+    nil =>
+    a
+  | v :: vs' =>
+    reverse_alt_aux V vs' (v :: a)
+  end.
+
+Definition reverse_alt (V : Type) (vs : list V) : list V :=
+  reverse_alt_aux V vs nil.
+
+(*
+Lemma about_reverse_alt_aux :
+*)
+
+(* ********** *)
+
+(* Exercise 03 *)
+
+Fixpoint list_fold_left (V W : Type) (nil_case : W) (cons_case : V -> W -> W) (vs : list V) : W :=
+  match vs with
+    nil =>
+      nil_case
+  | v :: vs' =>
+      list_fold_left V W (cons_case v nil_case) cons_case vs'
+  end.
+
+(*
+Lemma about_list_fold_left :
+*)
+
+(* ********** *)
+
+(* Exercise 04 *)
+
+Fixpoint fac_alt_aux (n a : nat) : nat :=
+  match n with
+  | O =>
+    a
+  | S n' =>
+    fac_alt_aux n' (S n' * a)
+  end.
+
+Definition fac_alt (n : nat) : nat :=
+  fac_alt_aux n 1.
+
+Lemma fold_unfold_fac_alt_aux_O :
+  forall a : nat,
+    fac_alt_aux 0 a =
+    a.
+Proof.
+  fold_unfold_tactic fac_alt_aux.
+Qed.
+
+Lemma fold_unfold_fac_alt_aux_S :
+  forall n' a : nat,
+    fac_alt_aux (S n') a =
+    fac_alt_aux n' (S n' * a).
+Proof.
+  fold_unfold_tactic fac_alt_aux.
+Qed.
+
+Check (make_Eureka_lemma nat).
+Check (make_Eureka_lemma nat 1 Nat.mul).
+Check (forall n a : nat, make_Eureka_lemma nat 1 Nat.mul (fac_alt_aux n) a).
+
+
+Lemma about_fac_alt_aux :
+  forall n a : nat,
+    fac_alt_aux n a = fac_alt_aux n 1 * a.
+Proof.
+  intro n.
+  induction n as [ | n' IHn'].
+    + intro a.
+    rewrite -> 2 fold_unfold_fac_alt_aux_O.
+    rewrite -> Nat.mul_1_l.
+    reflexivity.
+  + intro a.
+    rewrite -> 2 fold_unfold_fac_alt_aux_S.
+    rewrite -> (IHn' (S n' * a)).
+    rewrite -> (IHn' (S n' * 1)).
+    rewrite -> Nat.mul_1_r.
+    rewrite -> 1 Nat.mul_assoc.
+    reflexivity.
+Qed.
+
+Lemma about_fac_alt_aux' :
+  forall (n a : nat),
+    make_Eureka_lemma nat 1 Nat.mul (fac_alt_aux n) a.
+Proof.
+  unfold make_Eureka_lemma.
+  intro n.
+  induction n as [ | n' IHn'].
+  + intro a.
+    rewrite -> 2 fold_unfold_fac_alt_aux_O.
+    rewrite -> Nat.mul_1_l.
+    reflexivity.
+  + intro a.
+    rewrite -> 2 fold_unfold_fac_alt_aux_S.
+    rewrite -> (IHn' (S n' * a)).
+    rewrite -> (IHn' (S n' * 1)).
+    rewrite -> Nat.mul_1_r.
+    rewrite -> 1 Nat.mul_assoc.
+    reflexivity.
+Qed.
+
+(* ********** *)
+
+(* Exercise 05 *)
+
+Inductive binary_tree : Type :=
+| Leaf : nat -> binary_tree
+| Node : binary_tree -> binary_tree -> binary_tree.
+
+(* ***** *)
+
+Fixpoint weight (t : binary_tree) : nat :=
+  match t with
+  | Leaf n =>
+    n
+  | Node t1 t2 =>
+    weight t1 + weight t2
+  end.
+
+Lemma fold_unfold_weight_Leaf :
+  forall n : nat,
+    weight (Leaf n) = n.
+Proof.
+  fold_unfold_tactic weight.
+Qed.
+
+Lemma fold_unfold_weight_Node :
+  forall t1 t2 : binary_tree,
+    weight (Node t1 t2) = weight t1 + weight t2.
+Proof.
+  fold_unfold_tactic weight.
+Qed.
+
+(* ***** *)
+
+Fixpoint weight_alt_aux (t : binary_tree) (a : nat) : nat :=
+  match t with
+  | Leaf n =>
+    n + a
+  | Node t1 t2 =>
+    weight_alt_aux t1 (weight_alt_aux t2 a)
+  end.
+
+Definition weight_alt (t : binary_tree) : nat :=
+  weight_alt_aux t 0.
+
+Lemma fold_unfold_weight_alt_aux_Leaf :
+  forall n a : nat,
+    weight_alt_aux (Leaf n) a = n + a.
+Proof.
+  fold_unfold_tactic weight_alt_aux.
+Qed.
+
+Lemma fold_unfold_weight_alt_aux_Node :
+  forall (t1 t2 : binary_tree)
+         (a : nat),
+    weight_alt_aux (Node t1 t2) a = weight_alt_aux t1 (weight_alt_aux t2 a).
+Proof.
+  fold_unfold_tactic weight_alt_aux.
+Qed.
+
+(* ***** *)
+
+Check (forall (t : binary_tree) (a : nat), make_Eureka_lemma nat 0 Nat.add (weight_alt_aux t) a).
+
+
+Lemma about_weight_alt_aux :
+  forall (t : binary_tree)
+         (a : nat),
+    weight_alt_aux t a = weight_alt_aux t 0 + a.
+Proof.
+  intro t.
+  induction t as [ | t1 IHt1 t2 IHt2].
+  + intro a.
+    rewrite -> (fold_unfold_weight_alt_aux_Leaf n a).
+    rewrite -> (fold_unfold_weight_alt_aux_Leaf n 0).
+    Search (_ + _ + _ = _ + _ + _).
+    rewrite -> Nat.add_shuffle0.
+    rewrite -> (Nat.add_0_r (n + a)).
+    reflexivity.
+  + intro a.
+    rewrite -> 2 fold_unfold_weight_alt_aux_Node.
+    rewrite -> (IHt1 (weight_alt_aux t2 a)).
+    rewrite -> (IHt1 (weight_alt_aux t2 0)).
+    rewrite -> (IHt2 a).
+    rewrite -> Nat.add_assoc.
+    reflexivity.
+Qed.
+
+Lemma about_weight_alt_aux' :
+  forall (t : binary_tree)
+         (a : nat),
+    make_Eureka_lemma nat 0 Nat.add (weight_alt_aux t) a.
+Proof.
+  unfold make_Eureka_lemma.
+  intro t.
+  induction t as [ | t1 IHt1 t2 IHt2].
+  + intro a.
+    rewrite -> (fold_unfold_weight_alt_aux_Leaf n a).
+    rewrite -> (fold_unfold_weight_alt_aux_Leaf n 0).
+    Search (_ + _ + _ = _ + _ + _).
+    rewrite -> Nat.add_shuffle0.
+    rewrite -> (Nat.add_0_r (n + a)).
+    reflexivity.
+  + intro a.
+    rewrite -> 2 fold_unfold_weight_alt_aux_Node.
+    rewrite -> (IHt1 (weight_alt_aux t2 a)).
+    rewrite -> (IHt1 (weight_alt_aux t2 0)).
+    rewrite -> (IHt2 a).
+    rewrite -> Nat.add_assoc.
+    reflexivity.
+Qed.
+
+Theorem weight_and_weight_alt_are_equivalent :
+  forall t : binary_tree,
+    weight t = weight_alt t.
+Proof.
+  unfold weight_alt.
+  intro t.
+  induction t as [ | t1 IHt1 t2 IHt2].
+  + rewrite -> fold_unfold_weight_Leaf.
+    rewrite -> fold_unfold_weight_alt_aux_Leaf.
+    rewrite -> Nat.add_0_r.
+    reflexivity.
+  + rewrite -> fold_unfold_weight_Node.
+    rewrite -> fold_unfold_weight_alt_aux_Node.
+    rewrite -> (about_weight_alt_aux t1 (weight_alt_aux t2 0)).
+    rewrite -> IHt1.
+    rewrite -> IHt2.
+    reflexivity.
+Qed.  
+
+(* ********** *)
+
+(* end of week-10_about-resetting-the-accumulator.v *)

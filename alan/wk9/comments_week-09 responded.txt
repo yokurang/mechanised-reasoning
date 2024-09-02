@@ -1,0 +1,342 @@
+Hi guys,
+
+Thanks for your handin.  Here are some comments.
+
+----------
+
+submission.v
+
+-----
+
+Lemma eqb_bool_is_reflexive :
+  forall b : bool,
+    eqb_bool b b = true.
+Proof.
+Abort.
+
+Really?
+
+Lemma eqb_bool_is_reflexive :
+  forall b : bool,
+    eqb_bool b b = true.
+Proof.
+  intros [ | ]; unfold eqb_bool; reflexivity.
+Qed.
+
+-----
+
+Why didn't you treat eqb_bool?
+It is a good warmup.
+
+-----
+
+the part about Nat.eqb suggests you are lost?
+
+-----
+
+Proposition soundness_and_completeness_of_eqb_pair :
+
+good
+
+-----
+
+Definition eqb_unit (u1 u2 : unit) : bool :=
+  match u1 with
+  | tt =>
+      match u2 with
+      | tt =>
+          true
+      end
+  end.
+
+is an overkill; how about
+
+Definition eqb_unit (u1 u2 : unit) : bool :=
+  true.
+
+instead?
+
+-----
+
+Proposition soundness_and_completeness_of_eqb_option_bool_list_unit :
+  is_a_sound_and_complete_equality_predicate (option bool * list unit) (eqb_pair (option bool) eqb_option_bool (list unit) eqb_list_unit).
+Proof.
+  exact (about_soundness_and_completeness_of_eqb_option_bool_list_unit soundness_and_completeness_of_eqb_option_bool soundness_and_completeness_of_eqb_list_unit).
+Qed.
+
+OK
+
+-----
+
+(* week-08_uniqueness-of-the-quotient-and-remainder.v *)
+
+nothing is done here
+
+-----
+
+Lemma about_factoring_a_multiplicative_constant_on_the_right_in_Sigma :
+Lemma about_factoring_a_multiplicative_constant_on_the_left_in_Sigma :
+
+fine
+
+-----
+
+Lemma about_swapping_Sigma :
+
+( Fixed.)
+
+no, no, no:
+
+Nat.add_cancel_r is defined as
+     forall n m p : nat, n + p = m + p <-> n = m
+so you cannot casually write
+       rewrite -> Nat.add_cancel_r.
+which doesn't convey that you understand what you are doing
+
+ditto in the induction case: there is something to understand here,
+and this something is not conveyed in this handin
+
+-----
+
+Lemma about_Sigma_with_two_equivalent_functions :
+
+OK
+
+-----
+
+Lemma about_Sigma_with_two_equivalent_functions_up_to_the_bound :
+
+(Resolved.)
+
+again, no: if the *goals* window is
+
+  x' : nat
+  f, g : nat -> nat
+  i : forall i : nat, i <= S x' -> f i = g i
+  IHx' : (forall i : nat, i <= x' -> f i = g i) -> Sigma x' f = Sigma x' g
+  i0 : nat
+  H_i0_less_than_x' : i0 <= x'
+  ============================
+  i0 <= S x'
+
+it makes no sense to write
+
+       rewrite -> H_i0_less_than_x'.
+
+even though tCPA accepts it.
+
+-----
+
+Lemma about_Sigma_with_an_additive_function :
+Lemma about_Sigma_with_a_constant_function :
+
+all good
+
+-----
+
+Lemma about_Sigma_with_two_small_a_function :
+
+you are overusing the apply tactic
+
+(I'm not able to see the alternative strategy.)
+
+this proof is on the mindless side, witness
+  rewrite -> IHx'.
+which creates subgoals
+
+(Resolved)
+more fundamentally, Nat.le_succ_diag_r denotes
+  forall n : nat, n <= S n
+which is not a Leibniz equality, and therefore writing
+       rewrite -> Nat.le_succ_diag_r.
+makes no sense,
+even though tCPA accepts it.
+
+ditto later in the proof: le_n_S denotes
+  forall n m : nat, n <= m -> S n <= S m
+and so if the goal is
+  i <= S x'
+it makes no sense to write
+       apply le_n_S.
+even though tCPA accepts it.
+
+-----
+
+Lemma about_Sigma_up_to_a_positive_sum :
+Property about_Sigma1 :
+
+OK
+
+-----
+
+Proposition euclids_division :
+Proposition euclids_division_alt :
+Corollary euclids_division_alt_using_euclids_division :
+Corollary euclids_division_using_euclids_division_alt :
+
+good and clear
+
+-----
+
+(* week-09_formalizing-two-by-two-matrices.v *)
+
+OK
+
+-----
+
+Lemma mul_m22_assoc can be proved with a lighter footing, e.g.,
+
+  Restart.
+
+  intros [x11 x12
+          x21 x22]
+         [y11 y12
+          y21 y22]
+         [z11 z12
+          z21 z22].
+  unfold mul_m22.
+  rewrite ->8 Nat.mul_add_distr_l.
+  rewrite ->16 Nat.mul_assoc.
+  rewrite ->8 Nat.mul_add_distr_r.
+  rewrite ->2 (Nat.add_shuffle1 _ (x12 * _ * _) _).
+  rewrite ->2 (Nat.add_shuffle1 _ (x21 * _ * _) _).
+  reflexivity.
+Qed.
+
+-----
+
+F) How does your formalization of Proposition 14 compare with the informal proof of Proposition 14?
+
+Right.  So you are illustrating that tCPA gives us a domain-specific language
+for writing proofs.
+
+-----
+
+Fixpoint aux_fib (n : nat) (a : nat) (b : nat) : nat :=
+Definition fib (n : nat) : nat :=
+
+actually, it would have been a lot simpler to stick to the canonical definition of the Fibonacci function
+
+(this solution is literally the same as in another group)
+
+-----
+
+and the rest is fine
+
+----------
+
+report.pdf
+
+-----
+
+remember to use a spell checker (e.g., "wuth" -> "with")
+
+-----
+
+front page:
+
+the title doesn't reflect the content of the report
+
+the drawing is amusing but irrelevant here
+
+the quote looks gratuitous
+
+-----
+
+contents: good and clear
+
+-----
+
+S1
+
+OK
+
+-----
+
+S2 E00
+
+on topic
+
+-----
+
+S3 E08 W07
+
+"As a hint, we are told that the unit value in tCPA is written tt and has type unit."
+
+Not told, reminded:
+  https://delimited-continuation.github.io/YSC3236/2023-2024_Sem1/week-02_exercises.html#exercise-about-types
+
+the rest is fine, shows understanding, and should be useful should you one day need to consult this report
+
+-----
+
+S4 E01 W08
+
+good and clear
+
+-----
+
+S5 E02 W08
+
+The paragraph
+
+  We see that there is no more restriction on the value of d, and the base case is proved using properties of addition,
+  multiplication and successors. For the induction step, we no longer need to case d as [ | d’] because the proposition
+  is stated in a way that matches the induction step of natural number d. Hence, we can directly divide it into the two
+  cases r = d or r < d, and the rest of the proof is similar to the original one as well.
+
+should have been stated upfront, since it is the reason of being for this exercise.
+
+The conclusion should make more than mention this point incidentally: you know now how to encode qualifications in the statement of theorems.
+For example, in Week 10, and from memory, the informal quantification
+  forall n >= 4, ...n...
+is not formalized as
+  forall n : nat, 4 <= n -> ...n...
+but either as
+  forall n : nat, ...(4 + n)...
+or as
+  forall n : nat, ...(S (S (S (S n))))...
+
+Modulo that, the narrative is fine and conveys understanding.
+
+-----
+
+S6 E01
+
+this narrative is based on unexplained shortcuts that are not aligned with what is taught in FPP
+
+-----
+
+S7 E02 W09
+
+OK
+
+"During office hours, I defined my own Nat.add_shuffle1 as nat_add_shuffle1."
+Why is this relevant here?
+
+"Hence, it we see an example in which programs are proofs."
+No.  It is an illustration that tCPA provides a domain-specific language for writing proofs.
+
+"Here, our fib function uses two accumulators. This way, we can compute the Fibonacci sequence in linear time."
+The point is missed: exponentiating F is done in linear time and therefore makes it possible to compute Fibonacci numbers in linear time.
+
+-----
+
+S8
+
+OK
+
+----------
+
+Overall, this handin is unsatisfactory.
+Could you revise it so that all the critical points above are addressed?
+
+Specifically,
+
+* except for not specifying arguments to lemmas when there is no ambiguity, there should be no shortcuts, and
+
+* the canonical Fibonacci function should be used.
+
+AdvThanksance,
+
+-- Olivier

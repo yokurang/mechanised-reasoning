@@ -1,0 +1,1795 @@
+\documentclass{article}
+
+\usepackage[english]{babel}
+
+% Encoding and Fonts
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern} % Modern LaTeX font
+
+% Page layout and typography
+\usepackage[margin=0.7in]{geometry} % More balanced margin settings
+\usepackage{microtype} % Subtle improvements in word spacing for aesthetics
+\usepackage[parfill]{parskip}  % Space between paragraphs instead of indents
+
+% Graphics and Colors
+% \usepackage{minted}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{xcolor}
+\definecolor{LightGray}{gray}{0.95}
+\definecolor{colorSection}{RGB}{0, 0, 0}         
+\definecolor{colorSubsection}{RGB}{0, 0, 255}     
+\definecolor{colorSubsubsection}{RGB}{255, 0, 0}  
+\definecolor{colorSubsubsubsection}{RGB}{0, 128, 0} 
+
+% Hyperlinks
+\usepackage[hidelinks]{hyperref} 
+
+% Headers and Footers
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhead{} 
+\fancyfoot[C]{\thepage} 
+\renewcommand{\headrulewidth}{0.5pt} 
+\renewcommand{\footrulewidth}{0.5pt} 
+
+% Math Support
+\usepackage{amsmath}
+
+% Codeblocks using listings
+\usepackage{listings}
+\lstdefinelanguage{Coq}{
+  keywords={Definition, Inductive, Fixpoint, match, with, end, as, return, forall, exists, if, then, else, fun, Lemma, Proof, Qed, intro, intros, Theorem},
+  morecomment=[s]{(*}{*)}
+}
+\lstdefinestyle{customc}{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=L,
+  xleftmargin=\parindent,
+  language=Coq,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\bfseries\color{green!40!black},
+  commentstyle=\itshape\color{purple!40!black},
+  identifierstyle=\color{blue},
+  stringstyle=\color{orange},
+  backgroundcolor=\color{LightGray},
+}
+
+\definecolor{draculaBackground}{RGB}{40,42,54}
+\definecolor{draculaForeground}{RGB}{248,248,242}
+\definecolor{draculaComment}{RGB}{98,114,164}
+\definecolor{draculaKeyword}{RGB}{139,233,253}
+\definecolor{draculaFunction}{RGB}{80,250,123}
+\definecolor{draculaNumber}{RGB}{189,147,249}
+\definecolor{draculaString}{RGB}{241,250,140}
+
+\lstdefinestyle{dracula}{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=L,
+  xleftmargin=\parindent,
+  language=Coq,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily\color{draculaForeground},
+  keywordstyle=\bfseries\color{draculaKeyword},
+  commentstyle=\itshape\color{draculaComment},
+  identifierstyle=\color{draculaFunction},
+  numberstyle=\color{draculaNumber},
+  stringstyle=\color{draculaString},
+  backgroundcolor=\color{draculaBackground},
+}
+
+\lstset{style=dracula}
+
+% Lists and Enumerations
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=*} 
+
+% Other utility packages
+\usepackage{spverbatim}
+\usepackage{cprotect}
+\usepackage{lipsum}
+
+% Title sectioning with color
+\usepackage{titlesec}
+\titleformat*{\section}{\large\bfseries\color{colorSection}}
+\titleformat*{\subsection}{\normalsize\bfseries\color{colorSubsection}}
+\titleformat*{\subsubsection}{\small\bfseries\color{colorSubsubsection}}
+\titleformat{\subsubsubsection}
+{\normalsize\bfseries\color{colorSubsubsubsection}}{\thesubsubsubsection}{1em}{}
+
+\title{
+    \fontfamily{ebgaramond}\selectfont Week 10 : Induction with Induction \\
+    \vspace{1cm}
+    \includegraphics[width=0.8\linewidth]{download.jpeg}
+}
+\author{YSC3236: Functional Programming and Proving}
+\date{%
+    \small\emph{"Je ne sais pas le reste."} \\
+    — Évariste Galois\\
+    \vspace{1cm}
+    \today
+}
+\begin{document}
+\maketitle
+
+% Group member details
+\newpage
+\section*{Group Member Details}
+\begin{itemize}
+    \item Alan Matthew \\
+    Email: alan.matthew@u.yale-nus.edu.sg \\
+    Matriculation ID: A0224197B
+
+    \item Jingyi Hou \\
+    Email: jingyi.hou@u.yale-nus.edu.sg \\
+    Matriculation ID: A0242429E
+
+    \item Sean Lim \\
+    Email: sean.lim@u.yale-nus.edu.sg \\
+    Matriculation ID: A0230369E
+
+    \item Zhu Wentao \\
+    Email: zhu.wentao@u.yale-nus.edu.sg \\
+    Matriculation ID: A0224190N
+\end{itemize}
+\newpage
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+The big concepts this week were about a eureka lemma creator for resetting accumulators and the introduction of the concepts of weak and strong induction, the former being first-order structural induction (where you only have one induction hypothesis; also called mathematical induction) and the latter being induction with many induction hypotheses. 
+
+To appreciate the beauty of the eureka lemma maker, we work on the familiar factorial function and observe how it does the heavy lifting we have done manually many times previously. After getting sea-legs working with the factorial function, we generalise our understanding of the eureka lemma maker by working on another familiar data structure, the binary tree, and see that it is just as useful there as we would expect.
+
+We then move on to a program of proofs that help us understand the design of higher-order induction functions, ending with a comparison between using higher-order and first-order induction to prove a coin puzzle. For the last bit of this week, we have a returnee from Intro CS: mutual recursion! Here like before with the eureka lemmas, we apply what we have learnt about first and higher order induction to a different scenario, this time mutually defined odd and even predicates.
+
+
+\section{Exercise 00}
+We begin this week's exercises by checking the index of concepts and updates of the lecture notes. In particular, we are introduced to the various types of induction over Peano numbers. 
+
+The \texttt{first-order} structural recursion over Peano numbers is also known as mathematical induction. It has only one induction hypothesis and is sometimes referred to as \texttt{weak induction}.
+
+The \texttt{second-order} structural recursion over Peano numbers has two induction hypotheses, which suits the structure of the Fibonacci function.
+
+Similarly, the \texttt{third-order} and \texttt{fourth-order} structural recursion over Peano numbers has three and four induction hypotheses respectively. More generally, in the \texttt{course-of-value} induction principle, $k$ induction hypotheses are involved. The induction principle involving many induction hypotheses is also known as \texttt{strong induction}.
+
+In the exercises this week, we will see how these additional induction principles can help us prove seemingly intractable propositions in a relatively straightforward manner. 
+
+\section{Exercise 01}
+
+\subsection{Introduction}
+
+In this exercise, we are asked with formulating an eureka lemma for \texttt{length\_alt\_aux} using \texttt{make\_Eureka\_lemma}.
+
+\subsection{Answer}
+
+Following the lecture notes, we have the following definition for \texttt{make\_Eureka\_lemma}:
+
+\begin{lstlisting}
+Definition make_Eureka_lemma (A : Type) (id_A : A) (combine_A : A -> A -> A) (c : A -> A) (a : A) : Prop :=
+  c a = combine_A (c id_A) a.
+\end{lstlisting}
+
+The first argument is the type for the accumulator, then an identity element for this type, and a function to combine two elements of this type. Then we have the auxiliary function and the accumulator.
+
+Supplying these arguments for the \texttt{length} function, we have:
+
+\begin{lstlisting}
+Check (forall (V : Type) (vs : list V) (a : nat), make_Eureka_lemma nat 0 Nat.add (length_alt_aux V vs) a).
+(*
+forall (V : Type) (vs : list V) (a : nat), make_Eureka_lemma nat 0 Nat.add (length_alt_aux V vs) a
+    : Prop
+*)
+\end{lstlisting}
+
+We can them formulate this property as a lemma:
+
+\begin{lstlisting}
+Lemma about_length_alt_aux :
+  forall (V : Type) (vs : list V) (a : nat),
+    make_Eureka_lemma nat 0 Nat.add (length_alt_aux V vs) a.
+
+(* 
+1 goal (ID 18)
+
+============================
+forall (V : Type) (vs : list V) (a : nat),
+make_Eureka_lemma nat 0 Nat.add (length_alt_aux V vs) a
+*)
+\end{lstlisting}
+
+To prove this, let us first unfold the definition of \texttt{make\_Eureka\_lemma}. Proceeding from this, we can follow the goal and introduce the variables \texttt{V} and \texttt{vs} into the environment. Note that since the lemma has an accumulator, we should perform induction using Light of Inductil. 
+
+Inducting on \texttt{vs}, we have the following base case:
+
+\begin{lstlisting}
+1 goal (ID 30)
+
+V : Type
+a : nat
+============================
+length_alt_aux V nil a = length_alt_aux V nil 0 + a
+\end{lstlisting}
+
+Which is a double rewrite of the fold-unfold lemma \texttt{fold\_unfold\_length\_alt\_aux\_nil} and a single rewrite of \texttt{Nat.add\_0\_l}.
+
+Proceeding to the inductive case, we have:
+
+\begin{lstlisting}
+1 goal (ID 35)
+
+V : Type
+v : V
+vs' : list V
+IHvs' : forall a : nat, length_alt_aux V vs' a = length_alt_aux V vs' 0 + a
+a : nat
+============================
+length_alt_aux V (v :: vs') a = length_alt_aux V (v :: vs') 0 + a
+\end{lstlisting}
+
+Which is a double rewrite of the fold-unfold lemma \texttt{fold\_unfold\_length\_alt\_aux\_cons}. Afterwards, we can apply the induction hypothesis \texttt{IHvs'} on \texttt{(S a)}. 
+
+\begin{lstlisting}
+1 goal (ID 38)
+
+V : Type
+v : V
+vs' : list V
+IHvs' : forall a : nat, length_alt_aux V vs' a = length_alt_aux V vs' 0 + a
+a : nat
+============================
+length_alt_aux V vs' 0 + S a = length_alt_aux V vs' 1 + a
+\end{lstlisting}
+
+Observing the goal, we can still apply the induction hypothesis \texttt{IHvs'} on \texttt{1}. Finally, we only need to rewrite the goal using \texttt{Nat.add\_succ\_l} and \texttt{Nat.add\_assoc} to complete the proof.
+
+Here is the full proof:
+
+\begin{lstlisting}
+Lemma about_length_alt_aux :
+  forall (V : Type) (vs : list V) (a : nat),
+    make_Eureka_lemma nat 0 Nat.add (length_alt_aux V vs) a.
+Proof.
+  unfold make_Eureka_lemma.
+  intros V vs.
+  induction vs as [n | v vs' IHvs'].
+  + intro a.
+    rewrite -> 2 fold_unfold_length_alt_aux_nil.
+    rewrite -> Nat.add_0_l.
+    reflexivity.
+  + intro a.
+    rewrite -> 2 fold_unfold_length_alt_aux_cons.
+    rewrite -> (IHvs' (S a)).
+    rewrite -> (IHvs' 1).
+    rewrite <- Nat.add_1_l.
+    rewrite -> Nat.add_assoc.
+    reflexivity.
+Qed.
+\end{lstlisting}
+
+\subsection{Conclusion}
+
+In this exercise, we have shown that the Eureka lemma we postulated for the length function is an instance of \texttt{make\_Eureka\_lemma}. The importance of this is to realize that all of the Eureka lemmas we have been writing so far, including this one, is part of the same elephant. In other words, they are an instance of the same idea and possess the same general structure.
+
+\section{Exercise 02}
+
+\subsection{Introduction}
+
+In this exercise, we are tasked to formulate an Eureka lemma for list reversal using \texttt{make\_Eureka\_lemma}.
+
+\subsection{Answer}
+
+In formulating an Eureka lemma for list reversal, we must first understand the structure of the list reversal function. In particular, we must understand that the type of the accumulator, which carries the reversed list, is the same as the type of the list itself (\texttt{list V}), and that the identity element is the tail of the list (\texttt{vs}), the function to combine two elements is the list append function (\texttt{list\_append V}), and the auxiliary function is the list reversal function (\texttt{reverse\_alt\_aux V}), and finally the accumulator (\texttt{a}).
+
+Note that for this exercise, we are going to import the \texttt{list\_append} function from the midterm exercise and its respective fold-unfold lemmas. 
+
+Using the \texttt{Check} tactic on our Eureka lemma, we have:
+
+\begin{lstlisting}
+Check (forall (V : Type) (vs a : list V), make_Eureka_lemma (list V) vs (list_append V) (reverse_alt_aux V vs) a).
+(*
+forall (V : Type) (vs a : list V),
+make_Eureka_lemma (list V) vs (list_append V) (reverse_alt_aux V vs) a
+    : Prop
+*)
+\end{lstlisting}
+
+Formulating this as a lemma, we have the following goal:
+
+\begin{lstlisting}
+1 goal (ID 157)
+
+============================
+forall (V : Type) (vs a : list V),
+make_Eureka_lemma (list V) nil (list_append V) (reverse_alt_aux V vs) a
+\end{lstlisting}
+
+We can proceed initially as routine by unfolding the definition of \texttt{make\_Eureka\_lemma} and introducing the variables \texttt{V} and \texttt{vs} into the environment.
+
+For the base case, we have:
+
+\begin{lstlisting}
+1 goal (ID 169)
+
+V : Type
+a : list V
+============================
+reverse_alt_aux V nil a = list_append V (reverse_alt_aux V nil nil) a
+\end{lstlisting}
+
+Which are a double rewrite of the fold-unfold lemma \texttt{fold\_unfold\_reverse\_alt\_aux\_nil} and a single rewrite of the fold-unfold lemma \texttt{fold\_unfold\_list\_append\_nil}.
+
+Proceeding to the inductive case, we have:
+
+\begin{lstlisting}
+1 goal (ID 174)
+
+V : Type
+v : V
+vs' : list V
+IHvs' : forall a : list V, reverse_alt_aux V vs' a = list_append V (reverse_alt_aux V vs' nil) a
+a : list V
+============================
+reverse_alt_aux V (v :: vs') a = list_append V (reverse_alt_aux V (v :: vs') nil) a
+\end{lstlisting}
+
+Which is a double rewrite of the fold-unfold lemma \texttt{fold\_unfold\_reverse\_alt\_aux\_cons} and we can proceed by supplying the induction hypothesis \texttt{IHvs'} on \texttt{(v :: a)}.
+
+However, the goal then reads 
+
+\begin{lstlisting}
+1 goal (ID 178)
+
+V : Type
+v : V
+vs' : list V
+IHvs' : forall a : list V, reverse_alt_aux V vs' a = list_append V (reverse_alt_aux V vs' nil) a
+a : list V
+============================
+list_append V (reverse_alt_aux V vs' nil) (v :: a) =
+list_append V (reverse_alt_aux V vs' (v :: nil)) a
+\end{lstlisting}
+
+And we require an additional Eureka lemma to prove this. In particular, we require an Eureka lemma that states that the list append of \texttt{reverse\_alt\_aux V vs' nil} and \texttt{(v :: a)} is equal to the list append of \texttt{reverse\_alt\_aux V vs' (v :: nil)} and \texttt{a}. Let us name this lemma \texttt{about\_list\_append\_cons}.
+
+\begin{lstlisting}
+Lemma about_list_append_cons :
+  forall (V : Type)
+        (v2 : V)
+        (v1s v2s' : list V),
+    list_append V v1s (v2 :: v2s') = list_append V (list_append V v1s (v2 :: nil)) v2s'.
+\end{lstlisting}
+
+Admitting this lemma for now, we can proceed with the proof. We can rewrite the goal using \texttt{about\_list\_append\_cons} and \texttt{IHvs'} on \texttt{(v :: nil)} to complete the proof.
+
+With that, let us return to proving \texttt{about\_list\_append\_cons}. We can proceed by induction on \texttt{vs'}. The base case is as follows:
+
+\begin{lstlisting}
+1 goal (ID 172)
+
+V : Type
+v2s' : list V
+v2 : V
+============================
+list_append V nil (v2 :: v2s') = list_append V (list_append V nil (v2 :: nil)) v2s'
+\end{lstlisting}
+
+However, we quickly realize that we need an additional Eureka lemma to prove this. In particular, we require an Eureka lemma that states that in the list append operation nil is left neutral. Let us name this lemma \texttt{nil\_is\_left\_neutral\_wrt\_list\_append}.
+
+\begin{lstlisting}
+Proposition nil_is_left_neutral_wrt_list_append :
+  forall (V : Type)
+         (vs : list V),
+    list_append V nil vs = vs.
+\end{lstlisting}
+
+Admitting this lemma for now, we can proceed with the proof. We can perform a double rewrite using our newly defined lemma \texttt{nil\_is\_left\_neutral\_wrt\_list\_append} and then rewrite using \texttt{fold\_unfold\_list\_append\_cons}. Finally, we can rewrite again using \texttt{nil\_is\_left\_neutral\_wrt\_list\_append} to complete the proof.
+
+Let us proceed to the inductive case. We have:
+
+\begin{lstlisting}
+1 goal (ID 178)
+
+V : Type
+v1 : V
+v1s', v2s' : list V
+IHv1s' : forall v2 : V,
+          list_append V v1s' (v2 :: v2s') = list_append V (list_append V v1s' (v2 :: nil)) v2s'
+v2 : V
+============================
+list_append V (v1 :: v1s') (v2 :: v2s') =
+list_append V (list_append V (v1 :: v1s') (v2 :: nil)) v2s'
+\end{lstlisting}
+
+Which we can proceed by rewriting using \texttt{fold\_unfold\_list\_append\_cons} and then applying the induction hypothesis \texttt{IHv1s'} on \texttt{v2}. Lastly, we can perform two more rewrites using \texttt{fold\_unfold\_list\_append\_cons} to complete the proof.
+
+With that, we have completed the proof for \texttt{about\_list\_append\_cons}.
+
+Let us now return to the proof of \texttt{nil\_is\_left\_neutral\_wrt\_list\_append}. 
+
+\begin{lstlisting}
+1 goal (ID 150)
+
+============================
+forall (V : Type) (vs : list V), list_append V nil vs = vs
+\end{lstlisting}
+
+We can introduce the variables \texttt{V} and \texttt{vs} into the environment. We can then proceed by rewriting using our fold-unfold lemma for list append on the nil case \texttt{fold\_unfold\_list\_append\_nil} on \texttt{V} and \texttt{vs} to complete the proof.
+
+Here is the full proof:
+
+\begin{lstlisting}
+Proposition nil_is_left_neutral_wrt_list_append :
+  forall (V : Type)
+         (vs : list V),
+    list_append V nil vs = vs.
+Proof.
+  intros V vs.
+  rewrite -> (fold_unfold_list_append_nil V vs).
+  reflexivity.
+Qed.
+
+Lemma about_list_append_cons :
+  forall (V : Type)
+         (v2 : V)
+         (v1s v2s' : list V),
+    list_append V v1s (v2 :: v2s') = list_append V (list_append V v1s (v2 :: nil)) v2s'.
+Proof.
+  intros V v2 v1s v2s'.
+  revert v2.
+  induction v1s as [ | v1 v1s' IHv1s'].
+  + intro v2.
+    rewrite -> 2 nil_is_left_neutral_wrt_list_append.
+    rewrite -> fold_unfold_list_append_cons.
+    rewrite -> nil_is_left_neutral_wrt_list_append.
+    reflexivity.
+  + intro v2.
+    rewrite -> fold_unfold_list_append_cons.
+    rewrite -> (IHv1s' v2).
+    rewrite -> 2 fold_unfold_list_append_cons.
+    reflexivity.
+Qed.
+    
+Lemma about_reverse_alt_aux :
+  forall (V : Type) (vs a : list V),
+    make_Eureka_lemma (list V) nil (list_append V) (reverse_alt_aux V vs) a.
+Proof.
+  unfold make_Eureka_lemma.
+  intros V vs.
+  induction vs as [n | v vs' IHvs'].
+  + intro a.
+    rewrite -> 2 fold_unfold_reverse_alt_aux_nil.
+    rewrite -> fold_unfold_list_append_nil.
+    reflexivity.
+  + intro a.
+    rewrite -> 2 fold_unfold_reverse_alt_aux_cons.
+    rewrite -> (IHvs' (v :: a)).
+    rewrite -> about_list_append_cons.
+    rewrite -> (IHvs' (v :: nil)).
+    reflexivity.
+Qed.  
+\end{lstlisting}
+
+\subsection{Conclusion}
+
+In this exercise, we arrive at the same conclusion as Exercise 01. However, it is just that the proof is more involved. In particular, we had to prove an additional Eureka lemma to prove the original Eureka lemma, and then another additional Eureka lemma to prove our second Eureka lemma.
+
+\section{Exercise 04}
+
+\subsection{Introduction}
+In this exercise, we revisit the accumulator-passing tail-recursive factorial function and state its Eureka lemma using \texttt{make\_Eureka\_lemma}. 
+
+As part of the exercise, we have been provided with a tail-recursive implementation of the factorial function, its respective fold-unfold lemmas, and the factorial function definition which makes use of the accumulator. I will omit this here for brevity.
+
+\subsection{Answer}
+
+Our first task is to implement an Eureka lemma for the factorial function \texttt{about\_fac\_alt\_aux}. Here, if we step back for a moment, we notice that in the tail-recursive auxiliary function \texttt{fac\_alt\_aux}, the accumulator holds the value of the factorial we are computing. As such, I postulated an Eureka lemma that states that the factorial of \texttt{fac\_alt\_aux n a} is equal to the factorial of \texttt{fac\_alt\_aux n 1} multiplied by \texttt{a}.
+
+Hence, we can formalize the lemmas as follows:
+
+\begin{lstlisting}
+Lemma about_fac_alt_aux :
+  forall n a : nat,
+    fac_alt_aux n a = fac_alt_aux n 1 * a.
+\end{lstlisting}
+
+Since we have an accumulator, we can proceed our proof using the Light of Inductil. In particular, we can proceed by induction on \texttt{n}.
+
+Observing the base case we have: 
+
+\begin{lstlisting}
+1 goal (ID 25)
+
+a : nat
+============================
+fac_alt_aux 0 a = fac_alt_aux 0 1 * a
+\end{lstlisting}
+
+Which is a double rewrite of the fold-unfold lemma \texttt{fold\_unfold\_fac\_alt\_aux\_O}. 
+
+\begin{lstlisting}
+1 goal (ID 27)
+
+a : nat
+============================
+a = 1 * a
+\end{lstlisting}
+
+Which we can rewrite using the lemma \texttt{Nat.mul\_1\_r}. With that, we can use the \texttt{reflexivity} tactic to complete the base case.
+
+For the inductive case, we have:
+
+\begin{lstlisting}
+1 goal (ID 30)
+
+n' : nat
+IHn' : forall a : nat, fac_alt_aux n' a = fac_alt_aux n' 1 * a
+a : nat
+============================
+fac_alt_aux (S n') a = fac_alt_aux (S n') 1 * a
+\end{lstlisting}
+
+Which is a double rewrite of the fold-unfold lemma \texttt{fold\_unfold\_fac\_alt\_aux\_S}.
+
+\begin{lstlisting}
+1 goal (ID 32)
+
+n' : nat
+IHn' : forall a : nat, fac_alt_aux n' a = fac_alt_aux n' 1 * a
+a : nat
+============================
+fac_alt_aux n' (S n' * a) = fac_alt_aux n' (S n' * 1) * a
+\end{lstlisting}
+
+Observing the LHS and RHS, we can apply the induction hypothesis on \texttt{S n' * a} and \texttt{S n' * 1} respectively.
+
+\begin{lstlisting}
+1 goal (ID 34)
+
+n' : nat
+IHn' : forall a : nat, fac_alt_aux n' a = fac_alt_aux n' 1 * a
+a : nat
+============================
+fac_alt_aux n' 1 * (S n' * a) = fac_alt_aux n' 1 * (S n' * 1) * a
+\end{lstlisting}
+
+We can then rewrite the goal using \texttt{Nat.mul\_1\_r} and \texttt{Nat.mul\_assoc} to prove the inductive case.
+
+With that our proof is complete.
+
+\begin{lstlisting}
+Lemma about_fac_alt_aux :
+  forall n a : nat,
+    fac_alt_aux n a = fac_alt_aux n 1 * a.
+Proof.
+  intro n.
+  induction n as [ | n' IHn'].
+    + intro a.
+    rewrite -> 2 fold_unfold_fac_alt_aux_O.
+    rewrite -> Nat.mul_1_l.
+    reflexivity.
+  + intro a.
+    rewrite -> 2 fold_unfold_fac_alt_aux_S.
+    rewrite -> (IHn' (S n' * a)).
+    rewrite -> (IHn' (S n' * 1)).
+    rewrite -> Nat.mul_1_r.
+    rewrite -> Nat.mul_assoc.
+    reflexivity.
+Qed.
+\end{lstlisting}
+
+Next, we proceed with formulating an Eureka lemma using \texttt{make\_Eureka\_lemma}. 
+
+Firstly, let us understand the what it does:
+
+\begin{lstlisting}
+Definition make_Eureka_lemma (A : Type) (id_A : A) (combine_A : A -> A -> A) (c : A -> A) (a : A) : Prop :=
+  c a = combine_A (c id_A) a.
+\end{lstlisting}
+
+The first argument is the type for the accumulator, then an identity element for this type, and a function to combine two elements of this type. Then we have the auxiliary function and the accumulator.
+
+Supplying these arguments for the tail-recursive factorial function, we have:
+
+\begin{lstlisting}
+Check (forall x n a : nat, make_Eureka_lemma nat 1 Nat.mul (power_alt_aux x n) a).
+
+forall n a : nat, make_Eureka_lemma nat 1 Nat.mul (fac_alt_aux n) a
+     : Prop
+
+\end{lstlisting}
+
+Which seems to be what we need. Formalizing this as an Euler lemma, we have:
+
+\begin{lstlisting}
+Lemma about_fac_alt_aux' :
+  forall n a : nat,
+    make_Eureka_lemma nat 1 Nat.mul (fac_alt_aux n) a.
+\end{lstlisting}
+
+To prove this, let us first unfold the definition of \texttt{make\_Eureka\_lemma}.
+
+\begin{lstlisting}
+1 goal (ID 18)
+
+============================
+forall n a : nat, fac_alt_aux n a = fac_alt_aux n 1 * a
+\end{lstlisting}
+
+Notice that the goal is precisely the same as the Eureka lemma we proved earlier. Hence, the proof is identical. Furthermore, we can use the \texttt{exact} tactic on the lemma we proved earlier to complete the proof.
+
+\begin{lstlisting}
+Lemma about_fac_alt_aux' :
+  forall n a : nat,
+    make_Eureka_lemma nat 1 Nat.mul (fac_alt_aux n) a.
+Proof.
+  unfold make_Eureka_lemma.
+  intro n.
+  exact (about_fac_alt_aux n).
+Qed.
+\end{lstlisting}
+
+Hence, we showed that the first Eureka lemma we postulated is expressible as an instance of \texttt{make\_Eureka\_lemma}.
+
+\subsection{Conclusion}
+
+In this exercise, we have shown that the Eureka lemma we postulated for the tail-recursive factorial function is an instance of \texttt{make\_Eureka\_lemma}. The importance of this is to realize that all of the Eureka lemmas we have been writing so far, including this one, is an part of the same elephant. In other words, they are an instance of the same idea and possess the same general structure. 
+
+All Eureka lemmas have the same general structure. 
+
+\section{Exercise 05}
+
+\subsection{Introduction}
+
+Binary trees are a fundamental data structure in computer science. Often, we are interested in computing properties of binary trees. In this document, we will examine the problem of computing the sum of the values stored in the leaves of a binary tree of natural numbers. We present two implementations: a direct recursive method and a tail-recursive method. The goal is to prove that these two methods are equivalent in terms of their results.
+
+\begin{lstlisting}
+Inductive binary_tree : Type :=
+| Leaf : nat -> binary_tree
+| Node : binary_tree -> binary_tree -> binary_tree.
+\end{lstlisting}
+
+\begin{lstlisting}
+Fixpoint weight (t : binary_tree) : nat :=
+  match t with
+  | Leaf n => n
+  | Node t1 t2 => weight t1 + weight t2
+  end.
+\end{lstlisting}
+
+\begin{lstlisting}
+Fixpoint weight_alt_aux (t : binary_tree) (a : nat) : nat :=
+  match t with
+  | Leaf n => n + a
+  | Node t1 t2 => weight_alt_aux t1 (weight_alt_aux t2 a)
+  end.
+
+Definition weight_alt (t : binary_tree) : nat :=
+  weight_alt_aux t 0.
+\end{lstlisting}
+
+\subsection{Answer}
+
+Firstly, I am tasked to postulate and prove an Eureka lemma for the \texttt{weight} function.
+
+Similar to the factorial function, the computation of the weight is stored in the accumulator. As such, I postulate that the weight of \texttt{weight\_alt\_aux t a} is equal to the weight of \texttt{weight\_alt\_aux t 0} added to \texttt{a}.
+
+Formalizing the lemma is as follows:
+
+\begin{lstlisting}
+Lemma about_weight_alt_aux :
+  forall (t : binary_tree)
+         (a : nat),
+    weight_alt_aux t a = weight_alt_aux t 0 + a.
+\end{lstlisting}
+
+We can proceed with the proof using the Light of Inductil. In particular, we can proceed by induction on \texttt{t}.
+
+The base case is as follows:
+
+\begin{lstlisting}
+1 goal (ID 40)
+
+n, a : nat
+============================
+weight_alt_aux (Leaf n) a = weight_alt_aux (Leaf n) 0 + a
+\end{lstlisting}
+
+Which is a double rewrite of the fold-unfold lemma \texttt{fold\_unfold\_weight\_alt\_aux\_Leaf}.
+
+\begin{lstlisting}
+1 goal (ID 42)
+
+n, a : nat
+============================
+n + a = n + 0 + a
+\end{lstlisting}
+
+Next, we must reorder the goal, which is an instance of \texttt{Nat.add\_shuffle0}.
+
+\begin{lstlisting}
+1 goal (ID 56)
+
+n, a : nat
+============================
+n + a = n + a + 0
+\end{lstlisting}
+
+Finally we can rewrite the goal using \texttt{Nat.add\_0\_r} on \texttt{(n + a)} to complete the base case.
+
+For the inductive case, we have:
+
+\begin{lstlisting}
+1 goal (ID 59)
+
+t1, t2 : binary_tree
+IHt1 : forall a : nat, weight_alt_aux t1 a = weight_alt_aux t1 0 + a
+IHt2 : forall a : nat, weight_alt_aux t2 a = weight_alt_aux t2 0 + a
+a : nat
+============================
+weight_alt_aux (Node t1 t2) a = weight_alt_aux (Node t1 t2) 0 + a
+\end{lstlisting}
+
+Which is a double rewrite of the fold-unfold lemma \texttt{fold\_unfold\_weight\_alt\_aux\_Node}.
+
+\begin{lstlisting}
+1 goal (ID 61)
+
+t1, t2 : binary_tree
+IHt1 : forall a : nat, weight_alt_aux t1 a = weight_alt_aux t1 0 + a
+IHt2 : forall a : nat, weight_alt_aux t2 a = weight_alt_aux t2 0 + a
+a : nat
+============================
+weight_alt_aux t1 (weight_alt_aux t2 a) = weight_alt_aux t1 (weight_alt_aux t2 0) + a
+\end{lstlisting}
+
+We can then apply the induction hypothesis \texttt{IHt1} twice on \texttt{weight\_alt\_aux t2 a} and \texttt{weight\_alt\_aux t2 0} respectively.
+
+\begin{lstlisting}
+1 goal (ID 63)
+
+t1, t2 : binary_tree
+IHt1 : forall a : nat, weight_alt_aux t1 a = weight_alt_aux t1 0 + a
+IHt2 : forall a : nat, weight_alt_aux t2 a = weight_alt_aux t2 0 + a
+a : nat
+============================
+weight_alt_aux t1 0 + weight_alt_aux t2 a = weight_alt_aux t1 0 + weight_alt_aux t2 0 + a
+\end{lstlisting}
+
+We can then apply the induction hypothesis \texttt{IHt2} on \texttt{a}.
+
+\begin{lstlisting}
+1 goal (ID 64)
+
+t1, t2 : binary_tree
+IHt1 : forall a : nat, weight_alt_aux t1 a = weight_alt_aux t1 0 + a
+IHt2 : forall a : nat, weight_alt_aux t2 a = weight_alt_aux t2 0 + a
+a : nat
+============================
+weight_alt_aux t1 0 + (weight_alt_aux t2 0 + a) = weight_alt_aux t1 0 + weight_alt_aux t2 0 + a
+\end{lstlisting}
+
+Finally we can rewrite the goal using \texttt{Nat.add\_assoc} to complete the inductive case.
+
+With that, our proof is complete.
+
+\begin{lstlisting}
+Lemma about_weight_alt_aux :
+  forall (t : binary_tree)
+         (a : nat),
+    weight_alt_aux t a = weight_alt_aux t 0 + a.
+Proof.
+  intro t.
+  induction t as [n | t1 IHt1 t2 IHt2].
+  + intro a.
+    rewrite -> (fold_unfold_weight_alt_aux_Leaf n a).
+    rewrite -> (fold_unfold_weight_alt_aux_Leaf n 0).
+    Search (_ + _ + _ = _ + _ + _).
+    rewrite -> Nat.add_shuffle0.
+    rewrite -> (Nat.add_0_r (n + a)).
+    reflexivity.
+  + intro a.
+    rewrite -> 2 fold_unfold_weight_alt_aux_Node.
+    rewrite -> (IHt1 (weight_alt_aux t2 a)).
+    rewrite -> (IHt1 (weight_alt_aux t2 0)).
+    rewrite -> (IHt2 a).
+    rewrite -> Nat.add_assoc.
+    reflexivity.
+Qed.
+\end{lstlisting}
+
+Next, we must determine if our Eureka lemma is expressible using \texttt{make\_Eureka\_lemma}.
+
+Similar to the factorial function, we supply the arguments for the binary tree type, the identity element, the function to combine two elements, the auxiliary function, and the accumulator.
+
+\begin{lstlisting}
+Check (forall (t : binary_tree) (a : nat), make_Eureka_lemma nat 0 Nat.add (weight_alt_aux t) a).
+forall (t : binary_tree) (a : nat), make_Eureka_lemma nat 0 Nat.add (weight_alt_aux t) a
+     : Prop
+\end{lstlisting}
+
+Formalizing this as an Eureka lemma, we have:
+
+\begin{lstlisting}
+Lemma about_weight_alt_aux' :
+  forall (t : binary_tree)
+         (a : nat),
+    make_Eureka_lemma nat 0 Nat.add (weight_alt_aux t) a.
+\end{lstlisting}
+
+To prove this, let us first unfold the definition of \texttt{make\_Eureka\_lemma}.
+
+\begin{lstlisting}
+1 goal (ID 29)
+
+============================
+forall (t : binary_tree) (a : nat), weight_alt_aux t a = weight_alt_aux t 0 + a
+\end{lstlisting}
+
+Which is precisely the same as the Eureka lemma we proved earlier. Hence, the proof is identical. Furthermore, we can use the \texttt{exact} tactic on the lemma we proved earlier to complete the proof.
+
+\begin{lstlisting}
+Lemma about_weight_alt_aux' :
+  forall (t : binary_tree)
+         (a : nat),
+    make_Eureka_lemma nat 0 Nat.add (weight_alt_aux t) a.
+Proof.
+ intros t.
+ exact (about_weight_alt_aux t).
+Qed.
+\end{lstlisting}
+
+Hence, we have shown that the Eureka lemma we postulated for the \texttt{weight} function is expressible using the \texttt{make\_Eureka\_lemma}.
+
+Lastly, we must show that the two functions \texttt{weight} and \texttt{weight\_alt} are equivalent in terms of their results.
+
+The theorem states:
+
+\begin{lstlisting}
+Theorem weight_and_weight_alt_are_equivalent :
+  forall t : binary_tree,
+    weight t = weight_alt t.
+\end{lstlisting}
+
+Firstly, we must unfold the definition of \texttt{weight\_alt}.
+
+\begin{lstlisting}
+1 goal (ID 34)
+
+t : binary_tree
+============================
+weight t = weight_alt_aux t 0
+\end{lstlisting}
+
+However, with that our proof no longer follows the structure for the program as we are no longer proving the equality of \texttt{weight t} and \texttt{weight\_alt t} but instead \texttt{weight t} and \texttt{weight\_alt\_aux t 0}. As such, let us postulate the following lemma:
+
+\begin{lstlisting}
+Lemma about_weight_and_weight_alt_aux : 
+  forall (t : binary_tree),
+    weight t = weight_alt_aux t 0.
+\end{lstlisting}
+
+To prove this lemma, we can proceed by induction on \texttt{t}.
+
+Note that we can proceed with induction because both the LHS and RHS are recursive. So naturally it is reasonable to reason about them using induction.
+
+The base case is as follows:
+
+\begin{lstlisting}
+1 goal (ID 37)
+
+n : nat
+============================
+weight (Leaf n) = weight_alt_aux (Leaf n) 0
+\end{lstlisting}
+
+Solving this is a simple rewrite of the fold-unfold lemma \texttt{fold\_unfold\_weight\_alt\_aux\_Leaf} and a rewrite using \texttt{Nat.add\_0\_r}.
+
+Proceeding with the inductive case, we have:
+
+\begin{lstlisting}
+1 goal (ID 42)
+
+t1, t2 : binary_tree
+IHt1 : weight t1 = weight_alt_aux t1 0
+IHt2 : weight t2 = weight_alt_aux t2 0
+============================
+weight (Node t1 t2) = weight_alt_aux (Node t1 t2) 0
+\end{lstlisting}
+
+We can then rewrite the goal using the fold-unfold lemmas we have been provided with \texttt{fold\_unfold\_weight\_Node} and \texttt{fold\_unfold\_weight\_alt\_aux\_Node}.
+
+\begin{lstlisting}
+1 goal (ID 48)
+
+t1, t2 : binary_tree
+IHt1 : weight t1 = weight_alt_aux t1 0
+IHt2 : weight t2 = weight_alt_aux t2 0
+============================
+weight t1 + weight t2 = weight_alt_aux t1 (weight_alt_aux t2 0)
+\end{lstlisting}
+
+Here, observe that we have an instance of the Eureka lemma we proved earlier \texttt{about\_weight\_alt\_aux}. As such, we can rewrite the goal using the lemma.
+
+\begin{lstlisting}
+1 goal (ID 49)
+
+t1, t2 : binary_tree
+IHt1 : weight t1 = weight_alt_aux t1 0
+IHt2 : weight t2 = weight_alt_aux t2 0
+============================
+weight t1 + weight t2 = weight_alt_aux t1 0 + weight_alt_aux t2 0
+\end{lstlisting}
+
+We can conclude the proof by applying the induction hypothesis \texttt{IHt1} and \texttt{IHt2} respectively.
+
+As we used our Eureka lemma from earlier, we notice that there is a connection with what we did prior.
+
+Here is the full proof:
+
+\begin{lstlisting}
+Lemma about_weight_and_weight_alt_aux : 
+  forall (t : binary_tree),
+    weight t = weight_alt_aux t 0.
+Proof.  
+  intro t.
+  Check (about_weight_alt_aux t 0).
+  induction t as [n | t1 IHt1 t2 IHt2].
+  + rewrite -> fold_unfold_weight_Leaf.
+    rewrite -> fold_unfold_weight_alt_aux_Leaf.
+    rewrite -> Nat.add_0_r.
+    reflexivity.
+  + rewrite -> fold_unfold_weight_Node.
+    rewrite -> fold_unfold_weight_alt_aux_Node.
+    rewrite -> about_weight_alt_aux.
+    rewrite <- IHt1.
+    rewrite <- IHt2.
+    reflexivity.
+Qed.
+\end{lstlisting}
+
+We can then use this lemma to prove the theorem \texttt{weight\_and\_weight\_alt\_are\_equivalent} using the \texttt{exact} tactic.
+
+\begin{lstlisting}
+Theorem weight_and_weight_alt_are_equivalent :
+  forall t : binary_tree,
+    weight t = weight_alt t.
+Proof.
+  unfold weight_alt.
+  intro t.
+  exact (about_weight_and_weight_alt_aux t).
+Qed.
+\end{lstlisting}
+
+\subsection{Conclusion}
+
+In this exercise, we have shown that the Eureka lemma we postulated for the \texttt{weight} function is expressible using the \texttt{make\_Eureka\_lemma}. Furthermore, we have shown that the two functions \texttt{weight} and \texttt{weight\_alt} are equivalent in terms of their results.
+
+My main takeaway was structuring proofs in a way that follows the structure of the program and writing programs that follow the structure of the proof. This is because it makes the proof easier to understand and follow.
+
+Furthermore, we also solidify the notion that Eureka lemmas are an instance of the same general idea. In particular, we can express all Eureka lemmas using the \texttt{make\_Eureka\_lemma}.
+
+\newpage
+
+\section{Exercise 12}
+\subsection{Introduction}
+Since we have already seen how an induction principle with 2 base cases and induction hypotheses \texttt{nat\_ind2} and one with 3 base cases and induction hypotheses \texttt{nat\_ind3} and their applications, in this exercise, we design and implement the next induction principle \texttt{nat\_ind4}, that has 4 base cases and 4 induction hypotheses, and prove its correctness.
+
+\subsection{Answer}
+We know that \texttt{nat\_ind4} has 4 base cases and 4 induction hypotheses, so it is stated in the following way:
+
+\begin{lstlisting}
+Lemma nat_ind4 :
+  forall P : nat -> Prop,
+    P 0 ->
+    P 1 ->
+    P 2 ->
+    P 3 ->
+    (forall n : nat, P n -> P (S n) -> P (S (S n)) -> P (S (S (S n))) -> P (S (S (S (S n))))) ->
+    forall n : nat, P n.
+\end{lstlisting}
+
+We prove it using the standard induction principle first.
+
+\begin{lstlisting}
+Proof.
+  intros P P_0 P_1 P_2 P_3 P_SSSS.
+  assert (all :
+           forall m : nat,
+             P m /\ P (S m) /\ P (S (S m)) /\ P (S (S (S m)))).
+  { intro m.
+    induction m as [ | m' [IHm' [IHSm' [IHSSm' IHSSSm']]]].
+    - exact (conj P_0 (conj P_1 (conj P_2 P_3))).
+    - exact (conj IHSm' (conj IHSSm' (conj IHSSSm' (P_SSSS m' IHm' IHSm' IHSSm' IHSSSm')))). }
+  intro n.
+  destruct (all n) as [ly _].
+  exact ly.
+\end{lstlisting}
+
+In this case, in the \texttt{all} lemma, since there are 4 induction hypotheses and we are doing first-order induction, we need 3 conjunctions, and the rest is straightforward.
+
+Next, we try proving using \texttt{nat\_ind2}.
+
+\begin{lstlisting}
+  Restart.
+
+  intros P P_0 P_1 P_2 P_3 P_SSSS.
+  assert (all :
+           forall m : nat,
+             P m /\ P (S m) /\ P (S (S m))).
+  { intro m.
+    induction m as [ | | m' [IHm' [IHSm' IHSSm']] [_ [_ IHSSSm']]] using nat_ind2.
+    - exact (conj P_0 (conj P_1 P_2)).
+    - exact (conj P_1 (conj P_2 P_3)).
+    - exact (conj IHSSm' (conj IHSSSm' (P_SSSS m' IHm' IHSm' IHSSm' IHSSSm'))). }
+  intro n.
+  destruct (all n) as [ly _].
+  exact ly.
+\end{lstlisting}
+
+Since \texttt{nat\_ind2} has 2 base cases and 2 induction hypotheses, we only need 2 conjunctions for the \texttt{all} lemma, and the rest is similar to the proof using \texttt{nat\_ind2}.
+
+Finally, we complete the proof using \texttt{nat\_ind3}.
+
+\begin{lstlisting}
+  Restart.
+
+  intros P P_0 P_1 P_2 P_3 P_SSSS.
+  assert (all :
+           forall m : nat,
+             P m /\ P (S m)).
+  { intro m.
+    induction m as [ | | | m' [IHm' IHSm'] [_ IHSSm'] [_ IHSSSm']] using nat_ind3.
+    - exact (conj P_0 P_1).
+    - exact (conj P_1 P_2).
+    - exact (conj P_2 P_3).
+    - exact (conj IHSSSm' (P_SSSS m' IHm' IHSm' IHSSm' IHSSSm')). }
+  intro n.
+  destruct (all n) as [ly _].
+  exact ly.
+Qed.
+\end{lstlisting}
+
+Since \texttt{nat\_ind3} has 3 base cases and 3 induction hypotheses, we only need 1 conjunction for the \texttt{all} lemma, and the proof is short and concise using conjunctions of the induction hypotheses. 
+
+\subsection{Conclusion}
+In this exercise we implement and prove \texttt{nat\_ind4} using the three induction principles with 1, 2 and 3 base cases and induction hypotheses respectively, and we can see that how we construct the \texttt{all} lemma matches the induction principle we use.
+
+\section{Exercise 13}
+\subsection{Introduction}
+In this exercise we see an application of the fourth-order structural induction over Peano numbers which we implemented in the previous exercise. More specifically, we prove the following property using \texttt{nat\_ind4}.
+\begin{lstlisting}
+Property fours_and_fives :
+  forall n : nat,
+  exists a b : nat,
+    12 + n = 4 * a + 5 * b.
+\end{lstlisting}
+
+\subsection{Answer}
+We begin the induction proof using \texttt{nat\_ind4}.
+
+\begin{lstlisting}
+Proof.
+  intro n.
+  induction n as [ | | | | n' [a [b IHn']] _ _ _] using nat_ind4.
+  - exists 3, 0.
+    compute; reflexivity.
+  - exists 2, 1.
+    compute; reflexivity.
+  - exists 1, 2.
+    compute; reflexivity.
+  - exists 0, 3.
+    compute; reflexivity.
+  - exists (S a), b.
+\end{lstlisting}
+
+We observe that in the induction hypotheses, we have the cases for \texttt{n'}, \texttt{S n'}, \texttt{S (S n')} and \texttt{S (S (S n'))}, so in the last induction step, we need to prove the property for \texttt{S (S (S (S n')))}. Therefore, compared to the case for \texttt{n'}, we only need one more 4 on the right-hand side and keep the number of fives constant, which implies that we will only be using the first induction hypothesis in the induction step. Hence, we do not need to name the rest of the induction hypotheses when doing the induction.
+
+For the 4 base cases, we can just figure out the values of \texttt{a} and \texttt{b} and compute to complete the proofs. For the induction step, since we instantiate \texttt{a'} with \texttt{S a}, we have \texttt{4 * S a} on the right-hand side, so the following lemma will come in handy.
+
+\begin{lstlisting}
+Lemma four_times_succ :
+  forall n : nat,
+    S (S (S (S (4 * n)))) = 4 * S n.
+Proof.
+  intro n.
+  rewrite -> (plus_n_O (4 * n)).
+  rewrite ->4 plus_n_Sm.
+  rewrite -> (plus_n_O n) at 2.
+  rewrite -> plus_n_Sm.
+  rewrite -> Nat.mul_add_distr_l.
+  simpl (4 * 1).
+  reflexivity.
+Qed.
+\end{lstlisting}
+
+The proof is completed simply using properties of addition, multiplication and successor. With the help of this lemma, we can proceed with the proof of our property.
+
+\begin{lstlisting}
+  - exists (S a), b.
+    rewrite <- four_times_succ.
+    rewrite -> (plus_n_O n').
+    rewrite ->4 plus_n_Sm.
+    rewrite -> (plus_n_O (4 * a)).
+    rewrite ->4 plus_n_Sm.
+    rewrite -> Nat.add_assoc.
+    rewrite <- (Nat.add_assoc (4 * a) 4 (5 * b)).
+    rewrite -> (Nat.add_comm 4 (5 * b)).
+    rewrite -> Nat.add_assoc.
+    destruct (Nat.add_cancel_r (12 + n') (4 * a + 5 * b) 4) as [_ H_tmp].
+    exact (H_tmp IHn').
+Qed.
+\end{lstlisting}
+
+The rest of the proof is completed by using properties of addition and successors. 
+
+Here is the full proof:
+
+\begin{lstlisting}
+Property fours_and_fives :
+  forall n : nat,
+  exists a b : nat,
+    12 + n = 4 * a + 5 * b.
+Proof.
+  intro n.
+  induction n as [ | | | | n' [a [b IHn']] _ _ _] using nat_ind4.
+  - exists 3, 0.
+    compute; reflexivity.
+  - exists 2, 1.
+    compute; reflexivity.
+  - exists 1, 2.
+    compute; reflexivity.
+  - exists 0, 3.
+    compute; reflexivity.
+  - exists (S a), b.
+    rewrite <- four_times_succ.
+    rewrite -> (plus_n_O n').
+    rewrite ->4 plus_n_Sm.
+    rewrite -> (plus_n_O (4 * a)).
+    rewrite ->4 plus_n_Sm.
+    rewrite -> Nat.add_assoc.
+    rewrite <- (Nat.add_assoc (4 * a) 4 (5 * b)).
+    rewrite -> (Nat.add_comm 4 (5 * b)).
+    rewrite -> Nat.add_assoc.
+    destruct (Nat.add_cancel_r (12 + n') (4 * a + 5 * b) 4) as [_ H_tmp].
+    exact (H_tmp IHn').
+Qed.
+\end{lstlisting}
+
+\subsection{Conclusion}
+This exercise gives us an application of \texttt{nat\_ind4}, which is because if we had proven the cases for \texttt{n'}, \texttt{S n'}, \texttt{S (S n')} and \texttt{S (S (S n'))}, then it's easy to prove the induction step since we can just increment \texttt{a} by 1 and the pattern repeats. The important thing to note here is that to prove the case for \texttt{S (S (S (S n')))}, we only need to know the case for \texttt{n'}, since we only need to increase the value of \texttt{a} by 1 and keep \texttt{b} constant, so only the first induction hypothesis is needed. Additionally, we see how choosing the induction principle which aligns with the recursion pattern makes the proof simple and elegant.
+
+\newpage
+
+\section{Exercise 14}
+\subsection{Introduction}
+Whereas in Exercise 13 we used higher-order induction via nat\_ind4, in this exercise we prove fours\_and\_fives via mathematical induction (i.e., first-order induction).
+
+\subsection{Answer}
+
+To solve this exercise, let us begin as instructed by the exercise and induct the property on n.
+
+Observing the base case, we have:
+
+\begin{lstlisting}
+1 goal (ID 273)
+
+============================
+exists a b : nat, 12 + 0 = 4 * a + 5 * b
+\end{lstlisting}
+
+which requires us to find values for a and b such that 12 + 0 = 4 * a + 5 * b. We can easily see that a = 3 and b = 0 satisfies this equation. Hence, we can use the \texttt{exists} tactic to instantiate the existential variables and use the \texttt{reflexivity} tactic to complete the proof of the base case.
+
+Moving on to the inductive case, we have:
+
+\begin{lstlisting}
+1 goal (ID 276)
+
+n' : nat
+IHn' : exists a b : nat, 12 + n' = 4 * a + 5 * b
+============================
+exists a b : nat, 12 + S n' = 4 * a + 5 * b
+\end{lstlisting}
+
+We observe that the inductive hypothesis is an existential statement. Hence, we can use the \texttt{destruct} tactic to name the two conjuncts of the existential statement accordingly. 
+
+\begin{lstlisting}
+1 goal (ID 291)
+
+n', a, b : nat
+Hn' : 12 + n' = 4 * a + 5 * b
+============================
+exists a0 b0 : nat, 12 + S n' = 4 * a0 + 5 * b0
+\end{lstlisting}
+
+Afterwards, we can proceed the proof by splitting into cases. 
+
+\begin{lstlisting}
+4 goals (ID 316)
+
+n' : nat
+Hn' : 12 + n' = 5 * 0
+============================
+exists a b : nat, 12 + S n' = 4 * a + 5 * b
+
+goal 2 (ID 322) is:
+exists a b : nat, 12 + S n' = 4 * a + 5 * b
+goal 3 (ID 328) is:
+exists a b : nat, 12 + S n' = 4 * a + 5 * b
+goal 4 (ID 330) is:
+exists a b : nat, 12 + S n' = 4 * a + 5 * b
+\end{lstlisting}
+
+Proceeding to the first case, we have:
+
+\begin{lstlisting}
+1 goal (ID 316)
+
+n' : nat
+Hn' : 12 + n' = 5 * 0
+============================
+exists a b : nat, 12 + S n' = 4 * a + 5 * b
+\end{lstlisting}
+
+Which we solve using the \texttt{discriminate} tactic as follows:
+
+\begin{lstlisting}
+rewrite -> (Nat.mul_0_r 5) in Hn'.
+Search (_ + _ = 0).
+Check (Plus.plus_is_O_stt 12 n').
+Check (Plus.plus_is_O_stt 12 n' Hn').
+assert (H_absurd := (Plus.plus_is_O_stt 12 n' Hn')).
+destruct H_absurd as [H_twelve_equals_zero H_n'_equals_zero].
+Search (S _ = _).
+discriminate H_twelve_equals_zero.
+\end{lstlisting}
+
+Likewise the next two cases can be solved similarly:
+
+\begin{lstlisting}
+1 goal (ID 322)
+
+n' : nat
+Hn' : 12 + n' = 5 * 1
+============================
+exists a b : nat, 12 + S n' = 4 * a + 5 * b
+
+(* 
+rewrite -> (Nat.mul_1_r 5) in Hn'.
+Search (_ + _ =  _).
+rewrite -> 5 plus_Sn_m in Hn'.
+Search (S _ = S _ -> _ = _).
+Check (Nat.succ_inj ((11 + n')) 4 Hn').
+assert (H1 := Nat.succ_inj ((S (S (S (S (7 + n')))))) 4 Hn').
+assert (H2 := Nat.succ_inj ((S (S (S (7 + n'))))) 3 H1).
+assert (H3 := Nat.succ_inj ((S (S (7 + n')))) 2 H2).
+assert (H4 := Nat.succ_inj ((S (7 + n'))) 1 H3).
+assert (H5 := Nat.succ_inj ((7 + n')) 0 H4).
+Check (Plus.plus_is_O_stt 7 n').
+assert (H_absurd := (Plus.plus_is_O_stt 7 n' H5)).
+destruct H_absurd as [H_seven_equals_zero H_n'_equals_zero].
+discriminate  H_seven_equals_zero.
+*)
+\end{lstlisting}
+
+And also 
+
+\begin{lstlisting}
+1 goal (ID 328)
+
+n' : nat
+Hn' : 12 + n' = 5 * 2
+============================
+exists a b : nat, 12 + S n' = 4 * a + 5 * b
+
+(* 
+rewrite -> (Nat.mul_comm 5 2) in Hn'.
+unfold Nat.mul in Hn'.
+rewrite -> 10 plus_Sn_m in Hn'.           
+rewrite -> (Nat.add_0_r 5) in Hn'.
+simpl (5 + 5) in Hn'.
+assert (H1 := Nat.succ_inj (S (S (S (S (S (S (S (S (S (2 + n')))))))))) 9 Hn').
+assert (H2 := Nat.succ_inj (S (S (S (S (S (S (S (S (2 + n'))))))))) 8 H1).
+assert (H3 := Nat.succ_inj (S (S (S (S (S (S (S (2 + n')))))))) 7 H2).
+assert (H4 := Nat.succ_inj (S (S (S (S (S (S (2 + n'))))))) 6 H3).
+assert (H5 := Nat.succ_inj (S (S (S (S (S (2 + n')))))) 5 H4).
+assert (H6 := Nat.succ_inj (S (S (S (S (2 + n'))))) 4 H5).
+assert (H7 := Nat.succ_inj (S (S (S (2 + n')))) 3 H6).
+assert (H8 := Nat.succ_inj (S (S (2 + n'))) 2 H7).
+assert (H9 := Nat.succ_inj (S (2 + n')) 1 H8).
+assert (H10 := Nat.succ_inj (2 + n') 0 H9).
+assert (H_absurd := (Plus.plus_is_O_stt 2 n' H10)).
+destruct H_absurd as [H_two_equals_zero H_n'_equals_zero].
+discriminate H_two_equals_zero.
+*)
+\end{lstlisting}
+
+However, this method is not very elegant. We realize we can use the lemma \texttt{five\_times\_succ}:
+
+\begin{lstlisting}
+Lemma five_times_succ :
+  forall n : nat,
+    S (S (S (S (S (5 * n))))) = 5 * S n.
+Proof.
+  intro n.
+  rewrite -> (plus_n_O (5 * n)).
+  rewrite ->5 plus_n_Sm.
+  rewrite -> (plus_n_O n) at 2.
+  rewrite -> plus_n_Sm.
+  rewrite -> Nat.mul_add_distr_l.
+  simpl (5 * 1).
+  reflexivity.
+Qed.
+\end{lstlisting}
+
+Which is similar to the lemma \texttt{four\_times\_succ} we used in Exercise 13.
+
+Using this lemma, we can solve the remaining proof as follows:
+
+\begin{lstlisting}
+1 goal (ID 330)
+
+n', b''' : nat
+Hn' : 12 + n' = 5 * S (S (S b'''))
+============================
+exists a b : nat, 12 + S n' = 4 * a + 5 * b
+
+(* 
+exists 4.
+exists b'''.
+rewrite <-  Nat.add_succ_comm.
+rewrite -> plus_Sn_m.
+rewrite -> Hn'.
+Search (S _ + _ = S (_ + _)).
+rewrite <- 3 five_times_succ.
+rewrite <- (Nat.add_1_l (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (5 * b'''))))))))))))))))).
+rewrite <- 15 Nat.add_succ_comm.
+reflexivity.
+*)
+\end{lstlisting}
+
+And finally
+
+\begin{lstlisting}
+1 goal (ID 303)
+
+n', a', b : nat
+Hn' : 12 + n' = 4 * S a' + 5 * b
+============================
+exists a b0 : nat, 12 + S n' = 4 * a + 5 * b0
+
+(*
+exists a'.
+exists (S b).
+Search (S _ = _).
+rewrite <- (Nat.add_1_r n').
+rewrite -> Nat.add_assoc.
+rewrite -> Hn'.
+rewrite <- five_times_succ.
+rewrite <- four_times_succ.
+rewrite <- (Nat.add_assoc (S (S (S (S (4 * a'))))) (5 * b) 1).
+rewrite -> (Nat.add_comm (5 * b) 1).
+rewrite -> (Nat.add_assoc (S (S (S (S (4 * a'))))) 1 (5 * b)).
+rewrite -> (Nat.add_succ_comm (S (S (S (4 * a')))) 1).
+rewrite -> (Nat.add_succ_comm (S (S (4 * a'))) 2).
+rewrite -> (Nat.add_succ_comm (S (4 * a')) 3).
+rewrite -> (Nat.add_succ_comm (4 * a') 4).
+rewrite <- (Nat.add_1_l (S (S (S (S (5 * b)))))).
+rewrite <- (Nat.add_succ_comm 1 (S (S (S (5 * b))))).
+rewrite <- (Nat.add_succ_comm 2 (S (S (5 * b)))).
+rewrite <- (Nat.add_succ_comm 3 (S (5 * b))).
+rewrite <- (Nat.add_succ_comm 4 (5 * b)).
+rewrite -> (Nat.add_assoc (4 * a') 5 (5 * b)).
+reflexivity.
+*)
+\end{lstlisting}
+
+Here is the full proof for reference:
+
+\begin{lstlisting}
+Lemma five_times_succ :
+  forall n : nat,
+    S (S (S (S (S (5 * n))))) = 5 * S n.
+Proof.
+  intro n.
+  rewrite -> (plus_n_O (5 * n)).
+  rewrite ->5 plus_n_Sm.
+  rewrite -> (plus_n_O n) at 2.
+  rewrite -> plus_n_Sm.
+  rewrite -> Nat.mul_add_distr_l.
+  simpl (5 * 1).
+  reflexivity.
+Qed.
+
+Property fours_and_fives_via_mathematical_induction :
+  forall n : nat,
+  exists a b : nat,
+    12 + n = 4 * a + 5 * b.
+Proof.
+  intro n.
+  induction n as [ | n' IHn'].
+  + exists 3.
+    exists 0.
+    compute. (* the remaining goals are only computational steps *)
+    reflexivity.
+  + destruct IHn' as [a [b Hn']].
+    case a as [ | a'].
+    ++ rewrite -> (Nat.mul_0_r 4) in Hn'. 
+       rewrite -> (Nat.add_0_l (5 * b)) in Hn'.
+       case b as [ | [ | [ | b''']]].
+       +++ rewrite -> (Nat.mul_0_r 5) in Hn'.
+           Search (_ + _ = 0).
+           Check (Plus.plus_is_O_stt 12 n').
+           Check (Plus.plus_is_O_stt 12 n' Hn').
+           assert (H_absurd := (Plus.plus_is_O_stt 12 n' Hn')).
+           destruct H_absurd as [H_twelve_equals_zero H_n'_equals_zero].
+           Search (S _ = _).
+           discriminate H_twelve_equals_zero.
+       +++ rewrite -> (Nat.mul_1_r 5) in Hn'.
+           Search (_ + _ =  _).
+           rewrite -> 5 plus_Sn_m in Hn'.
+           Search (S _ = S _ -> _ = _).
+           Check (Nat.succ_inj ((11 + n')) 4 Hn').
+           assert (H1 := Nat.succ_inj ((S (S (S (S (7 + n')))))) 4 Hn').
+           assert (H2 := Nat.succ_inj ((S (S (S (7 + n'))))) 3 H1).
+           assert (H3 := Nat.succ_inj ((S (S (7 + n')))) 2 H2).
+           assert (H4 := Nat.succ_inj ((S (7 + n'))) 1 H3).
+           assert (H5 := Nat.succ_inj ((7 + n')) 0 H4).
+           Check (Plus.plus_is_O_stt 7 n').
+           assert (H_absurd := (Plus.plus_is_O_stt 7 n' H5)).
+           destruct H_absurd as [H_seven_equals_zero H_n'_equals_zero].
+           discriminate  H_seven_equals_zero.
+       +++ rewrite -> (Nat.mul_comm 5 2) in Hn'.
+           unfold Nat.mul in Hn'.
+           rewrite -> 10 plus_Sn_m in Hn'.           
+           rewrite -> (Nat.add_0_r 5) in Hn'.
+           simpl (5 + 5) in Hn'.
+           assert (H1 := Nat.succ_inj (S (S (S (S (S (S (S (S (S (2 + n')))))))))) 9 Hn').
+           assert (H2 := Nat.succ_inj (S (S (S (S (S (S (S (S (2 + n'))))))))) 8 H1).
+           assert (H3 := Nat.succ_inj (S (S (S (S (S (S (S (2 + n')))))))) 7 H2).
+           assert (H4 := Nat.succ_inj (S (S (S (S (S (S (2 + n'))))))) 6 H3).
+           assert (H5 := Nat.succ_inj (S (S (S (S (S (2 + n')))))) 5 H4).
+           assert (H6 := Nat.succ_inj (S (S (S (S (2 + n'))))) 4 H5).
+           assert (H7 := Nat.succ_inj (S (S (S (2 + n')))) 3 H6).
+           assert (H8 := Nat.succ_inj (S (S (2 + n'))) 2 H7).
+           assert (H9 := Nat.succ_inj (S (2 + n')) 1 H8).
+           assert (H10 := Nat.succ_inj (2 + n') 0 H9).
+           assert (H_absurd := (Plus.plus_is_O_stt 2 n' H10)).
+           destruct H_absurd as [H_two_equals_zero H_n'_equals_zero].
+           discriminate H_two_equals_zero.
+       +++ exists 4.
+           exists b'''.
+           rewrite <-  Nat.add_succ_comm.
+           rewrite -> plus_Sn_m.
+           rewrite -> Hn'.
+           Search (S _ + _ = S (_ + _)).
+           rewrite <- 3 five_times_succ.
+           rewrite <- (Nat.add_1_l (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (5 * b'''))))))))))))))))).
+           rewrite <- 15 Nat.add_succ_comm.
+           reflexivity.
+    ++ exists a'.
+       exists (S b).
+       Search (S _ = _).
+       rewrite <- (Nat.add_1_r n').
+       rewrite -> Nat.add_assoc.
+       rewrite -> Hn'.
+       rewrite <- five_times_succ.
+       rewrite <- four_times_succ.
+       rewrite <- (Nat.add_assoc (S (S (S (S (4 * a'))))) (5 * b) 1).
+       rewrite -> (Nat.add_comm (5 * b) 1).
+       rewrite -> (Nat.add_assoc (S (S (S (S (4 * a'))))) 1 (5 * b)).
+       rewrite -> (Nat.add_succ_comm (S (S (S (4 * a')))) 1).
+       rewrite -> (Nat.add_succ_comm (S (S (4 * a'))) 2).
+       rewrite -> (Nat.add_succ_comm (S (4 * a')) 3).
+       rewrite -> (Nat.add_succ_comm (4 * a') 4).
+       rewrite <- (Nat.add_1_l (S (S (S (S (5 * b)))))).
+       rewrite <- (Nat.add_succ_comm 1 (S (S (S (5 * b))))).
+       rewrite <- (Nat.add_succ_comm 2 (S (S (5 * b)))).
+       rewrite <- (Nat.add_succ_comm 3 (S (5 * b))).
+       rewrite <- (Nat.add_succ_comm 4 (5 * b)).
+       rewrite -> (Nat.add_assoc (4 * a') 5 (5 * b)).
+       reflexivity.
+Qed.
+\end{lstlisting}
+
+\subsection{Conclusion}
+
+Here, the proof using mathematical induction is quite more involved. We realize the importance of choosing the right induction principle to simplify our proofs.
+
+\newpage
+
+\section{Exercise 25}
+
+\subsection{Introduction}
+The two predicates \texttt{evenp} and \texttt{oddp} are so intertwined that they are often defined together. In this exercise, we are asked to prove the soundness and completeness of the two predicates. In particular, we first prove them separately, in the comfort of \texttt{nat\_ind2}. After that, we prove them together in the comfort of mathematical induction. 
+
+We do this because it is important to use the suitable induction principle in a proof. Choosing an induction principle not suited to the problem will not take us very far. 
+
+\subsection{Answer}
+We begin by proving the soundness and completeness of \texttt{evenp} using \texttt{nat\_ind2}. While the proof may seem complex at first glance, it is logical and actionable as the induction principle follows the structure of the specification. 
+
+Another key takeaway from this proof is that when one of the assumptions contains \texttt{exists}, we can use the \texttt{destruct} tactic and name the two conjuncts accordingly. We can then search for functions in the library that has the corresponding structure and use the \texttt{rewrite} tactic. When the left-hand side and right-hand side of the Leibniz equality have different constructors, we can use the \texttt{discriminate} tactic. 
+
+The entire proof is shown below:
+
+\begin{lstlisting}
+Theorem soundness_and_completeness_of_evenp :
+  forall n : nat,
+    evenp n = true <-> exists m : nat, n = 2 * m.
+Proof.
+  intro n.
+  induction n as [ | | n' [IHn'_sound IHn'_complete] [IHSn'_sound IHSn'_complete]] using nat_ind2.
+  - split.
+    + intro H_true.
+      exists 0.
+      Search (_ * 0 = 0).
+      rewrite -> (Nat.mul_0_r 2).
+      reflexivity.
+    + intro H_true.
+      rewrite -> (fold_unfold_evenp_O).
+      reflexivity.
+  - split.
+    + intro H_absurd.
+      discriminate H_absurd.
+    + rewrite -> (fold_unfold_evenp_S 0).
+      rewrite -> (fold_unfold_oddp_O).
+      intro H_absurd.
+      destruct H_absurd as [m H_m].
+      case m as [ | m'].
+      ++ rewrite -> (Nat.mul_0_r 2) in H_m.
+         discriminate H_m.
+      ++ Search (_ * S _).
+         Check (Nat.mul_succ_r 2 m').
+         rewrite -> (Nat.mul_succ_r 2 m') in H_m.
+         Search (_ + S _ = S _).
+         rewrite ->2 Nat.add_succ_r in H_m.
+         discriminate H_m.
+  - split.
+    + rewrite -> (fold_unfold_evenp_S (S n')).
+      rewrite -> (fold_unfold_oddp_S n').
+      intro H_true.
+      Check (IHn'_sound H_true).
+      destruct (IHn'_sound H_true) as [m H_m].
+      rewrite -> H_m.
+      Check (twice_S m).
+      rewrite -> (twice_S m).
+      exists (S m).
+      reflexivity.   
+    + rewrite -> (fold_unfold_evenp_S (S n')).
+      rewrite -> (fold_unfold_oddp_S n').
+      intros [m H_m].
+      apply IHn'_complete.
+      case m as [ | m'].
+      ++ rewrite -> (Nat.mul_0_r 2) in H_m.
+         discriminate H_m.
+      ++ rewrite <- (twice_S m') in H_m.
+         rewrite -> Nat.mul_comm in H_m.
+         injection H_m as H_n'.
+         rewrite -> Nat.mul_comm in H_n'.
+         rewrite -> H_n'.
+         exists m'.
+         reflexivity.
+Qed.
+\end{lstlisting}
+
+It is also worth noting in the comments that tCPA might oversimplify our assumptions when we use the \texttt{injection} tactic. To overcome this, we can use the \texttt{remember} tactic to add Leibniz equalities in our assumptions and name them using \texttt{eqn}.
+
+The rest of the proof is routine, using the fold-unfold lemmas of both \texttt{evenp} and \texttt{oddp}.
+
+On the other hand, if we attempt to prove the soundness and completeness of \texttt{evenp} without using \texttt{nat\_ind2}, we will soon discover that it is easy to get stuck. 
+
+\begin{lstlisting}
+Theorem soundness_and_completeness_of_evenp_messy :
+  forall n : nat,
+    evenp n = true <-> exists m : nat, n = 2 * m.
+Proof.
+  intro n.
+  induction n as [ | n' [IHn'_sound IHn'_complete]].
+  - split.
+    + intro H_true.
+      exists 0.
+      Search (_ * 0 = 0).
+      rewrite -> (Nat.mul_0_r 2).
+      reflexivity.
+    + intro H_true.
+      rewrite -> (fold_unfold_evenp_O).
+      reflexivity.
+  - split.
+    + rewrite -> (fold_unfold_evenp_S n').
+      intro H_n'.
+      case n' as [ | n''].
+      * rewrite -> fold_unfold_oddp_O in H_n'.
+        discriminate H_n'.
+      * rewrite -> fold_unfold_oddp_S in H_n'.
+        rewrite -> fold_unfold_evenp_S in IHn'_sound.
+        rewrite -> fold_unfold_evenp_S in IHn'_complete.
+Abort.
+\end{lstlisting}
+
+At this point of the proof, the *goals* window reads:
+
+\begin{lstlisting}
+1 goal (ID 88)
+  
+  n'' : nat
+  IHn'_sound : oddp n'' = true ->
+               exists m : nat, S n'' = 2 * m
+  IHn'_complete : (exists m : nat, S n'' = 2 * m) ->
+                  oddp n'' = true
+  H_n' : evenp n'' = true
+  ============================
+  exists m : nat, S (S n'') = 2 * m
+\end{lstlisting}
+
+Here we discover that it is impossible to make use of the assumptions we have to simplify our goal. This again shows that using induction principles that befit the structure of programs is key to a successful proof. 
+
+Luckily, we have the help of \texttt{nat\_ind2} at our disposal, and the soundness and completeness of \texttt{oddp} can be proved using the induction principle.
+
+\begin{lstlisting}
+Theorem soundness_and_completeness_of_oddp :
+  forall n : nat,
+    oddp n = true <-> exists m : nat, n = S (2 * m).
+Proof.
+  intro n.
+  induction n as [ | | n' [IHn'_sound IHn'_complete] [IHSn'_sound IHSn'_complete]] using nat_ind2.
+  - split.
+    + intro H_absurd.
+      exists 0.
+      Search (_ * 0 = 0).
+      rewrite -> (Nat.mul_0_r 2).
+      discriminate H_absurd.
+    + intro H_absurd.
+      rewrite -> (fold_unfold_oddp_O).
+      destruct H_absurd as [m H_m].
+      case m as [ | m'].
+      ++ discriminate H_m.
+      ++ discriminate H_m.
+  - split.
+    + intro H_true.
+      exists 0.
+      Search (_ * 0 = _).
+      rewrite -> (Nat.mul_0_r 2).
+      reflexivity.
+    + intro H_true.
+      destruct H_true as [m H_m].
+      case m as [ | m'].
+      ++ exact (fold_unfold_oddp_S 0).
+      ++ exact (fold_unfold_oddp_S 0).
+  - split.
+    + rewrite -> (fold_unfold_oddp_S (S n')).
+      rewrite -> (fold_unfold_evenp_S n').
+      intro H_true.
+      Check (IHn'_sound H_true).
+      destruct (IHn'_sound H_true) as [m H_m].
+      rewrite -> H_m.
+      Check (twice_S m).
+      rewrite -> (twice_S m).
+      exists (S m).
+      reflexivity.
+    + rewrite -> (fold_unfold_oddp_S (S n')).
+      rewrite -> (fold_unfold_evenp_S n').
+      intros [m H_m].
+      apply IHn'_complete.
+      case m as [ | m'].
+      ++ rewrite -> (Nat.mul_0_r 2) in H_m.
+         discriminate H_m.
+      ++ rewrite <- (twice_S m') in H_m.
+         rewrite -> Nat.mul_comm in H_m.
+         injection H_m as H_n'.
+         rewrite -> Nat.mul_comm in H_n'.
+         rewrite -> H_n'.
+         exists m'.
+         reflexivity.
+Qed.
+\end{lstlisting}
+Notice that the proof is highly similar to the proof for \texttt{evenp}. This again shows that the two predicates are highly intertwined with each other.
+
+Taking a step further, we can also prove the soundness and completeness of the two predicates together. After all, they are defined together in the first place. Here we can use the first order mathematical induction, and the proof goes through. 
+
+\begin{lstlisting}
+Theorem soundness_and_completeness_of_evenp_and_of_oddp :
+  forall n : nat,
+    (evenp n = true <-> exists m : nat, n = 2 * m)
+    /\
+      (oddp n = true <-> exists m : nat, n = S (2 * m)).
+Proof.
+  intro n.
+  induction n as [ | n' [[IHn'_esound IHn'_ecomplete] [IHn'_osound IHn'_ocomplete]]].
+  - split.
+    +  split.
+       ++ intro H_true.
+          exists 0.
+          rewrite -> (Nat.mul_0_r 2).
+          reflexivity.
+       ++ intro H_true.
+          rewrite -> (fold_unfold_evenp_O).
+          reflexivity.
+    + split.
+      ++ intro H_absurd.
+         discriminate H_absurd.
+      ++ intro H_absurd.
+         rewrite -> (fold_unfold_oddp_O).
+         destruct H_absurd as [m H_m].
+         case m as [ | m'].
+         +++ discriminate H_m.
+         +++ discriminate H_m.
+  - split.
+    + split.
+      ++ intro H_true.
+         rewrite -> (fold_unfold_evenp_S n') in H_true.
+         apply IHn'_osound in H_true.
+         destruct H_true as [m H_m].
+         rewrite -> H_m.
+         rewrite -> (twice_S m).
+         exists (S m).
+         reflexivity.
+      ++ rewrite -> (fold_unfold_evenp_S n').
+         intros [m H_m].
+         apply IHn'_ocomplete.
+         case m as [ | m'].
+         +++ rewrite -> (Nat.mul_0_r 2) in H_m.
+             discriminate H_m.
+         +++ rewrite <- (twice_S m') in H_m.
+             rewrite -> Nat.mul_comm in H_m.
+             injection H_m as H_n'.
+             rewrite -> Nat.mul_comm in H_n'.
+             rewrite -> H_n'.
+             exists m'.
+             reflexivity.
+    + split.
+      ++ intro H_true.
+         rewrite -> (fold_unfold_oddp_S n') in H_true.
+         apply IHn'_esound in H_true.
+         destruct H_true as [m H_m].
+         rewrite -> H_m.
+         exists m.
+         reflexivity.
+      ++ rewrite -> (fold_unfold_oddp_S n').
+         intros [m H_m].
+         apply IHn'_ecomplete.
+         case m as [ | m'].
+         +++ exists 0.
+             injection H_m.
+             intro H_n.
+             Search (_ * 0 = 0).
+             rewrite -> (Nat.mul_0_r 2).
+             exact H_n.
+         +++ exists (S m').
+             injection H_m.
+             intro H_n.
+             rewrite -> (Nat.add_0_r m') in H_n.
+             Search (S (_ + _)).
+             rewrite <- (plus_Sn_m m' (S m')) in H_n.
+             rewrite -> H_n.
+             exact (twice (S m')).
+Qed.
+\end{lstlisting}
+
+This again highlights the importance of choosing the suitable induction principle when doing a proof by induction. Here since the two predicates are defined together, there is no need for an additional induction hypothesis when proving their soundness and completeness together. 
+
+\subsection{Conclusion}
+To conclude, this exercise has been a telling example that demonstrates the importance of choosing the suitable induction principle for proofs by induction. Instead of starting the proof straightaway with excitement, one should pause and consider the structure of the program beforehand. Once we are in the right direction, the rest of the proof can follow in a relatively smooth manner. 
+
+Apart from that, one should always reflect on how the predicates are defined, as it may inform our way of approaching the proof. In this case, since the two predicates are defined together, their soundness and completeness can also be proved together in the comfort of mathematical induction.
+
+\newpage
+
+\section{Conclusion}
+
+To conclude, this week's exercises first ask us to reflect on the nature of Eureka lemmas written so far in the course. The exercises after have been an invitation to understand and reason about induction at a more ``meta'' level. All these allow us to zoom out and see the big picture in the induction proofs we have written. Our main summaries for the exercises this week are as follows:
+
+\begin{itemize}
+  \item All Eureka lemmas are an instance of the same general idea. In particular, we can express all Eureka lemmas using the \texttt{make\_Eureka\_lemma}. This is because all Eureka lemmas have the same general structure.
+  \item Structuring proofs in a way that follows the structure of the program and writing programs that follow the structure of the proof makes the proof easier to understand and follow.
+  \item Choosing the suitable induction principle based on the structure of the program can of great help in induction proofs.
+  \item When doing higher-order induction, we should recognize which induction hypothesis will be of use to prove the induction step.
+\end{itemize}
+
+\end{document}
+
+%%% Done
