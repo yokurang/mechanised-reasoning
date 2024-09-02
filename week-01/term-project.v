@@ -2020,7 +2020,7 @@ Proof.
   intro H_absurd.
   discriminate H_absurd.
 Qed.
-        
+
 Proposition Plus_is_conditionally_commutative :
   forall ae1 ae2 : arithmetic_expression,
     ((exists n : nat,
@@ -2564,4 +2564,183 @@ Proof.
   + reflexivity.
 Qed.
 
-(* compiles !*)
+(* ltr fin *)
+
+(* rtl *)
+
+Lemma fold_unfold_evaluate_rtl_Literal :
+  forall (n : nat),
+    evaluate_rtl (Literal n) =
+      Expressible_nat n.
+Proof.
+  fold_unfold_tactic evaluate_rtl.
+Qed.
+
+Lemma fold_unfold_evaluate_rtl_Plus :
+  forall (ae1 ae2 : arithmetic_expression),
+    evaluate_rtl (Plus ae1 ae2) =
+      match evaluate_rtl ae2 with
+      | Expressible_msg s2 =>
+          Expressible_msg s2
+      | Expressible_nat n2 =>
+          match evaluate_rtl ae1 with
+          | Expressible_msg s1 =>
+              Expressible_msg s1
+          | Expressible_nat n1 =>
+              Expressible_nat (n1 + n2)
+          end
+      end.
+Proof.
+  fold_unfold_tactic evaluate_rtl.
+Qed.
+
+Lemma fold_unfold_evaluate_rtl_Minus :
+  forall (ae1 ae2 : arithmetic_expression),
+    evaluate_rtl (Minus ae1 ae2) =
+      match evaluate_rtl ae2 with
+      | Expressible_msg s2 =>
+          Expressible_msg s2
+      | Expressible_nat n2 =>
+          match evaluate_rtl ae1 with
+          | Expressible_msg s1 =>
+              Expressible_msg s1
+          | Expressible_nat n1 =>
+              if n1 <? n2
+              then Expressible_msg (String.append "numerical underflow: -" (string_of_nat (n2 - n1)))
+              else Expressible_nat (n1 - n2)
+          end
+      end.
+Proof.
+  fold_unfold_tactic evaluate_rtl.
+Qed.
+
+Lemma fold_unfold_evaluate_rtl_Times :
+  forall (ae1 ae2 : arithmetic_expression),
+    evaluate_rtl (Times ae1 ae2) =
+      match evaluate_rtl ae2 with
+      | Expressible_msg s2 =>
+          Expressible_msg s2
+      | Expressible_nat n2 =>
+          match evaluate_rtl ae1 with
+          | Expressible_msg s1 =>
+              Expressible_msg s1
+          | Expressible_nat n1 =>
+              Expressible_nat (n1 * n2)
+          end
+      end.
+Proof.
+  fold_unfold_tactic evaluate_rtl.
+Qed.
+
+(* **** *)
+Proposition Literal_0_is_neutral_for_Plus_on_the_left_rtl :
+  forall ae : arithmetic_expression,
+    evaluate_rtl (Plus (Literal 0) ae) = evaluate_rtl ae.
+Proof.
+  intro ae.
+  rewrite -> fold_unfold_evaluate_rtl_Plus.
+  rewrite -> fold_unfold_evaluate_rtl_Literal.
+  case (evaluate_rtl ae) as [n | s].
+  - rewrite -> Nat.add_0_l.
+    reflexivity.
+  - reflexivity.
+Qed.
+
+Proposition Literal_0_is_neutral_for_Plus_on_the_right_rtl :
+  forall ae : arithmetic_expression,
+    evaluate_rtl (Plus ae (Literal 0)) = evaluate_rtl ae.
+Proof.
+  intro ae.
+  rewrite -> fold_unfold_evaluate_rtl_Plus.
+  rewrite -> fold_unfold_evaluate_rtl_Literal.
+  case (evaluate_rtl ae) as [n | s].
+  - rewrite -> (Nat.add_0_r n).
+    reflexivity.
+  - reflexivity.
+Qed.
+
+Proposition Plus_is_associative_rtl :
+  forall ae1 ae2 ae3 : arithmetic_expression,
+    evaluate_rtl (Plus ae1 (Plus ae2 ae3)) = evaluate_rtl (Plus (Plus ae1 ae2) ae3).
+Proof.
+  intros ae1 ae2 ae3.
+  rewrite ->4 fold_unfold_evaluate_rtl_Plus.
+  case (evaluate_rtl ae3) as [n3 | s3].
+  - case (evaluate_rtl ae2) as [n2 | s2].
+    + case (evaluate_rtl ae1) as [n1 | s1].
+      * rewrite -> Nat.add_assoc.
+        reflexivity.
+      * reflexivity.
+    + reflexivity.
+  - reflexivity.
+Qed.
+
+Proposition Plus_is_commutative :
+  forall ae1 ae2 : arithmetic_expression,
+    evaluate_rtl (Plus ae1 ae2) = evaluate_rtl (Plus ae2 ae1).
+Proof.
+  intros ae1 ae2.
+  rewrite ->2 fold_unfold_evaluate_rtl_Plus.
+  case (evaluate_rtl ae1) as [n1 | s1].
+  - case (evaluate_rtl ae2) as [n2 | s2].
+    + rewrite -> Nat.add_comm.
+      reflexivity.
+    + reflexivity.
+  - case (evaluate_rtl ae2) as [n2 | s2].
+    + reflexivity.
+    + (* not commutative if messages are different.*)
+Abort.
+
+Proposition Plus_is_conditionally_commutative_rtl :
+  forall (ae1 ae2 : arithmetic_expression)
+         (n : nat)
+         (s : string),
+    evaluate_rtl ae1 = Expressible_nat n
+    \/
+      evaluate_rtl ae2 = Expressible_nat n
+    \/
+      evaluate_rtl ae1 = Expressible_msg s /\ evaluate_rtl ae2 = Expressible_msg s
+    <->
+      evaluate_rtl (Plus ae1 ae2) = evaluate_rtl (Plus ae2 ae1).
+Proof.
+  split.
+  - intros [H_n1 | [H_n2 | [ H_s1 H_s2]]].
+    + rewrite ->2 fold_unfold_evaluate_rtl_Plus.
+      rewrite -> H_n1.
+      case (evaluate_rtl ae2) as [n2 | s2].
+      * rewrite -> (Nat.add_comm n2 n).
+        reflexivity.
+      * reflexivity.
+    + rewrite ->2 fold_unfold_evaluate_rtl_Plus.
+      rewrite -> H_n2.
+      case (evaluate_rtl ae1) as [n1 | s1].
+      * rewrite -> (Nat.add_comm n n1).
+        reflexivity.
+      * reflexivity.
+    + rewrite ->2 fold_unfold_evaluate_rtl_Plus.
+      rewrite -> H_s1.
+      rewrite -> H_s2.
+      reflexivity.
+  - rewrite ->2 fold_unfold_evaluate_rtl_Plus.
+    case (evaluate ae2) as [n2 | s2] eqn:H_ae2.
+    + intros _.
+      left.
+      exists n1.
+      reflexivity.
+    + intros _.
+      left.
+      exists n1.
+      reflexivity.
+    + intros _.
+      right.
+      left.
+      exists n2.
+      reflexivity.
+    + intros H_eq_s1_s2.
+      right.
+      right.
+      exists s1.
+      split.
+      * reflexivity.
+      * exact (eq_sym H_eq_s1_s2).
+Qed.
