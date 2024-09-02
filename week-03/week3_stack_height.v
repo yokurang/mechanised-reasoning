@@ -2325,6 +2325,14 @@ Lemma about_ae_OK_h_Plus_Minus :
     (ae = Plus ae1 ae2) \/ (ae = Minus ae1 ae2) ->
     fetch_decode_execute_loop_height (compile_aux ae) ds mh ch =
       OK_h (n :: ds) (max mh (S (S ch))) (Some (S ch)).
+  Compute (let ae := (Minus (Plus (Plus (Literal 0) (Literal 1))(Literal 2))(Literal 1)) in
+           let ds := nil in
+           let n  := 2 in
+           let mh := 3 in
+           let ch := 1 in
+           (evaluate ae = Expressible_nat n ->
+            fetch_decode_execute_loop_height (compile_aux ae) ds mh ch =
+              OK_h (n :: ds) (max mh (S ch)) (Some (S ch)))).
 Proof.
 Admitted.
     
@@ -2338,22 +2346,34 @@ Compute (
       let h := 1 in
       let n := 1 in
       run_height (Target_program (compile_aux ae)) = (Expressible_nat n, h) ->
-      S (depth ae) = h) .
+      S (depth ae) = h).
 Compute (
       let ae := (Plus (Plus (Literal 2) (Literal 1))(Literal 2)) in
       let h := 2 in
       let n := 5 in
       run_height (Target_program (compile_aux ae)) = (Expressible_nat n, h) ->
-      S (depth ae) = h) .
+      S (depth ae) = S h). (* Take care here *)
 Compute (
-      let ae := (Plus(Literal 2) (Plus (Literal 2) (Literal 1))) in
+      let ae := (Plus (Minus (Literal 2) (Literal 1))(Literal 2)) in
       let h := 2 in
+      let n := 3 in
+      run_height (Target_program (compile_aux ae)) = (Expressible_nat n, h) ->
+      S (depth ae) = S h). (* Take care here *)
+Compute (
+      let ae := (Plus (Literal 2) (Plus (Literal 2) (Literal 1))) in
+      let h := 3 in
       let n := 5 in
       run_height (Target_program (compile_aux ae)) = (Expressible_nat n, h) ->
-      S (depth ae) = h) .
+      S (depth ae) = h).
+Compute (
+      let ae := (Plus (Literal 2) (Plus (Plus (Literal 3) (Literal 2)) (Literal 1))) in
+      let h := 3 in
+      let n := 8 in
+      run_height (Target_program (compile_aux ae)) = (Expressible_nat n, h) ->
+      S (depth ae) = S h). (* Take care here *)
 Proof.  
-  intros ae h n'.
-  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
+  intros ae.
+  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intros h n'.
   - intro H_run.
     rewrite -> fold_unfold_depth_Literal.
     rewrite -> fold_unfold_compile_aux_Literal in H_run.
@@ -2369,21 +2389,38 @@ Proof.
     rewrite -> fetch_decode_execute_loop_concatenation_height in H_run.
     rewrite -> fold_unfold_depth_Plus.
     case ae1 as [ n1 | ae11 ae12 | ] eqn:C_ae1.
-    + rewrite -> fold_unfold_compile_aux_Literal in IHae1, H_run.
+    + rewrite -> fold_unfold_compile_aux_Literal in IHae1.
       unfold fetch_decode_execute_loop_height in IHae1.
       unfold decode_execute_height in IHae1.
       case ae2 as [ n2 | ae21 ae22 | ] eqn:C_ae2.
-      * rewrite -> fold_unfold_compile_aux_Literal in IHae2, H_run.
-        unfold fetch_decode_execute_loop_height in IHae2.
-        unfold decode_execute_height in IHae2, H_run.
-        unfold fetch_decode_execute_loop_height in H_run at 1.
+      * unfold depth.
+        rewrite ->2 fold_unfold_compile_aux_Literal in H_run.
+        rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons in H_run.
         unfold decode_execute_height in H_run.
+        rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil in H_run.
         rewrite -> fetch_decode_execute_loop_concatenation_height in H_run.
-        unfold fetch_decode_execute_loop_height in H_run at 1.
+        unfold fetch_decode_execute_loop_height in H_run.
         unfold decode_execute_height in H_run.
-        unfold fetch_decode_execute_loop_height in H_run at 1.
+        injection H_run as eq_n1_n2_n' eq_2_h.
+        rewrite <- eq_2_h.
+        compute.
+        reflexivity.
+      * rewrite -> fold_unfold_compile_aux_Plus in IHae2.
+        rewrite -> fetch_decode_execute_loop_concatenation_height in IHae2.
+                
+        rewrite -> fold_unfold_compile_aux_Literal in H_run.
+        rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons in H_run.
         unfold decode_execute_height in H_run.
-        injection H_run as ff  ss.            
+        rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil in H_run.
+        rewrite -> fold_unfold_compile_aux_Plus in H_run.
+        rewrite ->2 fetch_decode_execute_loop_concatenation_height in H_run.
+
+        rewrite -> fold_unfold_compile_aux_Plus in IHae2.
+        
+        
+        injection H_run as eq_n1_n2_n' eq_2_h.
+        rewrite <- eq_2_h.
+        
     + rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons in IHae1.
       unfold decode_execute_height in IHae1.
 
