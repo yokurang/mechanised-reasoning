@@ -2470,6 +2470,32 @@ Lemma about_height_and_depth_of_ae_eureka :
         fetch_decode_execute_loop_height (compile_aux ae) ds mh ch =
           KO_h s).
 Proof.
+  intros ae.
+  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intros ds mh ch.
+  split.
+  - intros n' H_n.
+    rewrite ->  fold_unfold_compile_aux_Literal.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons.
+    unfold decode_execute_height.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil.
+    rewrite -> fold_unfold_evaluate_Literal in H_n.
+    injection H_n as H_eq_n_n'.
+    rewrite -> H_eq_n_n'.
+(*
+1 subgoal
+(3 unfocused at this level)
+
+n : nat
+ds : data_stack
+mh, ch, n' : nat
+h_eq_n_n' : n = n'
+
+========================= (1 / 1)
+
+ok_h (n' :: ds) (init.nat.max mh (s ch)) (some (s ch)) =
+ok_h (n' :: ds) (init.nat.max mh (s (depth (literal n'))))
+  (some (s (depth (literal n'))))
+*)
 Admitted.
 
 Theorem about_height_and_depth_of_ae_aux :
@@ -2491,48 +2517,6 @@ Proof.
     rewrite H_KO in H_run.
     discriminate H_run.
 Qed.
-  (* intros ae. *)
-  (* induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intros h n'. *)
-  (* - intro H_run. *)
-  (*   rewrite -> fold_unfold_depth_Literal. *)
-  (*   rewrite -> fold_unfold_compile_aux_Literal in H_run. *)
-  (*   unfold run_height in H_run. *)
-  (*   rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons in H_run. *)
-  (*   unfold decode_execute_height in H_run. *)
-  (*   rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil in H_run. *)
-  (*   injection H_run as _ H_eq_1. *)
-  (*   exact H_eq_1. *)
-  (* - intro H_run. *)
-  (*   rewrite -> fold_unfold_compile_aux_Plus in H_run. *)
-  (*   unfold run_height in H_run, IHae1, IHae2. *)
-  (*   rewrite -> fetch_decode_execute_loop_concatenation_height in H_run. *)
-  (*   rewrite -> fold_unfold_depth_Plus. *)
-  (*   case ae1 as [ n1 | ae11 ae12 | ] eqn:C_ae1. *)
-  (*   + rewrite -> fold_unfold_compile_aux_Literal in IHae1. *)
-  (*     unfold fetch_decode_execute_loop_height in IHae1. *)
-  (*     unfold decode_execute_height in IHae1. *)
-  (*     case ae2 as [ n2 | ae21 ae22 | ] eqn:C_ae2. *)
-  (*     * unfold depth. *)
-  (*       rewrite ->2 fold_unfold_compile_aux_Literal in H_run. *)
-  (*       rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons in H_run. *)
-  (*       unfold decode_execute_height in H_run. *)
-  (*       rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil in H_run. *)
-  (*       rewrite -> fetch_decode_execute_loop_concatenation_height in H_run. *)
-  (*       unfold fetch_decode_execute_loop_height in H_run. *)
-  (*       unfold decode_execute_height in H_run. *)
-  (*       injection H_run as eq_n1_n2_n' eq_2_h. *)
-  (*       rewrite <- eq_2_h. *)
-  (*       compute. *)
-  (*       reflexivity. *)
-  (*     * rewrite -> fold_unfold_compile_aux_Plus in IHae2. *)
-  (*       rewrite -> fetch_decode_execute_loop_concatenation_height in IHae2. *)
-  (*                *)
-  (*       rewrite -> fold_unfold_compile_aux_Literal in H_run. *)
-  (*       rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons in H_run. *)
-  (*       unfold decode_execute_height in H_run. *)
-  (*       rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil in H_run. *)
-  (*       rewrite -> fold_unfold_compile_aux_Plus in H_run. *)
-  (*       rewrite ->2 fetch_decode_execute_loop_concatenation_height in H_run. *)
 
 Theorem about_height_and_depth_of_ae :
   forall (ae : arithmetic_expression)
