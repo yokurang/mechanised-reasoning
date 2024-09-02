@@ -2456,7 +2456,7 @@ Compute (
       S (depth ae) = h). (* Wrong case *)
 *)
 
-Lemma about_height_and_depth_of_ae_eureka :
+Lemma about_height_and_depth_of_ae_eureka' :
   forall (ae : arithmetic_expression)
          (ds : data_stack)
          (mh ch : nat),
@@ -2481,6 +2481,7 @@ Proof.
     rewrite -> fold_unfold_evaluate_Literal in H_n.
     injection H_n as H_eq_n_n'.
     rewrite -> H_eq_n_n'.
+    rewrite -> fold_unfold_depth_Literal.
 (*
 1 subgoal
 (3 unfocused at this level)
@@ -2488,14 +2489,49 @@ Proof.
 n : nat
 ds : data_stack
 mh, ch, n' : nat
-h_eq_n_n' : n = n'
+H_eq_n_n' : n = n'
 
 ========================= (1 / 1)
 
-ok_h (n' :: ds) (init.nat.max mh (s ch)) (some (s ch)) =
-ok_h (n' :: ds) (init.nat.max mh (s (depth (literal n'))))
-  (some (s (depth (literal n'))))
+OK_h (n' :: ds) (Init.Nat.max mh (S ch)) (Some (S ch)) =
+OK_h (n' :: ds) (Init.Nat.max mh 1) (Some 1)
 *)
+Admitted.
+
+Lemma about_height_and_depth_of_ae_eureka :
+  forall (ae : arithmetic_expression)
+         (ds : data_stack)
+         (mh : nat),
+    (forall n' : nat,
+        evaluate ae = Expressible_nat n' ->
+        fetch_decode_execute_loop_height (compile_aux ae) ds mh 0 =
+          OK_h (n' :: ds) (max mh (S (depth ae))) (Some (S (depth ae))))
+    /\
+    (forall s : string,
+        evaluate ae = Expressible_msg s ->
+        fetch_decode_execute_loop_height (compile_aux ae) ds mh 0 =
+          KO_h s).
+Proof.
+  intros ae.
+  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intros ds mh.
+  split.
+  - intros n' H_n.
+    rewrite ->  fold_unfold_compile_aux_Literal.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons.
+    unfold decode_execute_height.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil.
+    rewrite -> fold_unfold_evaluate_Literal in H_n.
+    injection H_n as H_eq_n_n'.
+    rewrite -> H_eq_n_n'.
+    rewrite -> fold_unfold_depth_Literal.
+    reflexivity.
+  - intros s H_s.
+    rewrite -> fold_unfold_evaluate_Literal in H_s.
+    discriminate H_s.
+  - split.
+    + intros n' H_n'.
+      rewrite -> fold_unfold_compile_aux_Plus.
+      rewrite -> fold_unfold_evaluate_Plus in H_n'.
 Admitted.
 
 Theorem about_height_and_depth_of_ae_aux :
@@ -2506,7 +2542,7 @@ Theorem about_height_and_depth_of_ae_aux :
 Proof.
   intros ae h n H_run.
   unfold run_height in H_run.
-  destruct (about_height_and_depth_of_ae_eureka ae nil 0 0) as [H_OK H_KO].
+  destruct (about_height_and_depth_of_ae_eureka ae nil 0) as [H_OK H_KO].
   destruct (evaluate ae) as [n' | s] eqn:Eval_ae.
   - specialize (H_OK n' eq_refl).
     rewrite H_OK in H_run.
