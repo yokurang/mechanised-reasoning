@@ -12,12 +12,12 @@
 (* ********** *)
 
 (* student name: Alan Matthew Anggara
-   e-mail address: alan.matthew@u.yale-nus.edu.sg
+e-mail address: alan.matthew@u.yale-nus.edu.sg
    student ID number: A0207754B
  *)
 
 (* student name: Kim Young Il
-   e-mail address: youngil.kim@u.yale-nus.edu.sg
+e-mail address: youngil.kim@u.yale-nus.edu.sg
    student ID number: A0207809Y
  *)
 
@@ -1854,22 +1854,45 @@ Definition test_depth (candidate : arithmetic_expression -> nat) : bool :=
                 (Plus (Literal 3) (Literal 4))) in
   let ae5 := (Plus (Plus (Literal 1) (Literal 2)) 
                 (Literal 4)) in
-  let ae4' := (Plus (Literal 1) 
+  let ae6 := (Plus (Literal 1) 
                  (Plus (Literal 3)
                     (Plus (Literal 4)(Literal 5)))) in
-  let ae5' := (Plus
+  let ae7 := (Plus
                  (Plus
                     (Plus (Literal 3)
                        (Literal 4))
                     (Literal 4))
                 (Literal 4)) in
+  let ae8 := (Minus (Literal 1) (Literal 2)) in
+  let ae9 := (Plus (Minus (Literal 1) (Literal 2)) (Literal 3)) in
+  let ae10 := (Minus 
+                 (Plus (Literal 1) (Literal 2))
+                 (Minus (Literal 3) (Literal 4))) in
+  let ae11 := (Plus
+                 (Plus
+                    (Plus
+                       (Plus (Literal 1) (Literal 2))
+                       (Literal 3))
+                    (Literal 4))
+                 (Literal 5)) in
+  let ae12 := (Minus
+                 (Minus (Literal 1)
+                    (Minus (Literal 2)
+                       (Minus
+                       (Literal 3) (Literal 4))))
+                 (Literal 5)) in
   (Nat.eqb (candidate ae1) 0) &&
     (Nat.eqb (candidate ae2) 2) &&
     (Nat.eqb (candidate ae3) 4) &&
     (Nat.eqb (candidate ae4) 2) &&
     (Nat.eqb (candidate ae5) 2) &&
-    (Nat.eqb (candidate ae4') 3) &&
-    (Nat.eqb (candidate ae5') 3).
+    (Nat.eqb (candidate ae6) 3) &&
+    (Nat.eqb (candidate ae7) 3) &&
+    (Nat.eqb (candidate ae8) 1) &&
+    (Nat.eqb (candidate ae9) 2) &&
+    (Nat.eqb (candidate ae10) 2) &&
+    (Nat.eqb (candidate ae11) 4) &&
+    (Nat.eqb (candidate ae12) 4).
 
 Fixpoint depth (ae : arithmetic_expression) : nat :=
   match ae with
@@ -1877,11 +1900,11 @@ Fixpoint depth (ae : arithmetic_expression) : nat :=
   | Plus ae1 ae2 =>
       let n1 := depth ae1 in
       let n2 := depth ae2 in
-      max (S n1) (S n2)
+      S (max n1 n2)
   | Minus ae1 ae2 =>
       let n1 := depth ae1 in
       let n2 := depth ae2 in
-      max (S n1) (S n2)
+      S (max n1 n2)
 end.
 
 Compute (test_depth depth).
@@ -2550,7 +2573,7 @@ Compute (let ae := (Minus (Literal 10)
            (Expressible_nat n, h) ->
          S (depth_right (super_refactor_left ae)) = h).
 Proof.
-  
+Admitted.  
 
 Lemma about_compiling_and_running_ltr_gives_S_depth_right :
   forall (ae : arithmetic_expression)
@@ -2652,9 +2675,6 @@ Compute (let ae := (Minus (Literal 10)
          run_height (compile (Source_program ae)) = (Expressible_nat n, h) ->
          h = S (depth_right ae)).
 Proof.
-  intros ae n h.
-  unfold compile.
-  exact (about_compiling_and_running_ltr_gives_S_depth_right ae n h).
-Qed.
+Admitted.
 
 (* end of week3_stack_height.v *)
