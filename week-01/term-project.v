@@ -2010,6 +2010,11 @@ Proof.
     + (* not commutative if messages are different.*)
 Abort.
 
+Compute( let ae1 := (Minus (Literal 1) (Literal 3)) in
+         let ae2 := (Minus (Literal 2) (Literal 3)) in
+         evaluate (Plus ae1 ae2) = evaluate (Plus ae2 ae1)
+).
+
 Proposition Plus_is_not_commutative :
   exists ae1 ae2: arithmetic_expression,
     evaluate (Plus ae1 ae2) <> evaluate (Plus ae2 ae1).
