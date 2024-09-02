@@ -2646,7 +2646,7 @@ Proof.
   rewrite -> fold_unfold_evaluate_rtl_Plus.
   rewrite -> fold_unfold_evaluate_rtl_Literal.
   case (evaluate_rtl ae) as [n | s].
-  - rewrite -> Nat.add_0_l.
+  - rewrite -> (Nat.add_0_l n).
     reflexivity.
   - reflexivity.
 Qed.
@@ -2695,6 +2695,22 @@ Proof.
     + reflexivity.
     + (* not commutative if messages are different.*)
 Abort.
+
+Compute( let ae1 := (Minus (Literal 1) (Literal 3)) in
+         let ae2 := (Minus (Literal 2) (Literal 3)) in
+         evaluate_rtl (Plus ae1 ae2) = evaluate_rtl (Plus ae2 ae1)
+).
+
+Proposition Plus_is_not_commutative_rtl :
+  exists (ae1 ae2 : arithmetic_expression),
+  evaluate_rtl (Plus ae1 ae2) <> evaluate_rtl (Plus ae2 ae1).
+Proof.
+  exists (Minus (Literal 1) (Literal 3)).
+  exists (Minus (Literal 2) (Literal 3)).
+  compute.
+  intro H_absurd.
+  discriminate H_absurd.
+Qed.
 
 Proposition Plus_is_conditionally_commutative_rtl :
   forall (ae1 ae2 : arithmetic_expression)
