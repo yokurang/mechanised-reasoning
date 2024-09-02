@@ -2355,7 +2355,7 @@ Lemma about_ae_OK_h :
             fetch_decode_execute_loop_height (compile_aux ae) ds mh ch =
               OK_h (n :: ds) (max mh (S ch)) (Some (S ch)))). (* fails for Minus - off by 1 *) *)
 
-
+(*
 Lemma about_ae_OK_h :
   forall (ae : arithmetic_expression)
          (ds : data_stack)
@@ -2401,7 +2401,8 @@ Proof.
     reflexivity.
   -
 Admitted.
-    
+ *)
+  
 Theorem about_height_and_depth_of_ae_aux :
   forall (ae : arithmetic_expression)
          (h n : nat),
@@ -2414,11 +2415,12 @@ Compute (
       run_height (Target_program (compile_aux ae)) = (Expressible_nat n, h) ->
       S (depth ae) = h).
 Compute (
-      let ae := (Plus (Plus (Literal 2) (Literal 1))(Literal 2)) in
+      let ae := (Plus (Plus (Literal 1)(Literal 2))(Literal 3)) in
       let h := 2 in
-      let n := 5 in
+      let n := 6 in
+      compile_aux ae = nil ->
       run_height (Target_program (compile_aux ae)) = (Expressible_nat n, h) ->
-      S (depth ae) = S h). (* Take care here *)
+      S (depth ae) = h). (* Wrong case *)
 Compute (
     let ae := (Plus
                  (Plus
@@ -2428,19 +2430,25 @@ Compute (
                        (Literal 3))
                        (Literal 4)) in
       let h := 2 in
-      let n := 7 in
+      let n := 10 in
       run_height (Target_program (compile_aux ae)) = (Expressible_nat n, h) ->
-      S (depth ae) = S (S h)). (* Take care here *)
+      S (depth ae) = h). (* Wrong case *)
 Compute (
       let ae := (Plus (Minus (Literal 2) (Literal 1))(Literal 2)) in
       let h := 2 in
       let n := 3 in
       run_height (Target_program (compile_aux ae)) = (Expressible_nat n, h) ->
-      S (depth ae) = S h). (* Take care here *)
+      S (depth ae) = h). (* Take care here *)
 Compute (
-      let ae := (Plus (Literal 2) (Plus (Literal 2) (Literal 1))) in
+      let ae := (Plus (Literal 1) (Plus (Literal 2) (Literal 3))) in
       let h := 3 in
       let n := 5 in
+      run_height (Target_program (compile_aux ae)) = (Expressible_nat n, h) ->
+      S (depth ae) = h).
+Compute (
+      let ae := (Plus (Literal 1) (Plus (Literal 2) (Plus (Literal 3) (Literal 4)))) in
+      let h := 4 in
+      let n := 10 in
       run_height (Target_program (compile_aux ae)) = (Expressible_nat n, h) ->
       S (depth ae) = h).
 Compute (
@@ -2448,8 +2456,8 @@ Compute (
       let h := 3 in
       let n := 8 in
       run_height (Target_program (compile_aux ae)) = (Expressible_nat n, h) ->
-      S (depth ae) = S h). (* Take care here *)
-Proof.  
+      S (depth ae) = h). (* Wrong case *)
+Proof.
   intros ae.
   induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intros h n'.
   - intro H_run.
@@ -2505,6 +2513,68 @@ Proof.
   exact (about_height_and_depth_of_ae_aux ae h n').
 Qed.
 
+Theorem compiling_and_running_super_refacored_left_gives_S_depth_right :
+  forall (ae : arithmetic_expression)
+         (n h: nat),
+    run_height (Target_program (compile_aux (super_refactor_left ae))) =
+      (Expressible_nat n, h) ->
+    S (depth_right (super_refactor_left ae)) = h.
+Compute (let ae := (Literal 1) in
+         let h := 1 in
+         let n := 1 in
+         run_height (Target_program (compile_aux (super_refactor_left ae))) =
+           (Expressible_nat n, h) ->
+         S (depth_right (super_refactor_left ae)) = h).         
+Compute (let ae := (Plus (Plus (Literal 1) (Literal 2))
+                      (Plus (Literal 3) (Literal 4))) in
+         let h := 2 in
+         let n := 10 in
+         run_height (Target_program (compile_aux (super_refactor_left ae))) =
+           (Expressible_nat n, h) ->
+         S (depth_right (super_refactor_left ae)) = h).
+Compute (let ae := (Plus
+                      (Plus
+                         (Plus
+                            (Literal 1)
+                            (Literal 2))
+                         (Literal 3))
+                      (Literal 4)) in
+         let h := 2 in
+         let n := 10 in
+         run_height (Target_program (compile_aux (super_refactor_left ae))) =
+           (Expressible_nat n, h) ->
+         S (depth_right (super_refactor_left ae)) = h).
+Compute (let ae := (Minus
+                      (Minus
+                         (Minus
+                            (Literal 10)
+                            (Literal 5))
+                         (Literal 2))
+                      (Literal 1)) in
+         let h := 2 in
+         let n := 2 in
+         run_height (Target_program (compile_aux (super_refactor_left ae))) =
+           (Expressible_nat n, h) ->
+         S (depth_right (super_refactor_left ae)) = h).         
+Compute (let ae := (Plus (Literal 1)
+                      (Plus (Literal 2)
+                         (Plus (Literal 3) (Literal 4)))) in
+         let h := 2 in
+         let n := 10 in
+         run_height (Target_program (compile_aux (super_refactor_left ae))) =
+           (Expressible_nat n, h) ->
+             S (depth_right (super_refactor_left ae)) = h).
+Compute (let ae := (Minus (Literal 10)
+                      (Minus (Literal 5)
+                         (Minus (Literal 2) (Literal 1)))) in
+         let h := 4 in
+         let n := 6 in
+         run_height (Target_program (compile_aux (super_refactor_left ae))) =
+           (Expressible_nat n, h) ->
+         S (depth_right (super_refactor_left ae)) = h).
+Proof.
+Admitted.  
+
 Lemma about_compiling_and_running_ltr_gives_S_depth_right :
   forall (ae : arithmetic_expression)
          (n h: nat),
@@ -2528,120 +2598,23 @@ Proof.
     rewrite -> fold_unfold_compile_aux_Plus.
     unfold run_height.
     rewrite -> fetch_decode_execute_loop_concatenation_height.
-Admitted.
-
-(*
-  Compute experiments
-*)
-
-Compute (let ae := (Literal 1) in
-         let h := 1 in
-         let n := 1 in
-         run_height (compile (Source_program ae)) = (Expressible_nat n, h) ->
-         h = S (depth ae)).
-
-Compute (let ae := (Plus
-                      (Plus
-                         (Plus
-                            (Literal 1)
-                            (Literal 2))
-                         (Literal 3))
-                      (Literal 4)) in
-         let (_, h) := run_height (compile (Source_program ae)) in
-         h = S (depth ae)). 
-(* (Expressible_nat 10, 2) = (Expressible_nat 10, 2) -> 2 = 4 *)
-
-Compute (let ae := (Minus
-                      (Minus
-                         (Minus
-                            (Literal 10)
-                            (Literal 5))
-                         (Literal 2))
-                      (Literal 1)) in
-         let h := 2 in
-         let n := 2 in
-         run_height (compile (Source_program ae)) = (Expressible_nat n, h) ->
-         h = S (depth ae)).
-
-(* (Expressible_nat 2, 2) = (Expressible_nat 2, 2) -> 2 = 4 *)
-
-Compute (let ae := (Plus (Literal 1)
-                      (Plus (Literal 2)
-                         (Plus (Literal 3) (Literal 4)))) in
-         let h := 4 in
-         let n := 10 in
-         run_height (compile (Source_program ae)) = (Expressible_nat n, h) ->
-         h = S (depth ae)).
-
-Compute (let ae := (Minus (Literal 10)
-                      (Minus (Literal 5)
-                         (Minus (Literal 2) (Literal 1)))) in
-         let h := 4 in
-         let n := 6 in
-         run_height (compile (Source_program ae)) = (Expressible_nat n, h) ->
-         h = S (depth ae)).
-
-(* ****** *)
-
-Theorem compiling_and_running_ltr_ae_not_eq_h_S_depth_ae :
-  exists (ae : arithmetic_expression)
-          (n h : nat),
-          run_height (compile (Source_program ae)) = (Expressible_nat n, h) ->
-          h <> S (depth ae).
-Proof.
-  exists (Plus
-          (Plus
-            (Plus
-            (Literal 1)
-            (Literal 2))
-          (Literal 3))
-        (Literal 4)).
-  exists 10.
-  exists 2.
-  compute.
-  intros _ H_absurd.
-  discriminate H_absurd.
-Qed.
-
-Theorem compiling_and_running_ltr_ae_conditionally_eq_h_S_depth_ae_aux :
-  forall (ae : arithmetic_expression)
-         (n h : nat),
-         run_height (Target_program (compile_aux ae)) = (Expressible_nat n, h) ->
-         h = S (depth ae).
-Proof.
-  intros ae.
-  unfold run_height.
-  case (compile_aux ae) as [ | bci bcis].
-  + rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil.
-    intros n h H_absurd.
-    discriminate H_absurd.
-  + intros n h.
-    rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons.
-    case (decode_execute_height bci nil 0 0) as [ds n' opt_n' | s].
-    * intros n h H_run.
-      injection H_run as H_n H_h.
-      rewrite -> fold_unfold_compile_aux_Literal in H_n.
-      rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil in H_n.
-      injection H_n as H_n.
-      rewrite -> H_n.
-      rewrite -> fold_unfold_depth_Literal.
-      rewrite -> fold_unfold_depth_Literal in H_h.
-      rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil in H_h.
-      injection H_h as H_h.
-      rewrite -> H_h.
-      reflexivity.
-    * intros n h H_run.
-      discriminate H_run.
-
-
-Theorem compiling_and_running_ltr_ae_conditionally_eq_h_S_depth_ae :
-  forall (ae : arithmetic_expression)
-         (n h : nat),
-         run_height (compile (Source_program ae)) = (Expressible_nat n, h) ->
-         h = S (depth ae).
-Proof.
-  intro ae.
-  unfold compile.
+    unfold run_height in IHae1, IHae2.
+    case (compile_aux ae1) as [ | bci1' bci1s' ].
+    + rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil.
+      case (compile_aux ae2) as [ | bci2' bci2s' ].
+      * rewrite -> fold_unfold_list_append_nil.
+        rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons.
+        unfold decode_execute_height.
+        intro H_absurd.
+        injection H_absurd as H_absurd _.
+        discriminate H_absurd.
+      * rewrite -> fold_unfold_list_append_cons.
+        rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons.
+        unfold decode_execute_height.
+        case bci2' as [ n2' | | ] eqn:C_bci2'.
+        -- rewrite -> fetch_decode_execute_loop_concatenation_height.
+           unfold fetch_decode_execute_loop_height at 1.
+           unfold decode_execute_height.
 Admitted.
 
 Theorem compiling_and_running_ltr_gives_S_depth_right :
@@ -2652,6 +2625,13 @@ Theorem compiling_and_running_ltr_gives_S_depth_right :
 Compute (let ae := (Literal 1) in
          let h := 1 in
          let n := 1 in
+         run_height (compile (Source_program ae)) = (Expressible_nat n, h) ->
+         h = S (depth_right ae)).
+
+Compute (let ae := (Plus (Plus (Literal 1) (Literal 2))
+                      (Plus (Literal 3) (Literal 4))) in
+         let h := 3 in
+         let n := 10 in
          run_height (compile (Source_program ae)) = (Expressible_nat n, h) ->
          h = S (depth_right ae)).
 
