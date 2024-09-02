@@ -1850,9 +1850,26 @@ Definition test_depth (candidate : arithmetic_expression -> nat) : bool :=
                       (Literal 0))
                    (Literal 0))
                 (Literal 0)) in
+  let ae4 := (Plus (Literal 1) 
+                (Plus (Literal 3) (Literal 4))) in
+  let ae5 := (Plus (Plus (Literal 1) (Literal 2)) 
+                (Literal 4)) in
+  let ae4' := (Plus (Literal 1) 
+                 (Plus (Literal 3)
+                    (Plus (Literal 4)(Literal 5)))) in
+  let ae5' := (Plus
+                 (Plus
+                    (Plus (Literal 3)
+                       (Literal 4))
+                    (Literal 4))
+                (Literal 4)) in
   (Nat.eqb (candidate ae1) 0) &&
     (Nat.eqb (candidate ae2) 2) &&
-    (Nat.eqb (candidate ae3) 4).
+    (Nat.eqb (candidate ae3) 4) &&
+    (Nat.eqb (candidate ae4) 2) &&
+    (Nat.eqb (candidate ae5) 2) &&
+    (Nat.eqb (candidate ae4') 3) &&
+    (Nat.eqb (candidate ae5') 3).
 
 Fixpoint depth (ae : arithmetic_expression) : nat :=
   match ae with
@@ -2116,20 +2133,24 @@ Definition test_fetch_decode_execute_loop_height (candidate : (list byte_code_in
     (eqb_result_of_decoding_and_execution_height
        (candidate (SUB :: SUB :: nil) (4 :: 3 :: 2 :: nil) 2 2)
        (KO_h "numerical underflow: -1"))
-.
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate
+          (PUSH 1 :: PUSH 2 :: ADD :: PUSH 3 :: ADD :: PUSH 4 :: ADD :: nil) nil 0 0)
+       (OK_h (10 :: nil) 2 (Some 1))).
 
 Fixpoint fetch_decode_execute_loop_height (bcis : list byte_code_instruction) (ds : data_stack) (mh ch : nat): result_of_decoding_and_execution_height :=
   match bcis with
   | nil => OK_h ds mh (Some ch)
   | bci :: bcis' =>
-    match decode_execute_height bci ds mh ch with
-    | OK_h ds' mh' ch' => fetch_decode_execute_loop_height bcis' ds' mh'
-                            (match ch' with
-                             | None => 0
-                             | Some ch'' => ch''
-                             end)
-    | KO_h s => KO_h s
-    end
+      match decode_execute_height bci ds mh ch with
+      | OK_h ds' mh' ch' => fetch_decode_execute_loop_height bcis' ds' mh'
+                              (match ch' with
+                               | None => 0
+                               | Some ch'' => ch''
+                               end)
+      | KO_h s => KO_h s
+      end
   end.
 
 Compute (test_fetch_decode_execute_loop_height fetch_decode_execute_loop_height).
@@ -2182,6 +2203,23 @@ Definition run_height (tp : target_program) : expressible_value * nat :=
   match tp with
   | Target_program bcis =>
     match fetch_decode_execute_loop_height bcis nil 0 0 with
+    | OK_h ds mh _ =>
+        match ds with
+        | nil => (Expressible_msg "no result on the data stack", 0)
+        | (n :: ds') =>
+            match ds' with
+            | nil => ((Expressible_nat n), mh)
+            | (n' :: ds'') => ((Expressible_msg "too many results on the data stack"), 0)
+            end
+        end
+    | KO_h s => ((Expressible_msg s), 0)
+    end
+  end.
+
+Definition run_height' (tp : target_program) : expressible_value * nat :=
+  match tp with
+  | Target_program bcis =>
+    match fetch_decode_execute_loop_height bcis nil 0 0 with
     | OK_h nil _ _ => (Expressible_msg "no result on the data stack", 0)
     | OK_h (n :: nil) mh _ => ((Expressible_nat n), mh)
     | OK_h (n :: _ :: _)  _ _ => ((Expressible_msg "too many results on the data stack"), 0)
@@ -2200,15 +2238,15 @@ Compute (let ae1 := (Plus
                        (Plus (Literal 1) (Literal 2))
                        (Plus (Literal 1) (Literal 2))) in
          (run_height (Target_program (compile_aux (Plus ae1 ae2)))) =
-        (match run_height (Target_program (compile_aux ae1)) with
-        | (Expressible_nat n1, h1) =>
-            (match run_height (Target_program (compile_aux ae2)) with
-             | (Expressible_nat n2, h2) =>
-                 (Expressible_nat (n1 + n2), (max h1 h2) + 1)
-             | (Expressible_msg s, _) => (Expressible_msg s, 0)
-             end)
-        | (Expressible_msg s, _) => (Expressible_msg s, 0)
-         end)).
+           (match run_height (Target_program (compile_aux ae1)) with
+            | (Expressible_nat n1, h1) =>
+                (match run_height (Target_program (compile_aux ae2)) with
+                 | (Expressible_nat n2, h2) =>
+                     (Expressible_nat (n1 + n2), (max h1 h2) + 1)
+                 | (Expressible_msg s, _) => (Expressible_msg s, 0)
+                 end)
+            | (Expressible_msg s, _) => (Expressible_msg s, 0)
+            end)).
 
 Theorem fetch_decode_execute_loop_concatenation_height :
   forall (bci1s bci2s : list byte_code_instruction)
@@ -2294,13 +2332,38 @@ Lemma about_ae_OK_h :
             fetch_decode_execute_loop_height (compile_aux ae) ds mh ch =
               OK_h (n :: ds) (max mh (S ch)) (Some (S ch)))). (* fails for Minus - off by 1 *) *)
 
-Lemma about_ae_OK_h_Literal :
+Lemma about_ae_OK_h :
   forall (ae : arithmetic_expression)
          (ds : data_stack)
          (n mh ch : nat),
-    (ae = Literal n ->
+    (evaluate ae = Expressible_nat n ->
      fetch_decode_execute_loop_height (compile_aux ae) ds mh ch =
        OK_h (n :: ds) (max mh (S ch)) (Some (S ch))).
+  Compute (
+      let ae := (Plus
+                   (Plus
+                      (Plus
+                         (Literal 1)
+                         (Literal 2))
+                      (Literal 3))
+                   (Literal 4)) in
+      let ds := nil in
+      let n  := 10 in
+      let mh := 3 in
+      let ch := 1 in
+      (evaluate ae = Expressible_nat n ->
+       fetch_decode_execute_loop_height (compile_aux ae) ds mh ch =
+         OK_h (n :: ds) (max mh (S ch)) (Some (S ch)))).
+  Compute (let ae := (Plus (Literal 1)
+                        (Plus (Literal 2)
+                           (Plus (Literal 3) (Literal 4)))) in
+           let ds := nil in
+           let n  := 10 in
+           let mh := 5 in
+           let ch := 1 in
+           (evaluate ae = Expressible_nat n ->
+            fetch_decode_execute_loop_height (compile_aux ae) ds mh ch =
+              OK_h (n :: ds) (max mh (S ch)) (Some (S ch)))).
 Proof.
   intros ae.
   induction ae as [ n' | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intros ds n mh ch.
@@ -2312,28 +2375,7 @@ Proof.
     injection H_eq as eq_n'_n.
     rewrite -> eq_n'_n.
     reflexivity.
-  - intro H_absurd.
-    discriminate H_absurd.
-  - intro H_absurd.
-    discriminate H_absurd.
-Qed.
-
-Lemma about_ae_OK_h_Plus_Minus :
-  forall (ae ae1 ae2 : arithmetic_expression)
-         (ds : data_stack)
-         (n mh ch : nat),
-    (ae = Plus ae1 ae2) \/ (ae = Minus ae1 ae2) ->
-    fetch_decode_execute_loop_height (compile_aux ae) ds mh ch =
-      OK_h (n :: ds) (max mh (S (S ch))) (Some (S ch)).
-  Compute (let ae := (Minus (Plus (Plus (Literal 0) (Literal 1))(Literal 2))(Literal 1)) in
-           let ds := nil in
-           let n  := 2 in
-           let mh := 3 in
-           let ch := 1 in
-           (evaluate ae = Expressible_nat n ->
-            fetch_decode_execute_loop_height (compile_aux ae) ds mh ch =
-              OK_h (n :: ds) (max mh (S ch)) (Some (S ch)))).
-Proof.
+  -
 Admitted.
     
 Theorem about_height_and_depth_of_ae_aux :
@@ -2353,6 +2395,18 @@ Compute (
       let n := 5 in
       run_height (Target_program (compile_aux ae)) = (Expressible_nat n, h) ->
       S (depth ae) = S h). (* Take care here *)
+Compute (
+    let ae := (Plus
+                 (Plus
+                    (Plus
+                       (Literal 1)
+                       (Literal 2))
+                       (Literal 3))
+                       (Literal 4)) in
+      let h := 2 in
+      let n := 7 in
+      run_height (Target_program (compile_aux ae)) = (Expressible_nat n, h) ->
+      S (depth ae) = S (S h)). (* Take care here *)
 Compute (
       let ae := (Plus (Minus (Literal 2) (Literal 1))(Literal 2)) in
       let h := 2 in
@@ -2414,16 +2468,6 @@ Proof.
         rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil in H_run.
         rewrite -> fold_unfold_compile_aux_Plus in H_run.
         rewrite ->2 fetch_decode_execute_loop_concatenation_height in H_run.
-
-        rewrite -> fold_unfold_compile_aux_Plus in IHae2.
-        
-        
-        injection H_run as eq_n1_n2_n' eq_2_h.
-        rewrite <- eq_2_h.
-        
-    + rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons in IHae1.
-      unfold decode_execute_height in IHae1.
-
 Admitted.
 
 Theorem about_height_and_depth_of_ae :
@@ -2435,6 +2479,102 @@ Proof.
   intros ae h n'.
   unfold compile.
   exact (about_height_and_depth_of_ae_aux ae h n').
+Qed.
+
+Lemma about_compiling_and_running_ltr_gives_S_depth_right :
+  forall (ae : arithmetic_expression)
+         (n h: nat),
+    run_height (Target_program (compile_aux ae)) = (Expressible_nat n, h) ->
+    S (depth_right ae) = h.
+Proof.
+  intro ae.
+  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
+  (*case ae as [ n | ae1 ae2 | ae1 ae2 ].*)
+  - intros n' h.
+    intro H_run.
+    rewrite -> fold_unfold_depth_right_Literal.
+    rewrite -> fold_unfold_compile_aux_Literal in H_run.
+    unfold run_height in H_run.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons in H_run.
+    unfold decode_execute_height in H_run.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil in H_run.
+    injection H_run as _ H_eq_1.
+    exact H_eq_1.
+  - intros n' h.
+    rewrite -> fold_unfold_compile_aux_Plus.
+    unfold run_height.
+    rewrite -> fetch_decode_execute_loop_concatenation_height.
+    case (fetch_decode_execute_loop_height (compile_aux ae1) nil 0 0) as
+      [ ds1' mh1' ch1' | ff] eqn:fdel_ae1.
+    + Check (fetch_decode_execute_loop_concatenation_height
+               (compile_aux ae2) (ADD :: nil) ds1' mh1' (match ch1' with
+                                                         | Some ch'' => ch''
+                                                         | None => 0
+                                                         end)).
+      rewrite -> (fetch_decode_execute_loop_concatenation_height
+                    (compile_aux ae2) (ADD :: nil) ds1' mh1' (match ch1' with
+                                                              | Some ch'' => ch''
+                                                              | None => 0
+                                                              end)).      
+      case (fetch_decode_execute_loop_height (compile_aux ae2) nil 0 0) as
+        [ ds2' mh2' ch2' | ff] eqn:fdel_ae2.
+      *
+      Check fetch_decode_execute_loop_concatenation_height.
+  
+Theorem compiling_and_running_ltr_gives_S_depth_right :
+  forall (ae : arithmetic_expression)
+         (n h: nat),
+    run_height (compile (Source_program ae)) = (Expressible_nat n, h) ->
+    h = S (depth_right ae).
+Compute (let ae := (Literal 1) in
+         let h := 1 in
+         let n := 1 in
+         run_height (compile (Source_program ae)) = (Expressible_nat n, h) ->
+         h = S (depth_right ae)).
+
+Compute (let ae := (Plus
+                      (Plus
+                         (Plus
+                            (Literal 1)
+                            (Literal 2))
+                         (Literal 3))
+                      (Literal 4)) in
+         let h := 2 in
+         let n := 10 in
+         run_height (compile (Source_program ae)) = (Expressible_nat n, h) ->
+         h = S (depth_right ae)).
+
+Compute (let ae := (Minus
+                      (Minus
+                         (Minus
+                            (Literal 10)
+                            (Literal 5))
+                         (Literal 2))
+                      (Literal 1)) in
+         let h := 2 in
+         let n := 2 in
+         run_height (compile (Source_program ae)) = (Expressible_nat n, h) ->
+         h = S (depth_right ae)).
+
+Compute (let ae := (Plus (Literal 1)
+                      (Plus (Literal 2)
+                         (Plus (Literal 3) (Literal 4)))) in
+         let h := 4 in
+         let n := 10 in
+         run_height (compile (Source_program ae)) = (Expressible_nat n, h) ->
+         h = S (depth_right ae)).
+
+Compute (let ae := (Minus (Literal 10)
+                      (Minus (Literal 5)
+                         (Minus (Literal 2) (Literal 1)))) in
+         let h := 4 in
+         let n := 6 in
+         run_height (compile (Source_program ae)) = (Expressible_nat n, h) ->
+         h = S (depth_right ae)).
+Proof.
+  intros ae n h.
+  unfold compile.
+  exact (about_compiling_and_running_ltr_gives_S_depth_right ae n h).
 Qed.
 
 (* end of week3_stack_height.v *)
