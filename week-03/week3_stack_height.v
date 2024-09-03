@@ -2353,7 +2353,7 @@ Compute (let ae1 := (Plus
             | (Expressible_msg s, _) => (Expressible_msg s, 0)
             end)).
 
-Theorem fetch_decode_execute_loop_concatenation_height :
+Theorem about_fetch_decode_execute_loop_height_concatenation :
   forall (bci1s bci2s : list byte_code_instruction)
          (ds : data_stack)
          (mh ch : nat),
@@ -2731,7 +2731,7 @@ Proof.
   - intros n' h.
     rewrite -> fold_unfold_compile_aux_Plus.
     unfold run_height.
-    rewrite -> fetch_decode_execute_loop_concatenation_height.
+    rewrite -> about_fetch_decode_execute_loop_height_concatenation.
     unfold run_height in IHae1, IHae2.
     case (compile_aux ae1) as [ | bci1' bci1s' ].
     + rewrite -> fold_unfold_fetch_decode_execute_loop_height_nil.
@@ -2746,7 +2746,7 @@ Proof.
         rewrite -> fold_unfold_fetch_decode_execute_loop_height_cons.
         unfold decode_execute_height.
         case bci2' as [ n2' | | ] eqn:C_bci2'.
-        -- rewrite -> fetch_decode_execute_loop_concatenation_height.
+        -- rewrite -> about_fetch_decode_execute_loop_height_concatenation.
            unfold fetch_decode_execute_loop_height at 1.
            unfold decode_execute_height.
 Admitted.
