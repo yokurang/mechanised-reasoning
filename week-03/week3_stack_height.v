@@ -2849,18 +2849,32 @@ OK_h (n' :: ds) (Init.Nat.max mh 1) (Some 1)
 *)
 Admitted.
 
+Compute (
+    let ae := (Plus (Plus (Plus (Plus
+                                   (Literal 1)
+                                   (Literal 2))
+                             (Literal 3))
+                       (Literal 4))
+                    (Literal 5)) in
+    let ds := (1 :: 2 :: 3 :: 4 :: 5 :: nil) in
+    let mh := 0 in
+    let n' := 15 in
+          evaluate ae = Expressible_nat n' ->
+          fetch_decode_execute_loop_height (compile_aux ae) ds mh (list_length nat ds) =
+            OK_h (n' :: ds) (max mh (S (depth ae))) (Some (S (depth ae)))).
+
 Lemma about_height_and_depth_of_ae_eureka :
   forall (ae : arithmetic_expression)
          (ds : data_stack)
          (mh : nat),
     (forall n' : nat,
         evaluate ae = Expressible_nat n' ->
-        fetch_decode_execute_loop_height (compile_aux ae) ds mh 0 =
+        fetch_decode_execute_loop_height (compile_aux ae) ds mh (list_length nat ds) =
           OK_h (n' :: ds) (max mh (S (depth ae))) (Some (S (depth ae))))
     /\
     (forall s : string,
         evaluate ae = Expressible_msg s ->
-        fetch_decode_execute_loop_height (compile_aux ae) ds mh 0 =
+        fetch_decode_execute_loop_height (compile_aux ae) ds mh (list_length nat ds) =
           KO_h s).
 Proof.
   intros ae.
@@ -2875,14 +2889,6 @@ Proof.
     injection H_n as H_eq_n_n'.
     rewrite -> H_eq_n_n'.
     rewrite -> fold_unfold_depth_Literal.
-    reflexivity.
-  - intros s H_s.
-    rewrite -> fold_unfold_evaluate_Literal in H_s.
-    discriminate H_s.
-  - split.
-    + intros n' H_n'.
-      rewrite -> fold_unfold_compile_aux_Plus.
-      rewrite -> fold_unfold_evaluate_Plus in H_n'.
 Admitted.
 
 Theorem about_height_and_depth_of_ae_aux :
@@ -2896,11 +2902,13 @@ Proof.
   destruct (about_height_and_depth_of_ae_eureka ae nil 0) as [H_OK H_KO].
   destruct (evaluate ae) as [n' | s] eqn:Eval_ae.
   - specialize (H_OK n' eq_refl).
+    rewrite -> fold_unfold_list_length_nil in H_OK.
     rewrite H_OK in H_run.
     injection H_run as _ H_h.
     rewrite H_h.
     reflexivity.
   - specialize (H_KO s eq_refl).
+    rewrite -> fold_unfold_list_length_nil in H_KO.
     rewrite H_KO in H_run.
     discriminate H_run.
 Qed.
