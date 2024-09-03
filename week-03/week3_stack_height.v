@@ -1838,6 +1838,63 @@ Compute (test_super_refactor_left super_refactor_left).
 
 (* ***** *)
 
+Definition test_compile_rtl_aux (candidate : arithmetic_expression -> (list byte_code_instruction)) :=
+  (eqb_list_byte_code_instruction (candidate (Literal 2))
+     (PUSH 2 :: nil))
+  && (eqb_list_byte_code_instruction (candidate (Plus (Literal 5) (Literal 2)))
+        (PUSH 2 :: PUSH 5 :: ADD :: nil))
+  && (eqb_list_byte_code_instruction (candidate (Minus (Literal 5) (Literal 2)))
+        (PUSH 2 :: PUSH 5 :: SUB :: nil)).
+
+Fixpoint compile_rtl_aux (ae : arithmetic_expression) : list byte_code_instruction :=
+    match ae with
+    | Literal n => PUSH n :: nil
+    | Plus ae1 ae2 => compile_rtl_aux ae2 ++ compile_rtl_aux ae1 ++ (ADD :: nil)
+    | Minus ae1 ae2 => compile_rtl_aux ae2 ++ compile_rtl_aux ae1 ++ (SUB :: nil)
+    end.
+
+Compute (test_compile_rtl_aux compile_rtl_aux = true).
+
+Lemma fold_unfold_compile_rtl_aux_Literal :
+  forall (n : nat),
+    compile_rtl_aux (Literal n) =
+      PUSH n :: nil.
+Proof.
+  fold_unfold_tactic compile_rtl_aux.
+Qed.
+
+Lemma fold_unfold_compile_rtl_aux_Plus :
+  forall (ae1 ae2 : arithmetic_expression),
+    compile_rtl_aux (Plus ae1 ae2) =
+       compile_rtl_aux ae2 ++ compile_rtl_aux ae1 ++ (ADD :: nil).
+Proof.
+  fold_unfold_tactic compile_rtl_aux.
+Qed.
+
+Lemma fold_unfold_compile_rtl_aux_Minus :
+  forall (ae1 ae2 : arithmetic_expression),
+    compile_rtl_aux (Minus ae1 ae2) =
+       compile_rtl_aux ae2 ++ compile_rtl_aux ae1 ++ (SUB :: nil).
+Proof.
+  fold_unfold_tactic compile_rtl_aux.
+Qed.
+
+Definition test_compile_rtl (candidate : source_program -> target_program) : bool :=
+  (eqb_target_program
+     (candidate (Source_program (Minus (Literal 3) (Literal 10))))
+     (Target_program (PUSH 10 :: PUSH 3 :: SUB :: nil)))
+  && (eqb_target_program
+        (candidate (Source_program (Minus (Minus (Literal 3) (Literal 1)) (Plus (Literal 3) (Literal 2)))))
+        (Target_program (PUSH 2 :: PUSH 3 :: ADD :: PUSH 1 :: PUSH 3 :: SUB :: SUB :: nil))).
+
+Definition compile_rtl (sp : source_program) : target_program :=
+  match sp with
+  | Source_program ae => Target_program (compile_rtl_aux ae)
+  end.
+
+Compute (test_compile_rtl compile_rtl = true).
+
+(* ***** *)
 
 (* *** Start of List Length *** *)
 
@@ -1932,11 +1989,11 @@ Definition test_depth (candidate : arithmetic_expression -> nat) : bool :=
                       (Literal 0))
                    (Literal 0))
                 (Literal 0)) in
-  let ae4 := (Plus (Literal 1) 
+  let ae4 := (Plus (Literal 1)
                 (Plus (Literal 3) (Literal 4))) in
-  let ae5 := (Plus (Plus (Literal 1) (Literal 2)) 
+  let ae5 := (Plus (Plus (Literal 1) (Literal 2))
                 (Literal 4)) in
-  let ae6 := (Plus (Literal 1) 
+  let ae6 := (Plus (Literal 1)
                  (Plus (Literal 3)
                     (Plus (Literal 4)(Literal 5)))) in
   let ae7 := (Plus
@@ -1947,7 +2004,7 @@ Definition test_depth (candidate : arithmetic_expression -> nat) : bool :=
                 (Literal 4)) in
   let ae8 := (Minus (Literal 1) (Literal 2)) in
   let ae9 := (Plus (Minus (Literal 1) (Literal 2)) (Literal 3)) in
-  let ae10 := (Minus 
+  let ae10 := (Minus
                  (Plus (Literal 1) (Literal 2))
                  (Minus (Literal 3) (Literal 4))) in
   let ae11 := (Plus
@@ -2164,6 +2221,8 @@ Definition eqb_result_of_decoding_and_execution_height (rde1 rde2 : result_of_de
       end
   end.
 
+(* ***** *)
+
 Definition test_decode_execute_height (candidate : byte_code_instruction -> data_stack -> nat -> nat -> result_of_decoding_and_execution_height) : bool :=
   (eqb_result_of_decoding_and_execution_height
      (candidate (PUSH 42) (1 :: 2 :: 3 :: nil) 0 0)
@@ -2336,6 +2395,167 @@ Compute (test_run_height run_height).
 
 (* ***** *)
 
+Definition test_decode_execute_height_rtl (candidate : byte_code_instruction -> data_stack -> nat -> nat -> result_of_decoding_and_execution_height) : bool :=
+  (eqb_result_of_decoding_and_execution_height
+     (candidate (PUSH 42) (1 :: 2 :: 3 :: nil) 0 0)
+     (OK_h (42 :: 1 :: 2 :: 3 :: nil) 1 (Some 1)))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate (PUSH 42) (1 :: 2 :: 3 :: nil) 10 5)
+       (OK_h (42 :: 1 :: 2 :: 3 :: nil) 10 (Some 6)))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate ADD (1 :: 2 :: 3 :: nil) 10 5)
+       (OK_h (3 :: 3 :: nil) 10 (Some 4)))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate SUB (2 :: 3 :: 3 :: nil) 10 5)
+       (KO_h "numerical underflow: -1"))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate SUB (3 :: 2 :: 3 :: nil) 10 5)
+       (OK_h (1 :: 3 :: nil) 10 (Some 4))).
+
+Definition decode_execute_height_rtl (bci : byte_code_instruction) (ds : data_stack) (mh ch : nat) : result_of_decoding_and_execution_height :=
+  match bci with
+  | PUSH n => OK_h (n :: ds) (max mh (S ch)) (Some (S ch))
+  | ADD =>
+      match ds with
+      | nil => KO_h "ADD: stack underflow"
+      | n1 :: ds' =>
+          match ds' with
+          | n2 :: ds'' => OK_h ((n1 + n2) :: ds'') mh (match ch with
+                                                       | 0 => None
+                                                       | S ch' => Some ch'
+                                                       end)
+          | nil => KO_h "ADD: stack underflow"
+          end
+      end
+  | SUB =>
+      match ds with
+      | nil => KO_h "SUB: stack underflow"
+      | n1 :: ds' =>
+          match ds' with
+          | n2 :: ds'' =>
+              match n1 <? n2 with
+              | true =>
+                  KO_h (String.append "numerical underflow: -" (string_of_nat (n2 - n1)))
+              | false =>
+                  OK_h ((n1 - n2) :: ds'') mh (match ch with
+                                               | 0 => None
+                                               | S ch' => Some ch'
+                                               end)
+              end
+          | nil => KO_h "SUB: stack underflow"
+          end
+      end
+  end.
+
+Compute test_decode_execute_height_rtl decode_execute_height_rtl.
+
+Definition test_fetch_decode_execute_loop_height_rtl (candidate : (list byte_code_instruction) -> data_stack -> nat -> nat -> result_of_decoding_and_execution_height) :=
+  (eqb_result_of_decoding_and_execution_height
+     (candidate (PUSH 42 :: PUSH 21 :: nil) (1 :: 2 :: 3 :: nil) 0 0)
+     (OK_h (21 :: 42 :: 1 :: 2 :: 3 :: nil) 2 (Some 2)))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate (ADD :: ADD :: nil) (1 :: 2 :: 3 :: nil) 3 3)
+       (OK_h (6 :: nil) 3 (Some 1)))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate (SUB :: nil) (3 :: 2 :: nil) 2 2)
+       (OK_h (1 :: nil) 2 (Some 1)))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate (SUB :: SUB :: nil) (4 :: 3 :: 2 :: nil) 2 2)
+       (KO_h "numerical underflow: -1"))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate
+          (PUSH 1 :: PUSH 2 :: ADD :: PUSH 3 :: ADD :: PUSH 4 :: ADD :: nil) nil 0 0)
+       (OK_h (10 :: nil) 2 (Some 1))).
+
+Fixpoint fetch_decode_execute_loop_height_rtl (bcis : list byte_code_instruction) (ds : data_stack) (mh ch : nat): result_of_decoding_and_execution_height :=
+  match bcis with
+  | nil => OK_h ds mh (Some ch)
+  | bci :: bcis' =>
+      match decode_execute_height_rtl bci ds mh ch with
+      | OK_h ds' mh' ch' => fetch_decode_execute_loop_height_rtl bcis' ds' mh'
+                              (match ch' with
+                               | None => 0
+                               | Some ch'' => ch''
+                               end)
+      | KO_h s => KO_h s
+      end
+  end.
+
+Compute (test_fetch_decode_execute_loop_height_rtl fetch_decode_execute_loop_height_rtl).
+
+Lemma fold_unfold_fetch_decode_execute_loop_height_rtl_nil :
+  forall (ds: data_stack)
+         (mh ch : nat),
+    fetch_decode_execute_loop_height_rtl nil ds mh ch =
+      OK_h ds mh (Some ch).
+Proof.
+  fold_unfold_tactic fetch_decode_execute_loop_height_rtl.
+Qed.
+
+Lemma fold_unfold_fetch_decode_execute_loop_height_rtl_cons :
+  forall (bci : byte_code_instruction)
+         (bcis' : list byte_code_instruction)
+         (ds : data_stack)
+         (mh ch : nat),
+    fetch_decode_execute_loop_height_rtl (bci :: bcis') ds mh ch =
+      match decode_execute_height_rtl bci ds mh ch with
+      | OK_h ds' mh' ch' => fetch_decode_execute_loop_height_rtl bcis' ds' mh'
+                              (match ch' with
+                               | None => 0
+                               | Some ch'' => ch''
+                               end)
+      | KO_h s => KO_h s
+      end.
+Proof.
+  fold_unfold_tactic fetch_decode_execute_loop_height_rtl.
+Qed.
+
+Definition test_run_height_rtl (candidate : target_program -> expressible_value * nat) : bool :=
+  (let (ev1, h1) := (candidate (Target_program (PUSH 42 :: nil))) in
+   (expressible_value_eqb ev1 (Expressible_nat 42)) &&
+     (Nat.eqb h1 1))
+  &&
+    (let (ev2, h2) := (candidate (Target_program (PUSH 42 :: PUSH 1 :: ADD :: PUSH 100 :: ADD :: nil))) in
+     (expressible_value_eqb ev2 (Expressible_nat 143)) &&
+       (Nat.eqb h2 2))
+  &&
+    (let (ev3, h3) := (candidate (Target_program (PUSH 42 :: ADD :: SUB :: nil))) in
+     (expressible_value_eqb ev3 (Expressible_msg "ADD: stack underflow")) &&
+       (Nat.eqb h3 0))
+  &&
+    (let (ev4, h4) := (candidate (Target_program (PUSH 20 :: PUSH 42 :: ADD :: PUSH 20 :: PUSH 30 :: PUSH 40 :: nil))) in
+     (expressible_value_eqb ev4 (Expressible_msg "too many results on the data stack")) &&
+       (Nat.eqb h4 0)).
+
+Definition run_height_rtl (tp : target_program) : expressible_value * nat :=
+  match tp with
+  | Target_program bcis =>
+    match fetch_decode_execute_loop_height_rtl bcis nil 0 0 with
+    | OK_h ds mh _ =>
+        match ds with
+        | nil => (Expressible_msg "no result on the data stack", 0)
+        | (n :: ds') =>
+            match ds' with
+            | nil => ((Expressible_nat n), mh)
+            | (n' :: ds'') => ((Expressible_msg "too many results on the data stack"), 0)
+            end
+        end
+    | KO_h s => ((Expressible_msg s), 0)
+    end
+  end.
+
+Compute (test_run_height_rtl run_height_rtl).
+
+(* ***** *)
+
 Compute (let ae1 := (Plus
                        (Plus (Literal 1) (Literal 2))
                        (Plus (Literal 1) (Literal 2))) in
@@ -2387,7 +2607,7 @@ Proof.
         exact (IHbci1s' nil ds1' n (match o with
                                     | Some ch'' => ch''
                                     | None => 0
-                                    end )).        
+                                    end )).
       * reflexivity.
     + intros ds mh ch.
       rewrite -> fold_unfold_list_append_cons.
@@ -2666,7 +2886,7 @@ Compute (let ae := (Literal 1) in
          let n := 1 in
          run_height (Target_program (compile_aux (super_refactor_left ae))) =
            (Expressible_nat n, h) ->
-         S (depth_right (super_refactor_left ae)) = h).         
+         S (depth_right (super_refactor_left ae)) = h).
 Compute (let ae := (Plus (Plus (Literal 1) (Literal 2))
                       (Plus (Literal 3) (Literal 4))) in
          let h := 2 in
@@ -2697,7 +2917,7 @@ Compute (let ae := (Minus
          let n := 2 in
          run_height (Target_program (compile_aux (super_refactor_left ae))) =
            (Expressible_nat n, h) ->
-         S (depth_right (super_refactor_left ae)) = h).         
+         S (depth_right (super_refactor_left ae)) = h).
 Compute (let ae := (Plus (Literal 1)
                       (Plus (Literal 2)
                          (Plus (Literal 3) (Literal 4)))) in
@@ -2715,7 +2935,7 @@ Compute (let ae := (Minus (Literal 10)
            (Expressible_nat n, h) ->
          S (depth_right (super_refactor_left ae)) = h).
 Proof.
-Admitted.  
+Admitted.
 
 Lemma about_compiling_and_running_ltr_gives_S_depth_right :
   forall (ae : arithmetic_expression)
