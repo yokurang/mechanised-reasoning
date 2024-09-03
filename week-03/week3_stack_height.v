@@ -1838,6 +1838,88 @@ Compute (test_super_refactor_left super_refactor_left).
 
 (* ***** *)
 
+
+(* *** Start of List Length *** *)
+
+Definition test_list_length (candidate : forall V : Type, list V -> nat) :=
+  (candidate nat nil =? 0) &&
+    (candidate bool nil =? 0) &&
+    (candidate nat (1 :: nil) =? 1) &&
+    (candidate bool (true :: nil) =? 1) &&
+    (candidate nat (2 :: 1 :: nil) =? 2) &&
+    (candidate bool (false :: true :: nil) =? 2) &&
+    (candidate nat (3 :: 2 :: 1 :: nil) =? 3) &&
+    (candidate bool (false :: false :: true :: nil) =? 3) &&
+    (candidate nat (5 :: 4 :: 3 :: 2 :: 1 :: nil) =? 5) &&
+    (candidate bool (true :: true :: false :: false :: true :: nil) =? 5).
+
+Fixpoint list_length (V : Type) (vs : list V) : nat :=
+  match vs with
+    | nil =>
+      0
+    | v :: vs' =>
+      S (list_length V vs')
+  end.
+
+Compute (test_list_length list_length).
+
+(* Associated fold-unfold lemmas: *)
+
+Lemma fold_unfold_list_length_nil :
+  forall V : Type,
+    list_length V nil =
+    0.
+Proof.
+  fold_unfold_tactic list_length.
+Qed.
+
+Lemma fold_unfold_list_length_cons :
+  forall (V : Type)
+         (v : V)
+         (vs' : list V),
+    list_length V (v :: vs') =
+    S (list_length V vs').
+Proof.
+  fold_unfold_tactic list_length.
+Qed.
+
+
+Fixpoint list_length_acc (V : Type) (ls : list V) (a : nat) : nat :=
+  match ls with
+  | nil =>
+      a
+  | v :: vs' =>
+      list_length_acc V vs' (S a)
+  end.
+
+
+Definition list_length_alt (V : Type) (vs : list V) : nat :=
+  list_length_acc V vs 0.
+
+Compute (test_list_length list_length_alt).
+
+Lemma fold_unfold_list_length_acc_nil :
+  forall (V : Type)
+         (acc : nat),
+    list_length_acc V nil acc =
+      acc.
+Proof.
+  fold_unfold_tactic list_length_acc.
+Qed.
+
+Lemma fold_unfold_list_length_acc_cons :
+  forall (V : Type)
+         (v : V)
+         (vs' : list V)
+         (acc : nat),
+    list_length_acc V (v :: vs') acc =
+      list_length_acc V vs' (S acc).
+Proof.
+  fold_unfold_tactic list_length_acc.
+Qed.
+
+(* *** End of List Length *** *)
+
 Definition test_depth (candidate : arithmetic_expression -> nat) : bool :=
   let ae1 := (Literal 1) in
   let ae2 := (Plus
