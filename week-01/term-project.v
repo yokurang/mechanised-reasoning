@@ -2012,8 +2012,7 @@ Abort.
 
 Compute( let ae1 := (Minus (Literal 1) (Literal 3)) in
          let ae2 := (Minus (Literal 2) (Literal 3)) in
-         evaluate (Plus ae1 ae2) = evaluate (Plus ae2 ae1)
-).
+         evaluate (Plus ae1 ae2) = evaluate (Plus ae2 ae1)).
 
 Proposition Plus_is_not_commutative :
   exists ae1 ae2: arithmetic_expression,
@@ -2059,28 +2058,23 @@ Proof.
       rewrite -> H_s2.
       reflexivity.
   - rewrite ->2 fold_unfold_evaluate_Plus;
-      case (evaluate ae1) as [n1 | s1] eqn:H_ae1;
-      case (evaluate ae2) as [n2 | s2] eqn:H_ae2.
+      case (evaluate ae1) as [n1 | s1] eqn:H_ae1.
     + intros _.
       left.
       exists n1.
       reflexivity.
-    + intros _.
-      left.
-      exists n1.
-      reflexivity.
-    + intros _.
-      right.
-      left.
-      exists n2.
-      reflexivity.
-    + intros H_eq_s1_s2.
-      right.
-      right.
-      exists s1.
-      split.
-      * reflexivity.
-      * exact (eq_sym H_eq_s1_s2).
+    + case (evaluate ae2) as [n2 | s2] eqn:H_ae2.
+      * right.
+        left.
+        exists n2.
+        reflexivity.
+      * intros H_eq_s1_s2.
+        right.
+        right.
+        exists s1.
+        split.
+        { reflexivity. }
+        { exact (eq_sym H_eq_s1_s2). }
 Qed.
 
 (*
@@ -2680,7 +2674,7 @@ Proof.
   - reflexivity.
 Qed.
 
-Proposition Plus_is_commutative :
+Proposition Plus_is_commutative_rtl :
   forall ae1 ae2 : arithmetic_expression,
     evaluate_rtl (Plus ae1 ae2) = evaluate_rtl (Plus ae2 ae1).
 Proof.
@@ -2698,8 +2692,7 @@ Abort.
 
 Compute( let ae1 := (Minus (Literal 1) (Literal 3)) in
          let ae2 := (Minus (Literal 2) (Literal 3)) in
-         evaluate_rtl (Plus ae1 ae2) = evaluate_rtl (Plus ae2 ae1)
-).
+         evaluate_rtl (Plus ae1 ae2) = evaluate_rtl (Plus ae2 ae1)).
 
 Proposition Plus_is_not_commutative_rtl :
   exists (ae1 ae2 : arithmetic_expression),
@@ -2713,29 +2706,31 @@ Proof.
 Qed.
 
 Proposition Plus_is_conditionally_commutative_rtl :
-  forall (ae1 ae2 : arithmetic_expression)
-         (n : nat)
-         (s : string),
-    evaluate_rtl ae1 = Expressible_nat n
-    \/
-      evaluate_rtl ae2 = Expressible_nat n
-    \/
-      evaluate_rtl ae1 = Expressible_msg s /\ evaluate_rtl ae2 = Expressible_msg s
+  forall ae1 ae2 : arithmetic_expression,
+    ((exists n : nat,
+         evaluate_rtl ae1 = Expressible_nat n)
+     \/
+       (exists n : nat,
+           evaluate_rtl ae2 = Expressible_nat n)
+     \/
+       (exists s : string,
+           evaluate_rtl ae1 = Expressible_msg s /\ evaluate_rtl ae2 = Expressible_msg s))
     <->
       evaluate_rtl (Plus ae1 ae2) = evaluate_rtl (Plus ae2 ae1).
 Proof.
+  intros ae1 ae2.
   split.
-  - intros [H_n1 | [H_n2 | [ H_s1 H_s2]]].
+  - intros [[n1 H_n1] | [[n2 H_n2] | [s [H_s1 H_s2]]]].
     + rewrite ->2 fold_unfold_evaluate_rtl_Plus.
       rewrite -> H_n1.
       case (evaluate_rtl ae2) as [n2 | s2].
-      * rewrite -> (Nat.add_comm n2 n).
+      * rewrite -> (Nat.add_comm n2 n1).
         reflexivity.
       * reflexivity.
     + rewrite ->2 fold_unfold_evaluate_rtl_Plus.
       rewrite -> H_n2.
       case (evaluate_rtl ae1) as [n1 | s1].
-      * rewrite -> (Nat.add_comm n n1).
+      * rewrite -> (Nat.add_comm n2 n1).
         reflexivity.
       * reflexivity.
     + rewrite ->2 fold_unfold_evaluate_rtl_Plus.
@@ -2743,25 +2738,121 @@ Proof.
       rewrite -> H_s2.
       reflexivity.
   - rewrite ->2 fold_unfold_evaluate_rtl_Plus.
-    case (evaluate ae2) as [n2 | s2] eqn:H_ae2.
+    case (evaluate_rtl ae1) as [n1 | s1] eqn:H_ae1.
     + intros _.
       left.
       exists n1.
       reflexivity.
-    + intros _.
-      left.
-      exists n1.
-      reflexivity.
-    + intros _.
-      right.
-      left.
-      exists n2.
-      reflexivity.
-    + intros H_eq_s1_s2.
-      right.
-      right.
-      exists s1.
-      split.
+    + case (evaluate_rtl ae2) as [n2 | s2] eqn:H_ae2.
+      * right.
+        left.
+        exists n2.
+        reflexivity.
+      * intros H_eq_s1_s2.
+        right.
+        right.
+        exists s1.
+        split.
+        { reflexivity. }
+        { exact H_eq_s1_s2. }
+Qed.
+
+Proposition Times_distributive_over_Plus_on_the_right_rtl :
+  forall ae1 ae2 ae3 : arithmetic_expression,
+    evaluate_rtl (Times (Plus ae1 ae2) ae3) =
+    evaluate_rtl (Plus (Times ae1 ae3) (Times ae2 ae3)).
+Proof.
+  intros ae1 ae2 ae3.
+  rewrite -> fold_unfold_evaluate_rtl_Times.
+  rewrite -> 2 fold_unfold_evaluate_rtl_Plus.
+  rewrite -> 2 fold_unfold_evaluate_rtl_Times.
+  case (evaluate_rtl ae3) as [n3 | s3] eqn:Hae3.
+  + case (evaluate_rtl ae2) as [n2 | s2] eqn:Hae2.
+    ++ case (evaluate_rtl ae1) as [n1 | s1] eqn:Hae1.
+       +++ rewrite -> Nat.mul_add_distr_r.
+           reflexivity.
+       +++ reflexivity.
+    ++ reflexivity.
+  + reflexivity.
+Qed.
+
+Proposition Times_distributive_over_Plus_on_the_left_rtl :
+  forall ae1 ae2 ae3 : arithmetic_expression,
+    evaluate_rtl (Times ae1 (Plus ae2 ae3)) =
+    evaluate_rtl (Plus (Times ae1 ae2) (Times ae1 ae3)).
+Proof.
+Abort.
+
+Compute (let ae1 := (Minus (Literal 1) (Literal 2)) in
+         let ae2 := (Minus (Literal 1) (Literal 3)) in
+         let ae3 := (Literal 0) in
+         evaluate_rtl (Times ae1 (Plus ae2 ae3)) =
+           evaluate_rtl (Plus (Times ae1 ae2) (Times ae1 ae3))).
+
+Proposition Times_distributes_over_Plus_on_the_left_conditionally_rtl :
+  forall (ae1 ae2 ae3 : arithmetic_expression),
+    (exists s : string,
+        evaluate_rtl ae3 = Expressible_msg s)
+    \/
+    (exists n : nat,
+        evaluate_rtl ae2 = Expressible_nat n)
+    \/
+    (exists n : nat,
+        evaluate_rtl ae1 = Expressible_nat n)
+    \/
+    (exists s : string,
+        evaluate_rtl ae2 = Expressible_msg s
+        /\
+        evaluate_rtl ae1 = Expressible_msg s)
+    <->
+      evaluate_rtl (Times ae1 (Plus ae2 ae3)) =
+        evaluate_rtl (Plus (Times ae1 ae2) (Times ae1 ae3)).
+Proof.
+  intros ae1 ae2 ae3.
+  rewrite -> fold_unfold_evaluate_rtl_Times.
+  rewrite -> 2 fold_unfold_evaluate_rtl_Plus.
+  rewrite -> 2 fold_unfold_evaluate_rtl_Times.
+  split.
+  - intros [[s H_ae3_s] | [[n2 H_ae2_n] | [[n1 H_ae1_n] | [s [H_ae2_s H_ae1_s]]]]].
+    rewrite -> H_ae3_s.
+    + reflexivity.
+    + rewrite -> H_ae2_n.
+      case (evaluate_rtl ae3) as [n3' | s3'].
+      * case (evaluate_rtl ae1) as [n1' | s1'].
+        ++ rewrite -> Nat.mul_add_distr_l.
+           reflexivity.
+        ++ reflexivity.
       * reflexivity.
-      * exact (eq_sym H_eq_s1_s2).
+    + rewrite -> H_ae1_n.
+      case (evaluate_rtl ae3) as [n3' | s3'].
+      * case (evaluate_rtl ae2) as [n2' | s2'].
+        -- rewrite -> Nat.mul_add_distr_l.
+           reflexivity.
+        -- reflexivity.
+      * reflexivity.
+    + rewrite -> H_ae2_s.
+      rewrite -> H_ae1_s.
+      case (evaluate_rtl ae3) as [n3' | s3'].
+      * reflexivity.
+      * reflexivity.
+  - case (evaluate_rtl ae3) as [n3 | s3] eqn:H_ae3.
+    + case (evaluate_rtl ae1) as [n1 | s1] eqn:H_ae1.
+      intros _.
+      * right. right. left.
+        exists n1.
+        reflexivity.
+      * case (evaluate_rtl ae2) as [n2 | s2] eqn:H_ae2.
+        -- intros _.
+           right. left.
+           exists n2.
+           reflexivity.
+        -- intros H_s2_eq_s1.
+           right. right. right.
+           exists s2.
+           split.
+           { reflexivity. }
+           { exact (eq_sym H_s2_eq_s1). }
+    + left.
+      exists s3.
+      reflexivity.
 Qed.
