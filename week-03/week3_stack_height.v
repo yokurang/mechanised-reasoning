@@ -2347,7 +2347,7 @@ Compute (
   end
 ).
 
-(* Test 17: Non-empty initial stack *)
+(* Test 19: Non-empty initial stack *)
 Compute (
   let bci1s := PUSH 1 :: ADD :: nil in
   let bci2s := PUSH 2 :: SUB :: nil in
@@ -2546,7 +2546,7 @@ Proof.
     rewrite -> fold_unfold_depth_right_Literal.
     unfold run_height_ltr.
     rewrite -> (fold_unfold_fetch_decode_execute_loop_height_ltr_cons (PUSH n)).
-    unfold decode_execute_height_ltr.
+    unfold decode_execute.
     rewrite -> (fold_unfold_fetch_decode_execute_loop_height_ltr_nil (n :: nil)).
     rewrite -> (fold_unfold_list_length_cons nat n nil).
     rewrite -> (fold_unfold_list_length_nil nat).
