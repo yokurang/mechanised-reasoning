@@ -2040,10 +2040,92 @@ Compute (let ae1 := (Plus
             | (Expressible_msg s, _) => (Expressible_msg s, 0)
             end)).
 
+Compute (
+    let bci1s := nil in
+    let bci2s := (PUSH 2 :: nil) in
+    let ds := nil in
+    match fetch_decode_execute_loop_height_ltr bci1s ds with
+    | OK_h ds1 mh =>
+        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+          fetch_decode_execute_loop_height_ltr bci2s ds1
+    | KO_h s =>
+        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds  =
+          KO_h s
+    end).
+
+Compute (
+    let bci1s := (PUSH 3 :: PUSH 4 :: nil) in
+    let bci2s := (PUSH 2 :: nil) in
+    let ds := nil in
+    match fetch_decode_execute_loop_height_ltr bci1s ds with
+    | OK_h ds1 mh =>
+        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+          fetch_decode_execute_loop_height_ltr bci2s ds1
+    | KO_h s =>
+        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds  =
+          KO_h s
+    end).
+
+Compute (
+    let bci1s := (PUSH 12 :: PUSH 4 :: ADD :: nil) in
+    let bci2s := (PUSH 2 :: nil) in
+    let ds := nil in
+    match fetch_decode_execute_loop_height_ltr bci1s ds with
+    | OK_h ds1 mh =>
+        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+          fetch_decode_execute_loop_height_ltr bci2s ds1
+    | KO_h s =>
+        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds  =
+          KO_h s
+    end).
+
+Compute (
+    let bci1s := (ADD :: PUSH 12 :: PUSH 4 :: ADD :: nil) in
+    let bci2s := (ADD :: PUSH 12 :: PUSH 12 :: ADD :: PUSH 12 :: PUSH 9 :: SUB :: nil) in
+    let ds := (1 :: 2 :: nil) in
+    match fetch_decode_execute_loop_height_ltr bci1s ds with
+    | OK_h ds1 mh =>
+        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+          fetch_decode_execute_loop_height_ltr bci2s ds1
+    | KO_h s =>
+        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds  =
+          KO_h s
+    end).
+
+Compute (
+    let bci1s := (PUSH 1 :: PUSH 1 :: PUSH 1 :: PUSH 1 :: PUSH 1 :: PUSH 1 :: nil) in
+    let bci2s := (ADD :: ADD :: ADD :: ADD :: nil) in
+    let ds := (1 :: 2 :: nil) in
+    match fetch_decode_execute_loop_height_ltr bci1s ds with
+    | OK_h ds1 mh =>
+        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+          fetch_decode_execute_loop_height_ltr bci2s ds1
+    | KO_h s =>
+        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds  =
+          KO_h s
+    end).
+
+Theorem about_fetch_decode_execute_loop_height_concatenation_ltr :
+  forall (ae1 ae2 : arithmetic_expression)
+         (ds : data_stack),
+    (forall (ds1 : data_stack)
+            (mh : nat),
+        fetch_decode_execute_loop_height_ltr (compile_aux ae1) ds =
+          OK_h ds1 mh ->
+        fetch_decode_execute_loop_height_ltr ((compile_aux ae1) ++ (compile_aux ae2)) ds =
+          fetch_decode_execute_loop_height_ltr (compile_aux ae2) ds1)
+    /\
+      (forall s : string,
+          fetch_decode_execute_loop_height_ltr (compile_aux ae1) ds = KO_h s ->
+          fetch_decode_execute_loop_height_ltr ((compile_aux ae1) ++ (compile_aux ae2)) ds  =
+            KO_h s).
+Proof.
+Admitted.
+
+  (*
 Theorem about_fetch_decode_execute_loop_height_concatenation_ltr :
   forall (bci1s bci2s : list byte_code_instruction)
          (ds : data_stack),
-    (* PUSH case  *)
     (forall (ds1 : data_stack)
             (mh : nat),
         fetch_decode_execute_loop_height_ltr bci1s ds =
@@ -2057,6 +2139,7 @@ Theorem about_fetch_decode_execute_loop_height_concatenation_ltr :
             KO_h s).
 Proof.
 Admitted.
+   *)
 (*   intros bci1s. *)
 (*   induction bci1s as [ | bci bci1s' IHbci1s']. *)
 (*   - unfold fetch_decode_execute_loop_height_ltr at 1 4. *)
@@ -2251,14 +2334,26 @@ Proof.
         -- admit.
         -- case (fetch_decode_execute_loop_height_ltr (bci2' :: bci2s') ds1) as [ds2 mh2 | s2] eqn:H_fdel_ae2.
            ++ Check (about_fetch_decode_execute_loop_height_concatenation_ltr (bci2' :: bci2s')
-           (ADD :: nil) ds1).
-           destruct (about_fetch_decode_execute_loop_height_concatenation_ltr (bci2' :: bci2s')
-           (ADD :: nil) ds1) as [H_fdel_OK2 _].
-           Check (H_fdel_OK2 ds2 mh2 H_fdel_ae2).
-           rewrite -> (H_fdel_OK2 ds2 mh2 H_fdel_ae2).
-           unfold fetch_decode_execute_loop_height_ltr.
-           unfold decode_execute_height_ltr.
-Admitted.
+                       (ADD :: nil) ds1).
+              destruct (about_fetch_decode_execute_loop_height_concatenation_ltr (bci2' :: bci2s')
+                          (ADD :: nil) ds1) as [H_fdel_OK2 _].
+              Check (H_fdel_OK2 ds1 mh1 H_fdel_ae2).
+
+           
+
+           destruct         
+
+
+
+
+
+
+    Check (about_fetch_decode_execute_loop_height_concatenation_ltr).
+    Check (fetch_decode_execute_loop_height_ltr).
+    destruct (fetch_decode_execute_loop_height_ltr (compile_aux ae1) nil) as [ds1 mh1 | s1] eqn:H_fdel_ae1.
+    + Check (about_fetch_decode_execute_loop_height_concatenation_ltr).
+      Check (about_fetch_decode_execute_loop_height_concatenation_ltr (compile_aux ae1) (compile_aux ae2 ++ ADD :: nil) nil).
+      destruct (about_fetch_decode_execute_loop_height_concatenation_ltr (compile_aux ae1) (compile_aux ae2 ++ ADD :: nil) nil) as [H_fdel_OK H_fdel_KO].
 
 (*
 fetch_decode_execute_loop_height_ltr (compile_aux ae1) nil = OK_h ds1 mh1 ->
