@@ -1808,16 +1808,15 @@ Lemma fold_unfold_fetch_decode_execute_loop_height_ltr_cons :
          (bcis' : list byte_code_instruction)
          (ds : data_stack),
     fetch_decode_execute_loop_height_ltr (bci :: bcis') ds =
-      match decode_execute_height_ltr bci ds with
-      | OK_h ds' mh' =>
-          match fetch_decode_execute_loop_height_ltr bcis' ds'  with
+          match decode_execute bci ds with
+      | OK ds' =>
+          match fetch_decode_execute_loop_height_ltr bcis' ds' with
           | OK_h ds'' mh'' =>
-              OK_h ds'' (max (list_length nat ds) mh'')
+              OK_h ds'' (max (max (list_length nat ds) (list_length nat ds')) mh'')
           | KO_h s =>
               KO_h s
           end
-      | KO_h s =>
-          KO_h s
+      | KO s => KO_h s
       end.
 Proof.
   fold_unfold_tactic fetch_decode_execute_loop_height_ltr.
@@ -1942,14 +1941,13 @@ Fixpoint fetch_decode_execute_loop_height_rtl (bcis : list byte_code_instruction
   match bcis with
   | nil => OK_h ds (list_length nat ds)
   | bci :: bcis' =>
-      match decode_execute_height_rtl bci ds with
+      match fetch_decode_execute_loop_height_rtl bcis' ds with
       | OK_h ds' mh' =>
-          match fetch_decode_execute_loop_height_rtl bcis' ds' with
-          | OK_h ds'' mh'' =>
-              OK_h ds'' (max (list_length nat ds) mh'')
-          | KO_h s =>
-              KO_h s
-          end                 
+          match decode_execute bci ds' with
+          | OK ds'' =>
+              OK_h ds'' (max (max (list_length nat ds') (list_length nat ds'')) mh')
+          | KO s => KO_h s
+          end
       | KO_h s => KO_h s
       end
   end.
