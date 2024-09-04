@@ -1808,7 +1808,7 @@ Lemma fold_unfold_fetch_decode_execute_loop_height_ltr_cons :
          (bcis' : list byte_code_instruction)
          (ds : data_stack),
     fetch_decode_execute_loop_height_ltr (bci :: bcis') ds =
-          match decode_execute bci ds with
+     match decode_execute bci ds with
       | OK ds' =>
           match fetch_decode_execute_loop_height_ltr bcis' ds' with
           | OK_h ds'' mh'' =>
@@ -1941,13 +1941,14 @@ Fixpoint fetch_decode_execute_loop_height_rtl (bcis : list byte_code_instruction
   match bcis with
   | nil => OK_h ds (list_length nat ds)
   | bci :: bcis' =>
-      match fetch_decode_execute_loop_height_rtl bcis' ds with
+      match decode_execute_height_rtl bci ds with
       | OK_h ds' mh' =>
-          match decode_execute bci ds' with
-          | OK ds'' =>
-              OK_h ds'' (max (max (list_length nat ds') (list_length nat ds'')) mh')
-          | KO s => KO_h s
-          end
+          match fetch_decode_execute_loop_height_rtl bcis' ds' with
+          | OK_h ds'' mh'' =>
+              OK_h ds'' (max (list_length nat ds) mh'')
+          | KO_h s =>
+              KO_h s
+          end                 
       | KO_h s => KO_h s
       end
   end.
@@ -2038,106 +2039,354 @@ Compute (let ae1 := (Plus
             | (Expressible_msg s, _) => (Expressible_msg s, 0)
             end)).
 
+(* End of test above *)
+
+(* Start of about_fetch_decode_execute_loop_height_ltr_concatenation *)
+
+(* Test 1: Empty first list *)
 Compute (
-    let bci1s := nil in
-    let bci2s := (PUSH 2 :: nil) in
-    let ds := nil in
-    match fetch_decode_execute_loop_height_ltr bci1s ds with
-    | OK_h ds1 mh =>
-        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
-          fetch_decode_execute_loop_height_ltr bci2s ds1
-    | KO_h s =>
-        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds  =
-          KO_h s
-    end).
+  let bci1s := nil in
+  let bci2s := PUSH 2 :: nil in
+  let ds := nil in
+  match fetch_decode_execute_loop_height_ltr bci1s ds with
+  | OK_h ds1 mh1 =>
+      match fetch_decode_execute_loop_height_ltr bci2s ds1 with
+      | OK_h ds2 mh2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+            OK_h ds2 (max mh1 mh2)
+      | KO_h s2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s2
+      end
+  | KO_h s =>
+      fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s
+  end
+).
 
+(* Test 2: Multiple PUSH operations *)
 Compute (
-    let bci1s := (PUSH 3 :: PUSH 4 :: nil) in
-    let bci2s := (PUSH 2 :: nil) in
-    let ds := nil in
-    match fetch_decode_execute_loop_height_ltr bci1s ds with
-    | OK_h ds1 mh =>
-        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
-          fetch_decode_execute_loop_height_ltr bci2s ds1
-    | KO_h s =>
-        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds  =
-          KO_h s
-    end).
+  let bci1s := PUSH 3 :: PUSH 4 :: nil in
+  let bci2s := PUSH 2 :: nil in
+  let ds := nil in
+  match fetch_decode_execute_loop_height_ltr bci1s ds with
+  | OK_h ds1 mh1 =>
+      match fetch_decode_execute_loop_height_ltr bci2s ds1 with
+      | OK_h ds2 mh2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+            OK_h ds2 (max mh1 mh2)
+      | KO_h s2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s2
+      end
+  | KO_h s =>
+      fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s
+  end
+).
 
+(* Test 3: PUSH and ADD operations *)
 Compute (
-    let bci1s := (PUSH 12 :: PUSH 4 :: ADD :: nil) in
-    let bci2s := (PUSH 2 :: nil) in
-    let ds := nil in
-    match fetch_decode_execute_loop_height_ltr bci1s ds with
-    | OK_h ds1 mh =>
-        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
-          fetch_decode_execute_loop_height_ltr bci2s ds1
-    | KO_h s =>
-        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds  =
-          KO_h s
-    end).
+  let bci1s := PUSH 12 :: PUSH 4 :: ADD :: nil in
+  let bci2s := PUSH 2 :: nil in
+  let ds := nil in
+  match fetch_decode_execute_loop_height_ltr bci1s ds with
+  | OK_h ds1 mh1 =>
+      match fetch_decode_execute_loop_height_ltr bci2s ds1 with
+      | OK_h ds2 mh2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+            OK_h ds2 (max mh1 mh2)
+      | KO_h s2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s2
+      end
+  | KO_h s =>
+      fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s
+  end
+).
 
+(* Test 4: Complex operations with initial stack *)
 Compute (
-    let bci1s := (ADD :: PUSH 12 :: PUSH 4 :: ADD :: nil) in
-    let bci2s := (ADD :: PUSH 12 :: PUSH 12 :: ADD :: PUSH 12 :: PUSH 9 :: SUB :: nil) in
-    let ds := (1 :: 2 :: nil) in
-    match fetch_decode_execute_loop_height_ltr bci1s ds with
-    | OK_h ds1 mh =>
-        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
-          fetch_decode_execute_loop_height_ltr bci2s ds1
-    | KO_h s =>
-        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds  =
-          KO_h s
-    end).
+  let bci1s := ADD :: PUSH 12 :: PUSH 4 :: ADD :: nil in
+  let bci2s := ADD :: PUSH 12 :: PUSH 12 :: ADD :: PUSH 12 :: PUSH 9 :: SUB :: nil in
+  let ds := 1 :: 2 :: nil in
+  match fetch_decode_execute_loop_height_ltr bci1s ds with
+  | OK_h ds1 mh1 =>
+      match fetch_decode_execute_loop_height_ltr bci2s ds1 with
+      | OK_h ds2 mh2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+            OK_h ds2 (max mh1 mh2)
+      | KO_h s2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s2
+      end
+  | KO_h s =>
+      fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s
+  end
+).
 
+(* Test 5: Many PUSH operations followed by ADD operations *)
 Compute (
-    let bci1s := (PUSH 1 :: PUSH 1 :: PUSH 1 :: PUSH 1 :: PUSH 1 :: PUSH 1 :: nil) in
-    let bci2s := (ADD :: ADD :: ADD :: ADD :: nil) in
-    let ds := (1 :: 2 :: nil) in
-    match fetch_decode_execute_loop_height_ltr bci1s ds with
-    | OK_h ds1 mh =>
-        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
-          fetch_decode_execute_loop_height_ltr bci2s ds1
-    | KO_h s =>
-        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds  =
-          KO_h s
-    end).
+  let bci1s := PUSH 1 :: PUSH 1 :: PUSH 1 :: PUSH 1 :: PUSH 1 :: PUSH 1 :: nil in
+  let bci2s := ADD :: ADD :: ADD :: ADD :: nil in
+  let ds := 1 :: 2 :: nil in
+  match fetch_decode_execute_loop_height_ltr bci1s ds with
+  | OK_h ds1 mh1 =>
+      match fetch_decode_execute_loop_height_ltr bci2s ds1 with
+      | OK_h ds2 mh2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+            OK_h ds2 (max mh1 mh2)
+      | KO_h s2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s2
+      end
+  | KO_h s =>
+      fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s
+  end
+).
 
-(* Theorem about_fetch_decode_execute_loop_height_concatenation_ltr : *)
-(*   forall (ae1 ae2 : arithmetic_expression) *)
-(*          (ds : data_stack), *)
-(*     (forall (ds1 : data_stack) *)
-(*             (mh : nat), *)
-(*         fetch_decode_execute_loop_height_ltr (compile_aux ae1) ds = *)
-(*           OK_h ds1 mh -> *)
-(*         fetch_decode_execute_loop_height_ltr ((compile_aux ae1) ++ (compile_aux ae2)) ds = *)
-(*           fetch_decode_execute_loop_height_ltr (compile_aux ae2) ds1) *)
-(*     /\ *)
-(*       (forall s : string, *)
-(*           fetch_decode_execute_loop_height_ltr (compile_aux ae1) ds = KO_h s -> *)
-(*           fetch_decode_execute_loop_height_ltr ((compile_aux ae1) ++ (compile_aux ae2)) ds  = *)
-(*             KO_h s). *)
-(* Proof. *)
-(* Admitted. *)
+(* Test 6: Error case - stack underflow *)
+Compute (
+  let bci1s := PUSH 1 :: nil in
+  let bci2s := ADD :: nil in
+  let ds := nil in
+  match fetch_decode_execute_loop_height_ltr bci1s ds with
+  | OK_h ds1 mh1 =>
+      match fetch_decode_execute_loop_height_ltr bci2s ds1 with
+      | OK_h ds2 mh2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+            OK_h ds2 (max mh1 mh2)
+      | KO_h s2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s2
+      end
+  | KO_h s =>
+      fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s
+  end
+).
 
- 
-Theorem about_fetch_decode_execute_loop_height_concatenation_ltr :
-  forall (bci1s bci2s : list byte_code_instruction)
-         (ds : data_stack),
-    (forall (ds1 : data_stack)
-            (mh : nat),
-        fetch_decode_execute_loop_height_ltr bci1s ds =
-          OK_h ds1 mh ->
-        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
-          fetch_decode_execute_loop_height_ltr bci2s ds1)
+(* Test 7: Error case - numerical underflow *)
+Compute (
+  let bci1s := PUSH 1 :: PUSH 2 :: nil in
+  let bci2s := SUB :: nil in
+  let ds := nil in
+  match fetch_decode_execute_loop_height_ltr bci1s ds with
+  | OK_h ds1 mh1 =>
+      match fetch_decode_execute_loop_height_ltr bci2s ds1 with
+      | OK_h ds2 mh2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+            OK_h ds2 (max mh1 mh2)
+      | KO_h s2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s2
+      end
+  | KO_h s =>
+      fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s
+  end
+).
+
+(* Test 8: Both lists empty *)
+Compute (
+  let bci1s := nil in
+  let bci2s := nil in
+  let ds := nil in
+  match fetch_decode_execute_loop_height_ltr bci1s ds with
+  | OK_h ds1 mh1 =>
+      match fetch_decode_execute_loop_height_ltr bci2s ds1 with
+      | OK_h ds2 mh2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+            OK_h ds2 (max mh1 mh2)
+      | KO_h s2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s2
+      end
+  | KO_h s =>
+      fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s
+  end
+).
+
+(* Test 9: First list empty, second list non-empty *)
+Compute (
+  let bci1s := nil in
+  let bci2s := PUSH 1 :: nil in
+  let ds := nil in
+  match fetch_decode_execute_loop_height_ltr bci1s ds with
+  | OK_h ds1 mh1 =>
+      match fetch_decode_execute_loop_height_ltr bci2s ds1 with
+      | OK_h ds2 mh2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+            OK_h ds2 (max mh1 mh2)
+      | KO_h s2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s2
+      end
+  | KO_h s =>
+      fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s
+  end
+).
+
+(* Test 10: First list non-empty, second list empty *)
+Compute (
+  let bci1s := PUSH 1 :: nil in
+  let bci2s := nil in
+  let ds := nil in
+  match fetch_decode_execute_loop_height_ltr bci1s ds with
+  | OK_h ds1 mh1 =>
+      match fetch_decode_execute_loop_height_ltr bci2s ds1 with
+      | OK_h ds2 mh2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+            OK_h ds2 (max mh1 mh2)
+      | KO_h s2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s2
+      end
+  | KO_h s =>
+      fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s
+  end
+).
+
+(* Test 11: Both lists non-empty, all PUSH operations *)
+Compute (
+  let bci1s := PUSH 1 :: PUSH 2 :: nil in
+  let bci2s := PUSH 3 :: PUSH 4 :: nil in
+  let ds := nil in
+  match fetch_decode_execute_loop_height_ltr bci1s ds with
+  | OK_h ds1 mh1 =>
+      match fetch_decode_execute_loop_height_ltr bci2s ds1 with
+      | OK_h ds2 mh2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+            OK_h ds2 (max mh1 mh2)
+      | KO_h s2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s2
+      end
+  | KO_h s =>
+      fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s
+  end
+).
+
+(* Test 12: First list PUSH, second list ADD *)
+Compute (
+  let bci1s := PUSH 1 :: PUSH 2 :: nil in
+  let bci2s := ADD :: nil in
+  let ds := nil in
+  match fetch_decode_execute_loop_height_ltr bci1s ds with
+  | OK_h ds1 mh1 =>
+      match fetch_decode_execute_loop_height_ltr bci2s ds1 with
+      | OK_h ds2 mh2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+            OK_h ds2 (max mh1 mh2)
+      | KO_h s2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s2
+      end
+  | KO_h s =>
+      fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s
+  end
+).
+
+(* Test 13: First list ADD (causing error), second list PUSH *)
+Compute (
+  let bci1s := ADD :: nil in
+  let bci2s := PUSH 1 :: nil in
+  let ds := nil in
+  match fetch_decode_execute_loop_height_ltr bci1s ds with
+  | OK_h ds1 mh1 =>
+      match fetch_decode_execute_loop_height_ltr bci2s ds1 with
+      | OK_h ds2 mh2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+            OK_h ds2 (max mh1 mh2)
+      | KO_h s2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s2
+      end
+  | KO_h s =>
+      fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s
+  end
+).
+
+(* Test 14: First list PUSH, second list SUB (causing error) *)
+Compute (
+  let bci1s := PUSH 1 :: nil in
+  let bci2s := SUB :: nil in
+  let ds := nil in
+  match fetch_decode_execute_loop_height_ltr bci1s ds with
+  | OK_h ds1 mh1 =>
+      match fetch_decode_execute_loop_height_ltr bci2s ds1 with
+      | OK_h ds2 mh2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+            OK_h ds2 (max mh1 mh2)
+      | KO_h s2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s2
+      end
+  | KO_h s =>
+      fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s
+  end
+).
+
+(* Test 15: Both lists mixed operations, no errors *)
+Compute (
+  let bci1s := PUSH 1 :: PUSH 2 :: ADD :: nil in
+  let bci2s := PUSH 3 :: SUB :: nil in
+  let ds := nil in
+  match fetch_decode_execute_loop_height_ltr bci1s ds with
+  | OK_h ds1 mh1 =>
+      match fetch_decode_execute_loop_height_ltr bci2s ds1 with
+      | OK_h ds2 mh2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+            OK_h ds2 (max mh1 mh2)
+      | KO_h s2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s2
+      end
+  | KO_h s =>
+      fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s
+  end
+).
+
+(* Test 16: Both lists mixed operations, error in second list *)
+Compute (
+  let bci1s := PUSH 1 :: PUSH 2 :: ADD :: nil in
+  let bci2s := PUSH 3 :: SUB :: SUB :: nil in
+  let ds := nil in
+  match fetch_decode_execute_loop_height_ltr bci1s ds with
+  | OK_h ds1 mh1 =>
+      match fetch_decode_execute_loop_height_ltr bci2s ds1 with
+      | OK_h ds2 mh2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+            OK_h ds2 (max mh1 mh2)
+      | KO_h s2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s2
+      end
+  | KO_h s =>
+      fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s
+  end
+).
+
+(* Test 17: Non-empty initial stack *)
+Compute (
+  let bci1s := PUSH 1 :: ADD :: nil in
+  let bci2s := PUSH 2 :: SUB :: nil in
+  let ds := 5 :: nil in
+  match fetch_decode_execute_loop_height_ltr bci1s ds with
+  | OK_h ds1 mh1 =>
+      match fetch_decode_execute_loop_height_ltr bci2s ds1 with
+      | OK_h ds2 mh2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+            OK_h ds2 (max mh1 mh2)
+      | KO_h s2 =>
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s2
+      end
+  | KO_h s =>
+      fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s
+  end
+).
+
+Theorem about_fetch_decode_execute_loop_height_ltr_concatenation : 
+  forall (bci1s bci2s : list byte_code_instruction) (ds : data_stack),
+    (forall (ds1 : data_stack) (mh1 : nat),
+      fetch_decode_execute_loop_height_ltr bci1s ds = OK_h ds1 mh1 ->
+        (forall (ds2 : data_stack) (mh2 : nat),
+          fetch_decode_execute_loop_height_ltr bci2s ds1 = OK_h ds2 mh2 ->
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = 
+            OK_h ds2 (max mh1 mh2))
+        /\
+        (forall s2 : string,
+          fetch_decode_execute_loop_height_ltr bci2s ds1 = KO_h s2 ->
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s2))
     /\
-      (forall s : string,
-          fetch_decode_execute_loop_height_ltr bci1s ds = KO_h s ->
-          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds  =
-            KO_h s).
+    (forall s : string,
+      fetch_decode_execute_loop_height_ltr bci1s ds = KO_h s ->
+      fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s).
 Proof.
 Admitted.
-   
+
+(* End of about_fetch_decode_execute_loop_height_ltr_concatenation *)
+
 (*   intros bci1s. *)
 (*   induction bci1s as [ | bci bci1s' IHbci1s']. *)
 (*   - unfold fetch_decode_execute_loop_height_ltr at 1 4. *)
