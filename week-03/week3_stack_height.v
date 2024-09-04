@@ -1904,7 +1904,7 @@ Compute (let ae1 := (Plus
             | (Expressible_msg s, _) => (Expressible_msg s, 0)
             end)).
 
-Theorem fetch_decode_execute_loop_concatenation_height_ltr :
+Theorem about_fetch_decode_execute_loop_height_ltr_concatenation :
   forall (bci1s bci2s : list byte_code_instruction)
          (ds : data_stack),
     (* PUSH case  *)
@@ -1914,10 +1914,10 @@ Theorem fetch_decode_execute_loop_concatenation_height_ltr :
         fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
           fetch_decode_execute_loop_height_ltr bci2s ds1)
     /\
-      (forall s1 : string,
-          fetch_decode_execute_loop_height_ltr bci1s ds = KO_h s1 ->
+      (forall s : string,
+          fetch_decode_execute_loop_height_ltr bci1s ds = KO_h s ->
           fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds  =
-            KO_h s1).
+            KO_h s).
 Proof.
   intros bci1s.
   induction bci1s as [ | bci bci1s' IHbci1s'].
