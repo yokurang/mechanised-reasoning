@@ -2559,22 +2559,40 @@ Compute (let ae1 := (Plus
             | (Expressible_msg s, _) => (Expressible_msg s, 0)
             end)).
 
-Theorem fetch_decode_execute_loop_concatenation_height :
+Theorem about_fetch_decode_execute_loop_height_ltr_concatenation :
   forall (bci1s bci2s : list byte_code_instruction)
-         (ds : data_stack)
-         (mh : nat),
+         (ds : data_stack),
     (forall (ds1 : data_stack)
             (mh1 : nat),
-        fetch_decode_execute_loop_height bci1s ds mh = OK_h ds1 mh1 ->
-        fetch_decode_execute_loop_height (bci1s ++ bci2s) ds mh =
-          fetch_decode_execute_loop_height bci2s ds1 (max mh mh1))
+        fetch_decode_execute_loop_height_ltr bci1s ds = OK_h ds1 mh1 ->
+        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+        fetch_decode_execute_loop_height_ltr bci2s ds1)
     /\
-      (forall s1 : string,
-          fetch_decode_execute_loop_height bci1s ds mh = KO_h s1 ->
-          fetch_decode_execute_loop_height (bci1s ++ bci2s) ds mh =
-            KO_h s1).
+      (forall s : string,
+          fetch_decode_execute_loop_height_ltr bci1s ds = KO_h s ->
+          fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds =
+            KO_h s).
 Proof.
-  intros bci1s.
+  intros bci1s bci2s.
+  induction bci1s as [ | [n | | ]  bci1s' IHbci1s']; intro ds.
+  + split.
+    ++ intros ds' mh' H_ds_inject.
+       rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_nil in H_ds_inject.
+       injection H_ds_inject as Eq_ds' _.
+       rewrite -> Eq_ds'.
+       rewrite -> fold_unfold_list_append_nil.
+       reflexivity.
+    ++ intro s.
+       rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_nil.
+       intro H_absurd.
+       discriminate H_absurd.
+  + split.
+    ++ intros ds' mh' H_fdel_cons_OK.
+       rewrite -> fold_unfold_list_append_cons.
+       Check (IHbci1s' ds).
+      rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons in H_ds_inject.
+
+
   induction bci1s as [ | bci bci1s' IHbci1s'].
   - intros [ | bci2 bci2s'].
     + intro ds.
