@@ -2203,6 +2203,11 @@ match run_height_ltr (compile (Source_program ae)) with
 
 (* End of running_and_compiling_ltr_guves_mh_S_depth_right_ae *)
 
+Lemma about_height_and_depth_of_ae_ltr_eureka :
+  forall (ae : arithmetic_expression)
+         (ds : data_stack)
+         (mh : nat),
+
 Theorem running_and_compiling_ltr_gives_mh_S_depth_right_ae_aux :
   forall (ae : arithmetic_expression)
          (n mh : nat),
@@ -2249,23 +2254,11 @@ Proof.
            (ADD :: nil) ds1).
            destruct (about_fetch_decode_execute_loop_height_concatenation_ltr (bci2' :: bci2s')
            (ADD :: nil) ds1) as [H_fdel_OK2 _].
-           Check (H_fdel_OK2 ds1 mh1 H_fdel_ae2).
-
-           
-
-           destruct         
-
-
-
-
-
-
-    Check (about_fetch_decode_execute_loop_height_concatenation_ltr).
-    Check (fetch_decode_execute_loop_height_ltr).
-    destruct (fetch_decode_execute_loop_height_ltr (compile_aux ae1) nil) as [ds1 mh1 | s1] eqn:H_fdel_ae1.
-    + Check (about_fetch_decode_execute_loop_height_concatenation_ltr).
-      Check (about_fetch_decode_execute_loop_height_concatenation_ltr (compile_aux ae1) (compile_aux ae2 ++ ADD :: nil) nil).
-      destruct (about_fetch_decode_execute_loop_height_concatenation_ltr (compile_aux ae1) (compile_aux ae2 ++ ADD :: nil) nil) as [H_fdel_OK H_fdel_KO].
+           Check (H_fdel_OK2 ds2 mh2 H_fdel_ae2).
+           rewrite -> (H_fdel_OK2 ds2 mh2 H_fdel_ae2).
+           unfold fetch_decode_execute_loop_height_ltr.
+           unfold decode_execute_height_ltr.
+Admitted.
 
 (*
 fetch_decode_execute_loop_height_ltr (compile_aux ae1) nil = OK_h ds1 mh1 ->
