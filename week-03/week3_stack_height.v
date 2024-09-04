@@ -1781,15 +1781,15 @@ Fixpoint fetch_decode_execute_loop_height_ltr (bcis : list byte_code_instruction
   match bcis with
   | nil => OK_h ds (list_length nat ds)
   | bci :: bcis' =>
-      match decode_execute_height_ltr bci ds with
-      | OK_h ds' mh' =>
+      match decode_execute bci ds with
+      | OK ds' =>
           match fetch_decode_execute_loop_height_ltr bcis' ds' with
           | OK_h ds'' mh'' =>
-              OK_h ds'' (max (list_length nat ds) mh'')
+              OK_h ds'' (max (max (list_length nat ds) (list_length nat ds')) mh'')
           | KO_h s =>
               KO_h s
           end
-      | KO_h s => KO_h s
+      | KO s => KO_h s
       end
   end.
 
@@ -2105,24 +2105,24 @@ Compute (
           KO_h s
     end).
 
-Theorem about_fetch_decode_execute_loop_height_concatenation_ltr :
-  forall (ae1 ae2 : arithmetic_expression)
-         (ds : data_stack),
-    (forall (ds1 : data_stack)
-            (mh : nat),
-        fetch_decode_execute_loop_height_ltr (compile_aux ae1) ds =
-          OK_h ds1 mh ->
-        fetch_decode_execute_loop_height_ltr ((compile_aux ae1) ++ (compile_aux ae2)) ds =
-          fetch_decode_execute_loop_height_ltr (compile_aux ae2) ds1)
-    /\
-      (forall s : string,
-          fetch_decode_execute_loop_height_ltr (compile_aux ae1) ds = KO_h s ->
-          fetch_decode_execute_loop_height_ltr ((compile_aux ae1) ++ (compile_aux ae2)) ds  =
-            KO_h s).
-Proof.
-Admitted.
+(* Theorem about_fetch_decode_execute_loop_height_concatenation_ltr : *)
+(*   forall (ae1 ae2 : arithmetic_expression) *)
+(*          (ds : data_stack), *)
+(*     (forall (ds1 : data_stack) *)
+(*             (mh : nat), *)
+(*         fetch_decode_execute_loop_height_ltr (compile_aux ae1) ds = *)
+(*           OK_h ds1 mh -> *)
+(*         fetch_decode_execute_loop_height_ltr ((compile_aux ae1) ++ (compile_aux ae2)) ds = *)
+(*           fetch_decode_execute_loop_height_ltr (compile_aux ae2) ds1) *)
+(*     /\ *)
+(*       (forall s : string, *)
+(*           fetch_decode_execute_loop_height_ltr (compile_aux ae1) ds = KO_h s -> *)
+(*           fetch_decode_execute_loop_height_ltr ((compile_aux ae1) ++ (compile_aux ae2)) ds  = *)
+(*             KO_h s). *)
+(* Proof. *)
+(* Admitted. *)
 
-  (*
+ 
 Theorem about_fetch_decode_execute_loop_height_concatenation_ltr :
   forall (bci1s bci2s : list byte_code_instruction)
          (ds : data_stack),
@@ -2139,7 +2139,7 @@ Theorem about_fetch_decode_execute_loop_height_concatenation_ltr :
             KO_h s).
 Proof.
 Admitted.
-   *)
+   
 (*   intros bci1s. *)
 (*   induction bci1s as [ | bci bci1s' IHbci1s']. *)
 (*   - unfold fetch_decode_execute_loop_height_ltr at 1 4. *)
@@ -2286,11 +2286,6 @@ match run_height_ltr (compile (Source_program ae)) with
 
 (* End of running_and_compiling_ltr_guves_mh_S_depth_right_ae *)
 
-Lemma about_height_and_depth_of_ae_ltr_eureka :
-  forall (ae : arithmetic_expression)
-         (ds : data_stack)
-         (mh : nat),
-
 Theorem running_and_compiling_ltr_gives_mh_S_depth_right_ae_aux :
   forall (ae : arithmetic_expression)
          (n mh : nat),
@@ -2337,23 +2332,9 @@ Proof.
                        (ADD :: nil) ds1).
               destruct (about_fetch_decode_execute_loop_height_concatenation_ltr (bci2' :: bci2s')
                           (ADD :: nil) ds1) as [H_fdel_OK2 _].
-              Check (H_fdel_OK2 ds1 mh1 H_fdel_ae2).
-
-           
-
-           destruct         
-
-
-
-
-
-
-    Check (about_fetch_decode_execute_loop_height_concatenation_ltr).
-    Check (fetch_decode_execute_loop_height_ltr).
-    destruct (fetch_decode_execute_loop_height_ltr (compile_aux ae1) nil) as [ds1 mh1 | s1] eqn:H_fdel_ae1.
-    + Check (about_fetch_decode_execute_loop_height_concatenation_ltr).
-      Check (about_fetch_decode_execute_loop_height_concatenation_ltr (compile_aux ae1) (compile_aux ae2 ++ ADD :: nil) nil).
-      destruct (about_fetch_decode_execute_loop_height_concatenation_ltr (compile_aux ae1) (compile_aux ae2 ++ ADD :: nil) nil) as [H_fdel_OK H_fdel_KO].
+              rewrite -> (H_fdel_OK2 ds2 mh2 H_fdel_ae2).
+              rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons.
+              unfold decode_execute_height_ltr.
 
 (*
 fetch_decode_execute_loop_height_ltr (compile_aux ae1) nil = OK_h ds1 mh1 ->
