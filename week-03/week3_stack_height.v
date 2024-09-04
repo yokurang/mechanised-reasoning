@@ -39,7 +39,7 @@ Definition string_of_nat (q0 : nat) : string :=
   in if q0 <? 10
      then s0
      else let q1 := q0 / 10
-          in let s1 := String (ascii_of_nat (48 + (q1 mod 10))) s0
+in let s1 := String (ascii_of_nat (48 + (q1 mod 10))) s0
              in if q1 <? 10
                 then s1
                 else let q2 := q1 / 10
@@ -1034,6 +1034,142 @@ Proof.
     reflexivity.
 Qed.
 
+Lemma the_commuting_diagram'_aux :
+  forall (ae : arithmetic_expression)
+         (ds : data_stack),
+    (forall n' : nat,
+        evaluate ae = Expressible_nat n' ->
+        fetch_decode_execute_loop (compile_aux ae) ds =
+          OK (n' :: ds))
+    /\
+      (forall s : string,
+          evaluate ae = Expressible_msg s ->
+          fetch_decode_execute_loop (compile_aux ae) ds =
+            KO s).
+Proof.
+  intro ae.
+  induction ae as [n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2]; intro ds; split.
+  - intros n' H_n.
+    rewrite -> fold_unfold_compile_aux_Literal.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_cons.
+    unfold decode_execute.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_nil.
+    rewrite -> fold_unfold_evaluate_Literal in H_n.
+    injection H_n as H_eq_n_n'.
+    rewrite -> H_eq_n_n'.
+    reflexivity.
+  - intros s H_s.
+    rewrite -> fold_unfold_evaluate_Literal in H_s.
+    discriminate H_s.
+    
+  - intros n' H_n'.
+    rewrite -> fold_unfold_compile_aux_Plus.
+    rewrite -> fold_unfold_evaluate_Plus in H_n'.
+    destruct (fetch_decode_execute_loop_concatenation_v2 (compile_aux ae1) (compile_aux ae2 ++ ADD :: nil) ds) as [H_fdel_ae1_OK H_fdel_ae1_KO].
+    case (evaluate ae1) as [n1 | s1] eqn: H_ae1.
+    + destruct (IHae1 ds) as [IHae1_OK IHae1_KO].
+      rewrite -> (H_fdel_ae1_OK (n1 :: ds) (IHae1_OK n1 (eq_refl (Expressible_nat n1)))).
+      destruct (fetch_decode_execute_loop_concatenation_v2 (compile_aux ae2) (ADD :: nil) (n1 :: ds)) as [H_fdel_ae2_OK H_fdel_ae2_KO].
+      case (evaluate ae2) as [n2 | s2] eqn: H_ae2.
+      * destruct (IHae2 (n1 :: ds)) as [IHae2_OK IHae2_KO].
+        rewrite -> (H_fdel_ae2_OK (n2 :: n1 :: ds) (IHae2_OK n2 (eq_refl (Expressible_nat n2)))).
+        rewrite -> fold_unfold_fetch_decode_execute_loop_cons.
+        unfold decode_execute.
+        rewrite -> fold_unfold_fetch_decode_execute_loop_nil.
+        injection H_n' as H_n1_n2.
+        rewrite -> H_n1_n2.
+        reflexivity.
+      * discriminate H_n'.
+    + discriminate H_n'.
+  - intros s H_s.
+    rewrite -> fold_unfold_compile_aux_Plus.
+    rewrite -> fold_unfold_evaluate_Plus in H_s.
+    destruct (fetch_decode_execute_loop_concatenation_v2 (compile_aux ae1) (compile_aux ae2 ++ ADD :: nil) ds) as [H_fdel_ae1_OK H_fdel_ae1_KO].
+    case (evaluate ae1) as [n1 | s1] eqn: H_ae1.
+    + destruct (IHae1 ds) as [IHae1_OK IHae1_KO].
+      rewrite -> (H_fdel_ae1_OK (n1 :: ds) (IHae1_OK n1 (eq_refl (Expressible_nat n1)))).
+      destruct (fetch_decode_execute_loop_concatenation_v2 (compile_aux ae2) (ADD :: nil) (n1 :: ds)) as [H_fdel_ae2_OK H_fdel_ae2_KO].
+      case (evaluate ae2) as [n2 | s2] eqn: H_ae2.
+      * discriminate H_s.
+      * destruct (IHae2 (n1 ::ds)) as [IHae2_OK IHae2_KO].
+        rewrite -> (H_fdel_ae2_KO s2 (IHae2_KO s2 (eq_refl (Expressible_msg s2)))).
+        injection H_s as H_s_s2.
+        rewrite -> H_s_s2.
+        reflexivity.        
+    + destruct (IHae1 ds) as [_ IHae1_KO].
+      rewrite -> (H_fdel_ae1_KO s1 (IHae1_KO s1 (eq_refl (Expressible_msg s1)))).
+      injection H_s as H_s1.
+      rewrite -> H_s1.
+      reflexivity.
+      
+  - intros n' H_n'.
+    rewrite -> fold_unfold_compile_aux_Minus.
+    rewrite -> fold_unfold_evaluate_Minus in H_n'.
+    destruct (fetch_decode_execute_loop_concatenation_v2 (compile_aux ae1) (compile_aux ae2 ++ SUB :: nil) ds) as [H_fdel_ae1_OK H_fdel_ae1_KO].
+    case (evaluate ae1) as [n1 | s1] eqn: H_ae1.
+    + destruct (IHae1 ds) as [IHae1_OK IHae2_KO].
+      rewrite -> (H_fdel_ae1_OK (n1 :: ds) (IHae1_OK n1 (eq_refl (Expressible_nat n1)))).
+      destruct (fetch_decode_execute_loop_concatenation_v2 (compile_aux ae2) (SUB :: nil) (n1 :: ds)) as [H_fdel_ae2_OK H_fdel_ae2_KO].
+      case (evaluate ae2) as [n2 | s2] eqn: H_ae2.
+      * destruct (IHae2 (n1 :: ds)) as [IHae2_OK IHHae2_KO].
+        case (n1 <? n2) eqn: H_n1_lt_n2.
+        { discriminate H_n'. }
+        rewrite -> (H_fdel_ae2_OK (n2 :: n1 :: ds) (IHae2_OK n2 (eq_refl (Expressible_nat n2)))).
+        rewrite -> fold_unfold_fetch_decode_execute_loop_cons.
+        unfold decode_execute.
+        rewrite -> H_n1_lt_n2.
+        rewrite -> fold_unfold_fetch_decode_execute_loop_nil.
+        injection H_n' as H_n1_n2.
+        rewrite -> H_n1_n2.
+        reflexivity. 
+      * discriminate H_n'.
+    + discriminate H_n'.
+  - intros s H_s.
+    rewrite -> fold_unfold_compile_aux_Minus.
+    rewrite -> fold_unfold_evaluate_Minus in H_s.
+    destruct (fetch_decode_execute_loop_concatenation_v2 (compile_aux ae1) (compile_aux ae2 ++ SUB :: nil) ds) as [H_fdel_ae1_OK H_fdel_ae1_KO].
+    case (evaluate ae1) as [n1 | s1] eqn: H_ae1.
+    + destruct (IHae1 ds) as [IHae1_OK IHae1_KO].
+      rewrite -> (H_fdel_ae1_OK (n1 :: ds) (IHae1_OK n1 (eq_refl (Expressible_nat n1)))).
+      destruct (fetch_decode_execute_loop_concatenation_v2 (compile_aux ae2) (SUB :: nil) (n1 :: ds)) as [H_fdel_ae2_OK H_fdel_ae2_KO].
+      case (evaluate ae2) as [n2 | s2] eqn: H_ae2.
+      * destruct (IHae2 (n1 :: ds)) as [IHae2_OK IHHae2_KO].
+        case (n1 <? n2) eqn: H_n1_lt_n2.
+        { rewrite -> (H_fdel_ae2_OK (n2 :: n1 :: ds) (IHae2_OK n2 (eq_refl (Expressible_nat n2)))).
+        rewrite -> fold_unfold_fetch_decode_execute_loop_cons.
+        unfold decode_execute.
+        rewrite -> H_n1_lt_n2.
+        remember (String.append ("numerical underflow: -") (string_of_nat (n2 - n1))) as msg eqn:H_msg.
+        injection H_s as H_s'.
+        rewrite -> H_s'.
+        reflexivity. }
+        discriminate H_s.
+      * destruct (IHae2 (n1 ::ds)) as [IHae2_OK IHae2_KO].
+        rewrite -> (H_fdel_ae2_KO s2 (IHae2_KO s2 (eq_refl (Expressible_msg s2)))).
+        injection H_s as H_s_s2.
+        rewrite -> H_s_s2.
+        reflexivity.   
+    + destruct (IHae1 ds) as [_ IHae1_KO].
+      rewrite -> (H_fdel_ae1_KO s1 (IHae1_KO s1 (eq_refl (Expressible_msg s1)))).
+      injection H_s as H_s1.
+      rewrite -> H_s1.
+      reflexivity.
+Qed.
+  
+Theorem the_commuting_diagram' :
+  forall sp : source_program,
+    interpret sp = run (compile sp).
+Proof.
+  intros [ae].
+  unfold interpret, run, compile.
+  destruct (the_commuting_diagram'_aux ae nil) as [H_fdel_OK H_fdel_KO].
+  destruct (evaluate ae) as [n | s] eqn: H_ae.
+  - rewrite -> (H_fdel_OK n (eq_refl (Expressible_nat n))).
+    reflexivity.
+  - rewrite -> (H_fdel_KO s (eq_refl (Expressible_msg s))).
+    reflexivity.
+Qed.
+
 (* ********** *)
 
 Fixpoint super_refactor_right (ae : arithmetic_expression) : arithmetic_expression :=
@@ -1904,7 +2040,7 @@ Compute (let ae1 := (Plus
             | (Expressible_msg s, _) => (Expressible_msg s, 0)
             end)).
 
-Theorem about_fetch_decode_execute_loop_height_ltr_concatenation :
+Theorem about_fetch_decode_execute_loop_height_concatenation_ltr :
   forall (bci1s bci2s : list byte_code_instruction)
          (ds : data_stack),
     (* PUSH case  *)
@@ -1964,6 +2100,154 @@ Proof.
           --
           admit.
 Admitted.
+
+(* Start of running_and_compiling_ltr_guves_mh_S_depth_right_ae tests *)
+
+Compute (let ae := Plus (Plus (Plus (Literal 1) (Literal 2)) (Literal 3))(Literal 4) in
+         let ds := nil in
+         match run_height_ltr (compile (Source_program ae)) with
+         | (Expressible_nat n, mh) =>
+             run_height_ltr (compile (Source_program ae)) = (Expressible_nat n, mh) ->
+             mh = S (depth_right ae)
+         | (Expressible_msg s, n) => s = s
+         end).
+
+Compute (let ae := Plus (Literal 1) (Minus (Literal 20) (Plus (Literal 3)(Literal 4))) in
+         let ds := nil in
+         match run_height_ltr (compile (Source_program ae)) with
+         | (Expressible_nat n, mh) =>
+             run_height_ltr (compile (Source_program ae)) = (Expressible_nat n, mh) ->
+             mh = S (depth_right ae)
+         | (Expressible_msg s, n) => s = s
+         end).
+
+Compute (let ae := (Literal 1) in
+         let ds := nil in
+         match run_height_ltr (compile (Source_program ae)) with
+         | (Expressible_nat n, mh) =>
+             run_height_ltr (compile (Source_program ae)) = (Expressible_nat n, mh) ->
+             mh = S (depth_right ae)
+         | (Expressible_msg s, n) => s = s
+         end).
+
+Compute (let ae := (Plus (Plus (Literal 1)(Literal 2))(Literal 3)) in
+         let ds := nil in
+         match run_height_ltr (compile (Source_program ae)) with
+         | (Expressible_nat n, mh) =>
+             run_height_ltr (compile (Source_program ae)) = (Expressible_nat n, mh) ->
+             mh = S (depth_right ae)
+         | (Expressible_msg s, n) => s = s
+         end).
+
+Compute (let ae := (Plus
+                     (Plus
+                        (Plus
+                           (Literal 1)
+                           (Literal 2))
+                           (Literal 3))
+                           (Literal 4)) in
+         let ds := nil in
+         match run_height_ltr (compile (Source_program ae)) with
+         | (Expressible_nat n, mh) =>
+             run_height_ltr (compile (Source_program ae)) = (Expressible_nat n, mh) ->
+             mh = S (depth_right ae)
+         | (Expressible_msg s, n) => s = s
+         end).
+
+Compute (let ae := (Plus (Minus (Literal 2) (Literal 1))(Literal 2)) in
+         let ds := nil in
+         match run_height_ltr (compile (Source_program ae)) with
+         | (Expressible_nat n, mh) =>
+             run_height_ltr (compile (Source_program ae)) = (Expressible_nat n, mh) ->
+             mh = S (depth_right ae)
+         | (Expressible_msg s, n) => s = s
+         end).
+
+Compute (let ae := (Plus (Literal 1) (Plus (Literal 2) (Literal 3))) in
+         let ds := nil in
+         match run_height_ltr (compile (Source_program ae)) with
+         | (Expressible_nat n, mh) =>
+             run_height_ltr (compile (Source_program ae)) = (Expressible_nat n, mh) ->
+             mh = S (depth_right ae)
+         | (Expressible_msg s, n) => s = s
+         end).
+
+Compute (let ae := (Plus (Literal 1) (Plus (Literal 2) (Plus (Literal 3) (Literal 4)))) in
+         let ds := nil in
+         match run_height_ltr (compile (Source_program ae)) with
+         | (Expressible_nat n, mh) =>
+             run_height_ltr (compile (Source_program ae)) = (Expressible_nat n, mh) ->
+             mh = S (depth_right ae)
+         | (Expressible_msg s, n) => s = s
+         end).
+
+Compute (let ae := (Plus (Literal 2) (Plus (Plus (Literal 3) (Literal 2)) (Literal 1))) in
+         let ds := nil in
+         match run_height_ltr (compile (Source_program ae)) with
+         | (Expressible_nat n, mh) =>
+             run_height_ltr (compile (Source_program ae)) = (Expressible_nat n, mh) ->
+             mh = S (depth_right ae)
+         | (Expressible_msg s, n) => s = s
+         end).
+
+Compute (let ae := (Minus (Literal 2) (Literal 3)) in
+         let ds := nil in
+match run_height_ltr (compile (Source_program ae)) with
+         | (Expressible_nat n, mh) =>
+             run_height_ltr (compile (Source_program ae)) = (Expressible_nat n, mh) ->
+             mh = S (depth_right ae)
+         | (Expressible_msg s, n) => s = s
+         end).
+
+(* End of running_and_compiling_ltr_guves_mh_S_depth_right_ae *)
+
+Theorem running_and_compiling_ltr_guves_mh_S_depth_right_ae_aux :
+  forall (ae : arithmetic_expression)
+         (n mh : nat),
+         run_height_ltr (Target_program (compile_aux ae)) = (Expressible_nat n, mh) ->
+         mh = S (depth_right ae).
+Proof.
+  intros ae.
+  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
+  - intros n' mh.
+    rewrite -> fold_unfold_compile_aux_Literal.
+    rewrite -> fold_unfold_depth_right_Literal.
+    unfold run_height_ltr.
+    rewrite -> (fold_unfold_fetch_decode_execute_loop_height_ltr_cons (PUSH n)).
+    unfold decode_execute_height_ltr.
+    rewrite -> (fold_unfold_fetch_decode_execute_loop_height_ltr_nil (n :: nil)).
+    rewrite -> (fold_unfold_list_length_cons nat n nil).
+    rewrite -> (fold_unfold_list_length_nil nat).
+    Search (Init.Nat.max _ _).
+    rewrite -> (Nat.max_0_l 1).
+    intro H_n_mh_inject.
+    injection H_n_mh_inject as _ H_eq_mh.
+    rewrite -> H_eq_mh.
+    reflexivity.
+  - intros n mh.
+    rewrite -> fold_unfold_compile_aux_Plus.
+    rewrite -> fold_unfold_depth_right_Plus.
+    unfold run_height_ltr.
+    Check (about_fetch_decode_execute_loop_height_concatenation_ltr).
+    Check (fetch_decode_execute_loop_height_ltr).
+    destruct (fetch_decode_execute_loop_height_ltr (compile_aux ae1) nil) as [ds1 mh1 | s1] eqn:H_fdel_ae1.
+    + Check (about_fetch_decode_execute_loop_height_concatenation_ltr).
+      Check (about_fetch_decode_execute_loop_height_concatenation_ltr (compile_aux ae1) (compile_aux ae2 ++ ADD :: nil) nil).
+      destruct (about_fetch_decode_execute_loop_height_concatenation_ltr (compile_aux ae1) (compile_aux ae2 ++ ADD :: nil) nil) as [H_fdel_OK H_fdel_KO].
+      
+
+
+Admitted.
+
+Theorem running_and_compiling_ltr_guves_mh_S_depth_right_ae :
+  forall (ae : arithmetic_expression)
+         (n mh : nat),
+    run_height_ltr (compile (Source_program ae)) = (Expressible_nat n, mh) ->
+    mh = S (depth_right ae).
+Proof.
+  intros ae n mh.
+  unfold compile.
+  exact (running_and_compiling_ltr_guves_mh_S_depth_right_ae_aux ae n mh).
 
 (* Computes for the theorem below:
 
