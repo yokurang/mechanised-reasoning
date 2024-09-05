@@ -1095,13 +1095,13 @@ Proof.
         rewrite -> (H_fdel_ae2_KO s2 (IHae2_KO s2 (eq_refl (Expressible_msg s2)))).
         injection H_s as H_s_s2.
         rewrite -> H_s_s2.
-        reflexivity.        
+        reflexivity.
     + destruct (IHae1 ds) as [_ IHae1_KO].
       rewrite -> (H_fdel_ae1_KO s1 (IHae1_KO s1 (eq_refl (Expressible_msg s1)))).
       injection H_s as H_s1.
       rewrite -> H_s1.
       reflexivity.
-      
+
   - intros n' H_n'.
     rewrite -> fold_unfold_compile_aux_Minus.
     rewrite -> fold_unfold_evaluate_Minus in H_n'.
@@ -1148,14 +1148,14 @@ Proof.
         rewrite -> (H_fdel_ae2_KO s2 (IHae2_KO s2 (eq_refl (Expressible_msg s2)))).
         injection H_s as H_s_s2.
         rewrite -> H_s_s2.
-        reflexivity.   
+        reflexivity.
     + destruct (IHae1 ds) as [_ IHae1_KO].
       rewrite -> (H_fdel_ae1_KO s1 (IHae1_KO s1 (eq_refl (Expressible_msg s1)))).
       injection H_s as H_s1.
       rewrite -> H_s1.
       reflexivity.
 Qed.
-  
+
 Theorem the_commuting_diagram' :
   forall sp : source_program,
     interpret sp = run (compile sp).
@@ -1659,24 +1659,6 @@ Qed.
 
 (* Start of fetch_decode_execute with height ltr functions *)
 
-Definition eqb_option (V : Type) (eqb_V : V -> V -> bool) (ov1 ov2 : option V) : bool :=
-  match ov1 with
-  | Some v1 =>
-      match ov2 with
-      | Some v2 =>
-          eqb_V v1 v2
-      | None =>
-          false
-      end
-  | None =>
-      match ov2 with
-      | Some v =>
-          false
-      | None =>
-          true
-      end
-  end.
-
 Inductive result_of_decoding_and_execution_height : Type :=
   OK_h : data_stack -> nat -> result_of_decoding_and_execution_height
 | KO_h : string -> result_of_decoding_and_execution_height.
@@ -1701,59 +1683,6 @@ Definition eqb_result_of_decoding_and_execution_height (rde1 rde2 : result_of_de
   end.
 
 (* ***** *)
-
-Definition test_decode_execute_height_ltr (candidate : byte_code_instruction -> data_stack -> result_of_decoding_and_execution_height) : bool :=
-  (eqb_result_of_decoding_and_execution_height
-     (candidate (PUSH 42) (1 :: 2 :: 3 :: nil))
-     (OK_h (42 :: 1 :: 2 :: 3 :: nil) 4))
-  &&
-    (eqb_result_of_decoding_and_execution_height
-       (candidate (PUSH 42) (1 :: 2 :: 3 :: nil))
-       (OK_h (42 :: 1 :: 2 :: 3 :: nil) 4))
-  &&
-    (eqb_result_of_decoding_and_execution_height
-       (candidate ADD (1 :: 2 :: 3 :: nil))
-       (OK_h (3 :: 3 :: nil) 3))
-  &&
-    (eqb_result_of_decoding_and_execution_height
-       (candidate SUB (2 :: 3 :: 3 :: nil))
-       (OK_h (1 :: 3 :: nil) 3))
-  &&
-    (eqb_result_of_decoding_and_execution_height
-       (candidate SUB (3 :: 2 :: 3 :: nil))
-       (KO_h "numerical underflow: -1")).
-
-Definition decode_execute_height_ltr (bci : byte_code_instruction) (ds : data_stack) : result_of_decoding_and_execution_height :=
-  match bci with
-    (* current height depends on ds *)
-  | PUSH n => OK_h (n :: ds) (S (list_length nat ds))
-  | ADD =>
-      match ds with
-      | nil => KO_h "ADD: stack underflow"
-      | n2 :: ds' =>
-          match ds' with
-          | n1 :: ds'' => OK_h ((n1 + n2) :: ds'') (list_length nat ds)
-          | nil => KO_h "ADD: stack underflow"
-          end
-      end
-  | SUB =>
-      match ds with
-      | nil => KO_h "SUB: stack underflow"
-      | n2 :: ds' =>
-          match ds' with
-          | n1 :: ds'' =>
-              match n1 <? n2 with
-              | true =>
-                  KO_h (String.append "numerical underflow: -" (string_of_nat (n2 - n1)))
-              | false =>
-                  OK_h ((n1 - n2) :: ds'') (list_length nat ds)
-              end
-          | nil => KO_h "SUB: stack underflow"
-          end
-      end
-  end.
-
-Compute test_decode_execute_height_ltr decode_execute_height_ltr.
 
 Definition test_fetch_decode_execute_loop_height_ltr (candidate : (list byte_code_instruction) -> data_stack -> result_of_decoding_and_execution_height) :=
   (eqb_result_of_decoding_and_execution_height
@@ -1862,58 +1791,57 @@ Compute (test_run_height_ltr run_height_ltr).
 
 (* Start of fetch_decode_execute with height rtl functions *)
 
-Definition test_decode_execute_height_rtl (candidate : byte_code_instruction -> data_stack  -> result_of_decoding_and_execution_height) : bool :=
-  (eqb_result_of_decoding_and_execution_height
+Definition test_decode_execute_rtl (candidate : byte_code_instruction -> data_stack  -> result_of_decoding_and_execution) : bool :=
+  (eqb_result_of_decoding_and_execution
      (candidate (PUSH 42) (1 :: 2 :: 3 :: nil))
-     (OK_h (42 :: 1 :: 2 :: 3 :: nil) 4))
+     (OK (42 :: 1 :: 2 :: 3 :: nil)))
   &&
-    (eqb_result_of_decoding_and_execution_height
+    (eqb_result_of_decoding_and_execution
        (candidate (PUSH 42) (1 :: 2 :: 3 :: nil))
-       (OK_h (42 :: 1 :: 2 :: 3 :: nil) 4))
+       (OK (42 :: 1 :: 2 :: 3 :: nil)))
   &&
-    (eqb_result_of_decoding_and_execution_height
+    (eqb_result_of_decoding_and_execution
        (candidate ADD (1 :: 2 :: 3 :: nil))
-       (OK_h (3 :: 3 :: nil) 3 ))
+       (OK (3 :: 3 :: nil)))
   &&
-    (eqb_result_of_decoding_and_execution_height
+    (eqb_result_of_decoding_and_execution
        (candidate SUB (2 :: 3 :: 3 :: nil))
-       (KO_h "numerical underflow: -1"))
+       (KO "numerical underflow: -1"))
   &&
-    (eqb_result_of_decoding_and_execution_height
+    (eqb_result_of_decoding_and_execution
        (candidate SUB (3 :: 2 :: 3 :: nil))
-       (OK_h (1 :: 3 :: nil) 3)).
+       (OK (1 :: 3 :: nil))).
 
-Definition decode_execute_height_rtl (bci : byte_code_instruction)
-  (ds : data_stack) : result_of_decoding_and_execution_height :=
+Definition decode_execute_rtl (bci : byte_code_instruction) (ds : data_stack) : result_of_decoding_and_execution :=
   match bci with
-  | PUSH n => OK_h (n :: ds) (S (list_length nat ds))
+  | PUSH n => OK (n :: ds)
   | ADD =>
       match ds with
-      | nil => KO_h "ADD: stack underflow"
+      | nil => KO "ADD: stack underflow"
       | n1 :: ds' =>
           match ds' with
-          | n2 :: ds'' => OK_h ((n1 + n2) :: ds'') (list_length nat ds)
-          | nil => KO_h "ADD: stack underflow"
+          | n2 :: ds'' => OK ((n1 + n2) :: ds'')
+          | nil => KO "ADD: stack underflow"
           end
       end
   | SUB =>
       match ds with
-      | nil => KO_h "SUB: stack underflow"
+      | nil => KO "SUB: stack underflow"
       | n1 :: ds' =>
           match ds' with
           | n2 :: ds'' =>
               match n1 <? n2 with
               | true =>
-                  KO_h (String.append "numerical underflow: -" (string_of_nat (n2 - n1)))
+                  KO (String.append "numerical underflow: -" (string_of_nat (n2 - n1)))
               | false =>
-                  OK_h ((n1 - n2) :: ds'') (list_length nat ds)
+                  OK ((n1 - n2) :: ds'')
               end
-          | nil => KO_h "SUB: stack underflow"
+          | nil => KO "SUB: stack underflow"
           end
       end
   end.
 
-Compute test_decode_execute_height_rtl decode_execute_height_rtl.
+Compute test_decode_execute_rtl decode_execute_rtl.
 
 Definition test_fetch_decode_execute_loop_height_rtl (candidate : (list byte_code_instruction) -> data_stack  -> result_of_decoding_and_execution_height) :=
   (eqb_result_of_decoding_and_execution_height
@@ -1941,15 +1869,15 @@ Fixpoint fetch_decode_execute_loop_height_rtl (bcis : list byte_code_instruction
   match bcis with
   | nil => OK_h ds (list_length nat ds)
   | bci :: bcis' =>
-      match decode_execute_height_rtl bci ds with
-      | OK_h ds' mh' =>
+      match decode_execute_rtl bci ds with
+      | OK ds' =>
           match fetch_decode_execute_loop_height_rtl bcis' ds' with
           | OK_h ds'' mh'' =>
-              OK_h ds'' (max (list_length nat ds) mh'')
+              OK_h ds'' (max (max (list_length nat ds) (list_length nat ds')) mh'')
           | KO_h s =>
               KO_h s
-          end                 
-      | KO_h s => KO_h s
+          end
+      | KO s => KO_h s
       end
   end.
 
@@ -1968,16 +1896,16 @@ Lemma fold_unfold_fetch_decode_execute_loop_height_rtl_cons :
          (bcis' : list byte_code_instruction)
          (ds : data_stack),
     fetch_decode_execute_loop_height_rtl (bci :: bcis') ds =
-    match decode_execute_height_rtl bci ds with
-    | OK_h ds' mh' =>
-        match fetch_decode_execute_loop_height_rtl bcis' ds' with
-        | OK_h ds'' mh'' =>
-            OK_h ds'' (max (list_length nat ds) mh'')
-        | KO_h s =>
-            KO_h s
-        end                 
-    | KO_h s => KO_h s
-    end.
+      match decode_execute_rtl bci ds with
+      | OK ds' =>
+          match fetch_decode_execute_loop_height_rtl bcis' ds' with
+          | OK_h ds'' mh'' =>
+              OK_h ds'' (max (max (list_length nat ds) (list_length nat ds')) mh'')
+          | KO_h s =>
+              KO_h s
+          end
+      | KO s => KO_h s
+      end.
 Proof.
   fold_unfold_tactic fetch_decode_execute_loop_height_rtl.
 Qed.
