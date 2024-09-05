@@ -1,0 +1,70 @@
+% week-04_magritte-forever.txt
+% MR 2024 - YSC4217 2024-2024, Sem1
+% Olivier Danvy <danvy@yale-nus.edu.sg>
+% Version of Thu 05 Sep 2024
+
+%%%%%%%%%%
+
+A Magritte take on the term project
+
+-----
+
+Say that the target interpreter is a "Magritte" one:
+instead of a data stack of natural numbers,
+it has a data stack of syntactic representations of natural numbers,
+namely arithmetic expressions.
+
+So instead of pushing a natural number n,
+it pushes the syntactic representation of a natural number, i.e., Literal n.
+
+And instead of popping off two natural numbers
+and pushing the result of adding these two natural numbers,
+it pops off two representations of natural numbers
+and pushes the syntactic representation of the addition of two arithmetic expressions using the Plus constructor.
+
+And likewise with the Minus constructor.
+(And no error can occur, since no subtraction is performed; instead, the representation of a subtraction is constructed.)
+
+So, make a copy of the .v file of your term project and add at its end.
+   
+1. Implement this Magritte target interpreter.
+
+     Definition Magritte_data_stack := list arithmetic_expression.
+
+     Fixpoint Magritte_fetch_decode_execute_loop (bcis : list byte_code_instruction) (ds : Magritte_data_stack) : Magritte_data_stack :=
+       ...
+
+     Lemma about_Magritte_fetch_decode_execute_loop :
+       forall (ae : arithmetic_expression)
+              (ds : Magritte_data_stack),
+	 exists ae' : arithmetic_expression,
+           Magritte_fetch_decode_execute_loop (compile_aux ae) ds = ae' :: ds.
+
+     Definition Magritte_run (t : target_program) : option arithmetic_expression :=
+       match t with
+         Target_program bcis =>
+           match Magritte_fetch_decode_execute_loop bcis nil with
+             OK nil => None
+           | OK (ae :: nil) => Some ae
+           | OK (ae :: ae'' :: ds'') => None
+           end
+       end.
+
+     Corollary about_Magritte_run :
+       forall sp : source_program,
+         exists ae' : arithmetic_expression,
+           Magritte_run (compile ae) = Some ae'.
+
+2. Likewise, implement a Magritte source interpreter
+   so that its result is not a natural number or an error message,
+   it is the syntactic representation of a natural number.
+
+3. A commuting diagram also holds about Magritte_interpret, compile, and Magritte_run.
+   State and prove the Magritte analogue of the capstone theorem.
+
+4. What does the Magritte analogue of the capstone theorem tell us
+   about the Magritte target interpreter?
+
+%%%%%%%%%%
+
+% end of week-04_magritte-forever.txt
