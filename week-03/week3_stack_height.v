@@ -2578,13 +2578,121 @@ Fixpoint arithmetic_expression_from_arithmetic_expression_right (aer : arithmeti
 
 (* End of running_and_compiling_ltr_guves_mh_S_depth_right_ae *)
 
+Compute (compile_aux (Minus (Literal  1) (Literal 2))).
+
+Lemma about_running_and_compiling_ltr_gives_mh_S_depth_right_ae_aux_aux :
+  forall (ae : arithmetic_expression)
+    (ds : data_stack),
+    (forall (n : nat),
+        evaluate ae = Expressible_nat n ->
+        fetch_decode_execute_loop_height_ltr (compile_aux ae) ds = OK_h (n :: ds) ((list_length nat ds) + (S (depth_right ae))))
+    /\
+      (forall (s : string),
+          evaluate ae = Expressible_msg s ->
+          fetch_decode_execute_loop_height_ltr (compile_aux ae) ds = KO_h s
+      ).
+Proof.
+
+ Compute (
+     let ae := Plus (Literal 1) (Minus (Literal 20) (Plus (Literal 3) (Literal 4))) in
+     let ds := (1 :: nil) in
+     match (evaluate ae) with
+     | Expressible_nat n => fetch_decode_execute_loop_height_ltr (compile_aux ae) ds = OK_h (n :: ds) ((list_length nat ds) + (S (depth_right ae)))
+     | Expressible_msg s =>  fetch_decode_execute_loop_height_ltr (compile_aux ae) ds = KO_h s
+     end).
+          
+ Compute (
+     let ae := Plus (Plus (Plus (Literal 1) (Literal 2)) (Literal 3))(Literal 4) in
+     let ds := (1 :: nil) in
+     match (evaluate ae) with
+     | Expressible_nat n => fetch_decode_execute_loop_height_ltr (compile_aux ae) ds = OK_h (n :: ds) ((list_length nat ds) + (S (depth_right ae)))
+     | Expressible_msg s =>  fetch_decode_execute_loop_height_ltr (compile_aux ae) ds = KO_h s
+     end).
+ 
+ Compute (
+     let ae := (Plus (Plus (Literal 1) (Literal 2))
+                  (Plus (Literal 3) (Literal 4))) in
+     let ds := (1 :: nil) in
+     match (evaluate ae) with
+     | Expressible_nat n => fetch_decode_execute_loop_height_ltr (compile_aux ae) ds = OK_h (n :: ds) ((list_length nat ds) + (S (depth_right ae)))
+     | Expressible_msg s =>  fetch_decode_execute_loop_height_ltr (compile_aux ae) ds = KO_h s
+     end).
+ 
+  intro ae.
+  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intro ds.
+  - rewrite -> fold_unfold_evaluate_Literal.
+    rewrite -> fold_unfold_compile_aux_Literal.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons.
+    unfold decode_execute.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_nil.
+    rewrite -> fold_unfold_depth_right_Literal.
+    split.
+    + intros n' H_inject.
+      injection H_inject as H_eq_n_n'.
+      rewrite -> fold_unfold_list_length_cons.
+      Search (max _ _ = _).
+      Search (_ <= S _).
+      Check (Nat.le_succ_diag_r (list_length nat ds)).
+      Search (max _ _ = _).
+      Check (Nat.max_r (list_length nat ds) (list_length nat ds)).
+      Check (Nat.max_r (list_length nat ds) (S (list_length nat ds))
+               (Nat.le_succ_diag_r (list_length nat ds))).
+      rewrite -> (Nat.max_r (list_length nat ds) (S (list_length nat ds))
+                   (Nat.le_succ_diag_r (list_length nat ds))).
+      Search (max _ _ = _).
+      Check (Nat.max_id (S (list_length nat ds))).
+      rewrite -> (Nat.max_id (S (list_length nat ds))).
+      rewrite -> H_eq_n_n'.
+      rewrite <- Nat.add_1_r.
+      reflexivity.
+    + intros s H_absurd.
+      discriminate H_absurd.
+  - rewrite -> fold_unfold_evaluate_Plus.
+    rewrite -> fold_unfold_compile_aux_Plus.
+    rewrite -> fold_unfold_depth_right_Plus.
+    case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
+    + case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
+      * split.
+        -- intros n' H_eq_n1_n2_n'.
+           injection H_eq_n1_n2_n' as H_eq_n1_n2_n'.
+           
+        -- intros s H_absurd.
+           discriminate H_absurd.
+    
+      
+      
+Admitted.
+
+(*
+   match fetch_decode_execute_loop_height_ltr (compile_aux ae) nil with
+          | OK_h nil _ => (Expressible_msg "no result on the data stack", 0)
+          | OK_h (n :: nil) mh => (Expressible_nat n, mh)
+          | OK_h (n :: _ :: _) _ => (Expressible_msg "too many results on the data stack", 0)
+          | KO_h s => (Expressible_msg s, 0)
+          end = (Expressible_nat n, mh)
+*)
+
 Theorem running_and_compiling_ltr_gives_mh_S_depth_right_ae_aux :
   forall (ae : arithmetic_expression)
          (n mh : nat),
          run_height_ltr (Target_program (compile_aux ae)) = (Expressible_nat n, mh) ->
          mh = S (depth_right ae).
 Proof.
-  intros ae.
+  intros ae n mh H_run.
+  unfold run_height_ltr in H_run.
+  destruct (about_running_and_compiling_ltr_gives_mh_S_depth_right_ae_aux_aux ae nil) as [H_OK H_KO].
+  case (evaluate ae) as [n_ae | s_ae].
+  - Check (H_OK n_ae (eq_refl (Expressible_nat n_ae))).
+    rewrite -> (H_OK n_ae (eq_refl (Expressible_nat n_ae))) in H_run.
+    injection H_run as H_eq_n H_eq_mh.
+    exact (eq_sym (H_eq_mh)).
+  - Check (H_KO s_ae).
+    Check (H_KO s_ae (eq_refl (Expressible_msg s_ae))).
+    rewrite -> (H_KO s_ae (eq_refl (Expressible_msg s_ae))) in H_run.
+    discriminate H_run.
+Qed.
+                                                                              
+  (*
   induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
   - intros n' mh.
     rewrite -> fold_unfold_compile_aux_Literal.
@@ -2606,6 +2714,7 @@ Proof.
     rewrite -> fold_unfold_depth_right_Plus.
     unfold run_height_ltr.
     unfold run_height_ltr in IHae1, IHae2.
+    case (fetch_decode_execute_loop_height_ltr (compile_aux ae1 ++ compile_aux ae2 ++ ADD :: nil)) as [  ]
     Check (fetch_decode_execute_loop_height_ltr).
     case (compile_aux ae1) as [ | bci1' bci1s' ] eqn:C_ae1.
     + case (compile_aux ae2) as [ | bci2' bci2s' ] eqn:C_ae2.
@@ -2630,20 +2739,17 @@ Proof.
               Check (H_fdel_OK_OK ds' mh').
               Check (H_fdel_OK_OK ds' mh' (eq_refl (OK_h ds' mh'))).
               rewrite -> (H_fdel_OK_OK ds' mh' (eq_refl (OK_h ds' mh'))).
-
-Admitted.
-Lemma about_ds_and_fdel_height :
-  forall (bcis : list byte_code_instruction),
-    (forall (ds : data_stack),
-        ()
-                   
-
-              
               case ds' as [ | ds'' Ids''].
               --- intro H_absurd.
                   discriminate H_absurd.
               --- case Ids'' as [ ds''_n | Ids'''].
-                  +++ admit.
+                  +++ intro H_inject.
+                      injection H_inject as H_eq_n H_eq_mh.
+                      Check (IHae2 n mh).
+                      rewrite <- (IHae2 n mh).
+                      Search (depth_right ae1 = _).
+                      ----
+                                           
                   +++ intro H_absurd.
                       discriminate H_absurd.
 
@@ -2663,7 +2769,7 @@ Lemma about_ds_and_fdel_height :
               discriminate H_absurd.
            ++ case ds2' as [ | n2' ds2''].
               **
-
+*)
 (*
 fetch_decode_execute_loop_height_ltr (compile_aux ae1) nil = OK_h ds1 mh1 ->
       fetch_decode_execute_loop_height_ltr (compile_aux ae1) nil =
