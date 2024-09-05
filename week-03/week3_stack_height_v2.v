@@ -1169,44 +1169,154 @@ Qed.
 
 (* ********** *)
 
-(*** Main Theorems ***)
+(*** Proving time ***)
+
+Compute (let ae := (Plus (Minus (Plus (Literal 1) (Literal 1)) (Plus (Literal 1) (Literal 1))) (Minus (Plus (Literal 1) (Literal 1)) (Plus (Literal 1) (Literal 1)))) in
+         let ds := (42 :: nil) in
+         match evaluate_ltr ae with
+         | Expressible_nat n =>
+             fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
+               OK_h (n :: ds) (list_length nat ds + S (depth_right (super_refactor_ltr ae)))
+         | Expressible_msg s =>
+             fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
+               KO_h s
+        end).
+
+Compute (let ae := (Plus (Minus (Plus (Minus (Literal 5) (Literal 4)) (Literal 4)) (Literal 4)) (Literal 4)) in
+         let ds := (42 :: nil) in
+         match evaluate_ltr ae with
+         | Expressible_nat n =>
+             fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
+               OK_h (n :: ds) (list_length nat ds + S (depth_right (super_refactor_ltr ae)))
+         | Expressible_msg s =>
+             fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
+               KO_h s
+        end).
+
+Compute (let ae := (Plus (Literal 4) (Minus (Literal 30) (Plus (Literal 2) (Plus (Literal 1) (Literal 0))))) in
+         let ds := (42 :: nil) in
+         match evaluate_ltr ae with
+         | Expressible_nat n =>
+             fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
+               OK_h (n :: ds) (list_length nat ds + S (depth_right (super_refactor_ltr ae)))
+         | Expressible_msg s =>
+             fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
+               KO_h s
+        end).
+
+Compute (let ae := (Minus (Literal 1) (Literal 2)) in
+         let ds := (42 :: nil) in
+         match evaluate_ltr ae with
+         | Expressible_nat n =>
+             fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
+               OK_h (n :: ds) (list_length nat ds + S (depth_right (super_refactor_ltr ae)))
+         | Expressible_msg s =>
+             fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
+               KO_h s
+        end).
+
+Lemma main_theorem_aux :
+  forall (ae : arithmetic_expression)
+         (ds : data_stack),
+    (forall (n : nat),
+        evaluate_ltr ae = Expressible_nat n ->
+        fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
+          OK_h (n :: ds) (list_length nat ds + S (depth_right (super_refactor_ltr ae))))
+    /\
+      (forall (s : string),
+        evaluate_ltr ae = Expressible_msg s ->
+        fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
+          KO_h s).
+Proof.
+  intro ae.
+  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
+  - intro ds.
+    rewrite -> fold_unfold_evaluate_ltr_Literal.
+    rewrite -> fold_unfold_super_refactor_ltr_Literal.
+    rewrite -> fold_unfold_compile_ltr_aux_Literal.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons.
+    unfold decode_execute_ltr.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_nil.
+    split.
+    + intros n' H_eq_n_n'.
+      injection H_eq_n_n' as H_eq_n_n'.
+      rewrite -> H_eq_n_n'.
+      simpl.
+      admit.
+    + intros s H_absurd.
+      discriminate H_absurd.
+  - intro ds.
+    rewrite -> fold_unfold_evaluate_ltr_Plus.
+    rewrite -> fold_unfold_super_refactor_ltr_Plus.
+    case (evaluate_ltr ae1) as [ n1' | s1' ] eqn:H_e_ae1.
+    + case (evaluate_ltr ae2) as [ n2' | s2' ] eqn:H_e_ae2.
+      * split.
+        -- intros n H_eq_n1'n2'_n.
+           injection H_eq_n1'n2'_n as H_eq_n1'n2'_n.
+           destruct (IHae1 ds) as [H_OK_ae1 _].
+           destruct (IHae2 ds) as [H_OK_ae2 _].
+           Check (H_OK_ae1 n1' (eq_refl)).
+Admitted.
+
+(* ***** *)
+
+Compute (
+    let ae := (Plus (Minus (Plus (Minus (Literal 5) (Literal 4)) (Literal 4)) (Literal 4)) (Literal 4)) in
+    match (interpret_ltr (Source_program ae)) with
+    | Expressible_nat n =>
+        run_height_ltr (compile_ltr (Source_program (super_refactor_ltr ae))) =
+          (Expressible_nat n, S (depth_right (super_refactor_ltr ae)))
+    | Expressible_msg s =>
+        (Expressible_msg s, 0) = (Expressible_msg s, 0)
+    end).
+
+Compute (
+    let ae := (Plus (Literal 4) (Minus (Literal 30) (Plus (Literal 2) (Plus (Literal 1) (Literal 0))))) in
+    match (interpret_ltr (Source_program ae)) with
+    | Expressible_nat n =>
+        run_height_ltr (compile_ltr (Source_program (super_refactor_ltr ae))) =
+          (Expressible_nat n, S (depth_right (super_refactor_ltr ae)))
+    | Expressible_msg s =>
+        (Expressible_msg s, 0) = (Expressible_msg s, 0)
+    end).
+
+Compute (
+    let ae := (Plus (Minus (Plus (Literal 1) (Literal 1)) (Plus (Literal 1) (Literal 1))) (Minus (Plus (Literal 1) (Literal 1)) (Plus (Literal 1) (Literal 1)))) in
+    match (interpret_ltr (Source_program ae)) with
+    | Expressible_nat n =>
+        run_height_ltr (compile_ltr (Source_program (super_refactor_ltr ae))) =
+          (Expressible_nat n, S (depth_right (super_refactor_ltr ae)))
+    | Expressible_msg s =>
+        (Expressible_msg s, 0) = (Expressible_msg s, 0)
+    end).
 
 Theorem main_theorem :
   forall (ae : arithmetic_expression),
-    (forall (n : nat),
+    (forall n : nat,
         interpret_ltr (Source_program ae) = Expressible_nat n ->
         run_height_ltr (compile_ltr (Source_program (super_refactor_ltr ae))) =
-          (Expressible_nat n, S (depth_left (super_refactor_ltr ae)))).
+          (Expressible_nat n, S (depth_right (super_refactor_ltr ae))))
+    /\
+      (forall s : string,
+        interpret_ltr (Source_program ae) = Expressible_msg s ->
+        run_height_ltr (compile_ltr (Source_program (super_refactor_ltr ae))) =
+          (Expressible_msg s, 0)).
 Proof.
-  Compute (
-      let ae := (Plus (Minus (Plus (Minus (Literal 5) (Literal 4)) (Literal 4)) (Literal 4)) (Literal 4)) in
-      match (interpret_ltr (Source_program ae)) with
-      | Expressible_nat n =>
-          run_height_ltr (compile_ltr (Source_program (super_refactor_ltr ae))) =
-            (Expressible_nat n, S (depth_right (super_refactor_ltr ae)))
-      | Expressible_msg s =>
-          (Expressible_msg s, 0) = (Expressible_msg s, 0)
-      end).
-  Compute (
-      let ae := (Plus (Literal 4) (Minus (Literal 30) (Plus (Literal 2) (Plus (Literal 1) (Literal 0))))) in
-      match (interpret_ltr (Source_program ae)) with
-      | Expressible_nat n =>
-          run_height_ltr (compile_ltr (Source_program (super_refactor_ltr ae))) =
-            (Expressible_nat n, S (depth_right (super_refactor_ltr ae)))
-      | Expressible_msg s =>
-          (Expressible_msg s, 0) = (Expressible_msg s, 0)
-      end).
-  Compute (
-      let ae := (Plus (Minus (Plus (Literal 1) (Literal 1)) (Plus (Literal 1) (Literal 1))) (Minus (Plus (Literal 1) (Literal 1)) (Plus (Literal 1) (Literal 1)))) in
-      match (interpret_ltr (Source_program ae)) with
-      | Expressible_nat n =>
-          run_height_ltr (compile_ltr (Source_program (super_refactor_ltr ae))) =
-            (Expressible_nat n, S (depth_right (super_refactor_ltr ae)))
-      | Expressible_msg s =>
-          (Expressible_msg s, 0) = (Expressible_msg s, 0)
-      end).
-
-Admitted.
+  intro ae.
+  unfold interpret_ltr, run_height_ltr, compile_ltr.
+  split.
+  - intros n H_e_ae.
+    destruct (main_theorem_aux ae nil) as [H_OK _].
+    Check (H_OK n H_e_ae).
+    rewrite -> (H_OK n H_e_ae).
+    rewrite -> fold_unfold_list_length_nil.
+    rewrite -> Nat.add_0_l.
+    reflexivity.
+  - intros s H_e_ae.
+    destruct (main_theorem_aux ae nil) as [_ H_KO].
+    rewrite -> (H_KO s H_e_ae).
+    reflexivity.
+Qed.
 
 (* ********** *)
 
