@@ -2560,28 +2560,54 @@ Proof.
     rewrite -> fold_unfold_compile_aux_Plus.
     rewrite -> fold_unfold_depth_right_Plus.
     unfold run_height_ltr.
+    unfold run_height_ltr in IHae1, IHae2.
+    Check (fetch_decode_execute_loop_height_ltr).
     case (compile_aux ae1) as [ | bci1' bci1s' ] eqn:C_ae1.
-    + admit.
-    + Check (about_fetch_decode_execute_loop_height_concatenation_ltr).
-      case (fetch_decode_execute_loop_height_ltr (bci1' :: bci1s') nil) as [ds1 mh1 | s1] eqn:H_fdel_ae1.
-      * Check (about_fetch_decode_execute_loop_height_concatenation_ltr (bci1' :: bci1s')
-        (compile_aux ae2 ++ ADD :: nil) nil).
-        destruct (about_fetch_decode_execute_loop_height_concatenation_ltr (bci1' :: bci1s')
-        (compile_aux ae2 ++ ADD :: nil) nil) as [H_fdel_OK H_fdel_KO].
-        Check (H_fdel_OK ds1 mh1 H_fdel_ae1).
-        rewrite -> (H_fdel_OK ds1 mh1 H_fdel_ae1).
-        unfold run_height_ltr in IHae2.
-        Check (about_fetch_decode_execute_loop_height_concatenation_ltr).
-        case (compile_aux ae2) as [ | bci2' bci2s' ] eqn:C_ae2.
-        -- admit.
-        -- case (fetch_decode_execute_loop_height_ltr (bci2' :: bci2s') ds1) as [ds2 mh2 | s2] eqn:H_fdel_ae2.
-           ++ Check (about_fetch_decode_execute_loop_height_concatenation_ltr (bci2' :: bci2s')
-                       (ADD :: nil) ds1).
-              destruct (about_fetch_decode_execute_loop_height_concatenation_ltr (bci2' :: bci2s')
-                          (ADD :: nil) ds1) as [H_fdel_OK2 _].
-              rewrite -> (H_fdel_OK2 ds2 mh2 H_fdel_ae2).
-              rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons.
-              unfold decode_execute_height_ltr.
+    + case (compile_aux ae2) as [ | bci2' bci2s' ] eqn:C_ae2.
+      * intro H_absurd.
+        Search (nil ++ _).
+        rewrite ->2 app_nil_l in H_absurd.
+        rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons in H_absurd.
+        unfold decode_execute in H_absurd.
+        discriminate H_absurd.
+      * Check (app_nil_l).
+        rewrite -> app_nil_l.
+        case (fetch_decode_execute_loop_height_ltr ((bci2' :: bci2s')) nil) as [ds2 mh2 | s2] eqn:H_fdel_bcis2.
+        -- Check (about_fetch_decode_execute_loop_height_ltr_concatenation).
+           Check (about_fetch_decode_execute_loop_height_ltr_concatenation (bci2' :: bci2s') (ADD :: nil)).
+           Check (about_fetch_decode_execute_loop_height_ltr_concatenation (bci2' :: bci2s') (ADD :: nil) nil).
+           destruct (about_fetch_decode_execute_loop_height_ltr_concatenation (bci2' :: bci2s') (ADD :: nil) nil) as [H_fdel_OK H_fdel_KO].
+           Check (H_fdel_OK).
+           Check (H_fdel_OK ds2 mh2).
+           destruct (H_fdel_OK ds2 mh2 H_fdel_bcis2) as [H_fdel_OK_OK H_fdel_OK_KO].
+           case (fetch_decode_execute_loop_height_ltr (ADD :: nil) ds2) as [ds' mh' | s'] eqn:H_fdel_ADD_nil.
+           ** Check (H_fdel_OK_OK).
+              Check (H_fdel_OK_OK ds' mh').
+              Check (H_fdel_OK_OK ds' mh' (eq_refl (OK_h ds' mh'))).
+              rewrite -> (H_fdel_OK_OK ds' mh' (eq_refl (OK_h ds' mh'))).
+              case ds' as [ | ds'' Ids''].
+              --- intro H_absurd.
+                  discriminate H_absurd.
+              --- case Ids'' as [ ds''_n | Ids'''].
+                  +++ admit.
+                  +++ intro H_absurd.
+                      discriminate H_absurd.
+                    
+                          ** Check (H_fdel_OK_KO).
+              Check (H_fdel_OK_KO s').
+              Check (H_fdel_OK_KO s' (eq_refl (KO_h s'))).
+              rewrite -> (H_fdel_OK_KO s' (eq_refl (KO_h s'))).
+              intro H_absurd.
+              discriminate H_absurd.
+       
+              
+              s' H_fdel_ADD_nil).
+             
+           case ds2 as [ | n2 ds2'].
+           ++ intro H_absurd.
+              discriminate H_absurd.
+           ++ case ds2' as [ | n2' ds2''].
+              **
 
 (*
 fetch_decode_execute_loop_height_ltr (compile_aux ae1) nil = OK_h ds1 mh1 ->
