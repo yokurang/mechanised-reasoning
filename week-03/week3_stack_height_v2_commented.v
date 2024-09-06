@@ -1252,7 +1252,7 @@ Proof.
            destruct (IHae2 ds) as [H_OK_ae2 _].
            Check (H_OK_ae1 n1' (eq_refl)).
 Admitted.
-  
+
 Lemma about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK :
   forall (bci1s bci2s : list byte_code_instruction)
          (ds ds' ds'' : data_stack)
@@ -1278,7 +1278,33 @@ Lemma about_fetch_decode_execute_loop_height_ltr_concatenation_KO :
          (s1 : string),
     fetch_decode_execute_loop_height_ltr bci1s ds = KO_h s1 ->
     fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s1.
-Admitted.
+Proof.
+  intro bci1s.
+  induction bci1s as [ | bci1 bci1s' IHbci1s ].
+  - intros bci2s ds s1 H_absurd.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_nil in H_absurd.
+    discriminate H_absurd.
+  - intros [ | bci2 bci2s' ].
+    + intros ds s1 ly.
+      rewrite -> app_nil_r.
+      exact ly.
+    + intros ds s1 H_fdel_bci1s'.
+      Search (_ :: _ ++ _ = _).
+      rewrite <- app_comm_cons.
+      rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons.
+      destruct (decode_execute_ltr bci1 ds) as [ ds1' | s1' ] eqn:H_de_bci1.
+      * rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons in H_fdel_bci1s'.
+        rewrite -> H_de_bci1 in H_fdel_bci1s'.
+        Check (IHbci1s (bci2 :: bci2s') ds1' s1).
+        case (fetch_decode_execute_loop_height_ltr bci1s' ds1') as [ ds'' mh'' | s'' ] eqn:H_fdel_bci1s'_bci1s'.
+        -- discriminate H_fdel_bci1s'.
+        -- Check (IHbci1s (bci2 :: bci2s') ds1' s'' H_fdel_bci1s'_bci1s').
+           rewrite -> (IHbci1s (bci2 :: bci2s') ds1' s'' H_fdel_bci1s'_bci1s').
+           exact H_fdel_bci1s'.
+      * rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons in H_fdel_bci1s'.
+        rewrite -> H_de_bci1 in H_fdel_bci1s'.
+        exact H_fdel_bci1s'.
+Qed.
 
 (* [od] no need for refactoring yet: prove the theorem in general: *)
 Lemma main_theorem_aux' :
