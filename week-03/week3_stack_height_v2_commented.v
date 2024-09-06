@@ -1307,19 +1307,30 @@ Proof.
            destruct (IHae1 ds) as [IHae1_OK _].
            clear IHae1.
            Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK).
-           
-           
+           Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK (compile_ltr_aux ae1) (compile_ltr_aux ae1 ++ ADD :: nil) ds (n1' :: ds) (n' :: ds)).
+           Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK (compile_ltr_aux ae1) (compile_ltr_aux ae1 ++ ADD :: nil) ds (n1' :: ds) (n' :: ds) (list_length nat ds + S (depth_right ae1)) (list_length nat ds + S (Init.Nat.max (depth_right ae1) (S (depth_right ae2))))).
+           Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK (compile_ltr_aux ae1) (compile_ltr_aux ae2 ++ ADD :: nil) ds (n1' :: ds) (n' :: ds) (list_length nat ds + S (depth_right ae1)) (list_length nat ds + S (Init.Nat.max (depth_right ae1) (S (depth_right ae2))))
+                 (IHae1_OK n1' (eq_refl (Expressible_nat n1')))).
+           destruct (IHae2 (n1' :: ds)) as [IHae2_OK _].
+           Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
+                    (compile_ltr_aux ae1)
+                    (compile_ltr_aux ae2 ++ ADD :: nil)
+                    ds (n1' :: ds) (n2' :: n1' :: ds)
+                    (list_length nat ds + S (depth_right ae1))
+                    (list_length nat ds + S (Init.Nat.max (depth_right ae1) (S (depth_right ae2))))
+                    (IHae1_OK n1' (eq_refl (Expressible_nat n1')))
+                 ).
+           Check (IHae2_OK n2' (eq_refl (Expressible_nat n2'))).
+
            destruct (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
                        (compile_ltr_aux ae1)
                        (compile_ltr_aux ae2 ++ ADD :: nil) ds
                        ds
                        (n1' :: ds)
                        (n2' :: n1' :: ds)
-                       
-                      
              as [H_fdel_ae1_OK H_fdel_ae1_KO].
            destruct (IHae1 ds) as [IHae1_OK IHae1_KO].
-           
+
         -- intros n H_eq_n1'n2'_n.
            injection H_eq_n1'n2'_n as H_eq_n1'n2'_n.
            rewrite <- H_eq_n1'n2'_n.
