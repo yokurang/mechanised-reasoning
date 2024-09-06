@@ -2692,7 +2692,7 @@ Proof.
                         (compile_aux ae2) (ADD :: nil) (n1 :: ds)).
                Check (IHae2 (n1 :: ds)).
                destruct (IHae2 (n1 :: ds)) as [IHae2_OK IHae2_KO].
-               clear H_fdel_ae2_KO H_fdel_ae1_KO H_fdel_KO_ds2. 
+               clear H_fdel_ae2_KO H_fdel_ae1_KO H_fdel_KO_ds2 IHae2_KO H_fdel_KO_n1. 
                Check (IHae2_OK n2 (eq_refl (Expressible_nat n2))).
                (* IHae2_OK n2 eq_refl
                   : fetch_decode_execute_loop_height_ltr (compile_aux ae2)
@@ -2709,13 +2709,13 @@ Proof.
                         (IHae2_OK n2
                            (eq_refl (Expressible_nat n2)))).
                assert (H_useful := H_fdel_ae2_OK (n2 :: n1 :: ds) (list_length nat (n1 :: ds) +
-                                                      S (depth_right ae2))
-                        (IHae2_OK n2
-                           (eq_refl (Expressible_nat n2)))).
+                                                                     S (depth_right ae2))
+                                     (IHae2_OK n2
+                                        (eq_refl (Expressible_nat n2)))).
                rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons in H_useful.
                unfold decode_execute in H_useful.
                rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_nil in H_useful.
-               destruct (H_useful) as [H_useful_OK H_useful_KO].
+               destruct (H_useful) as [H_useful_OK _].
                Check (H_useful_OK (n1 + n2 :: ds) (Init.Nat.max
                    (Init.Nat.max (list_length nat (n2 :: n1 :: ds))
                       (list_length nat (n1 + n2 :: ds))) (list_length nat (n1 + n2 :: ds)))).
@@ -2761,23 +2761,25 @@ Proof.
                                           (Init.Nat.max (list_length nat (n2 :: n1 :: ds))
                                              (list_length nat (n1 + n2 :: ds)))
                                           (list_length nat (n1 + n2 :: ds))))))).
-               rewrite -> (H_fdel_OK_ds2 (n1 + n2 :: ds) (Init.Nat.max
-                                                      (list_length nat (n1 :: ds) +
-                                                         S (depth_right ae2))
-                                                      (Init.Nat.max
-                                                         (Init.Nat.max
-                                                            (list_length nat (n2 :: n1 :: ds))
-                                                            (list_length nat (n1 + n2 :: ds)))
-                                                         (list_length nat (n1 + n2 :: ds))))
-                        (H_useful_OK (n1 + n2 :: ds) (Init.Nat.max
-                                                       (Init.Nat.max (list_length nat (n2 :: n1 :: ds))
-                                                          (list_length nat (n1 + n2 :: ds)))
-                                                       (list_length nat (n1 + n2 :: ds)))
-                           (eq_refl (OK_h (n1 + n2 :: ds)
-                                       (Init.Nat.max
-                                          (Init.Nat.max (list_length nat (n2 :: n1 :: ds))
-                                             (list_length nat (n1 + n2 :: ds)))
-                                          (list_length nat (n1 + n2 :: ds))))))).
+               rewrite -> (H_fdel_OK_ds2 (n1 + n2 :: ds)
+                             (Init.Nat.max
+                                (list_length nat (n1 :: ds) +
+                                   S (depth_right ae2))
+                                (Init.Nat.max
+                                   (Init.Nat.max
+                                      (list_length nat (n2 :: n1 :: ds))
+                                      (list_length nat (n1 + n2 :: ds)))
+                                   (list_length nat (n1 + n2 :: ds))))
+                             (H_useful_OK (n1 + n2 :: ds)
+                                (Init.Nat.max
+                                   (Init.Nat.max (list_length nat (n2 :: n1 :: ds))
+                                      (list_length nat (n1 + n2 :: ds)))
+                                   (list_length nat (n1 + n2 :: ds)))
+                                (eq_refl (OK_h (n1 + n2 :: ds)
+                                            (Init.Nat.max
+                                               (Init.Nat.max (list_length nat (n2 :: n1 :: ds))
+                                                  (list_length nat (n1 + n2 :: ds)))
+                                               (list_length nat (n1 + n2 :: ds))))))).
                rewrite -> H_eq_n1_n2_n'.
                rewrite ->4 fold_unfold_list_length_cons.
                Search (max _ _ = _).

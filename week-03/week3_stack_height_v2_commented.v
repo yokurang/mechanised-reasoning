@@ -1245,7 +1245,7 @@ Proof.
            destruct (IHae2 ds) as [H_OK_ae2 _].
            Check (H_OK_ae1 n1' (eq_refl)).
 Admitted.
-
+  
 Lemma about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK :
   forall (bci1s bci2s : list byte_code_instruction)
          (ds ds' ds'' : data_stack)
@@ -1254,8 +1254,26 @@ Lemma about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK :
     fetch_decode_execute_loop_height_ltr bci2s ds' = OK_h ds'' mh2 ->
     fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = OK_h ds'' (max mh1 mh2).
 Admitted.
-(* [od] no need for refactoring yet: prove the theorem in general: *)
 
+Lemma about_fetch_decode_execute_loop_height_ltr_concatenation_OK_KO :
+  forall (bci1s bci2s : list byte_code_instruction)
+         (ds ds' : data_stack)
+         (mh1 : nat)
+         (s2 : string),
+    fetch_decode_execute_loop_height_ltr bci1s ds = OK_h ds' mh1 ->
+    fetch_decode_execute_loop_height_ltr bci2s ds' = KO_h s2 ->
+    fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s2.
+Admitted.
+
+Lemma about_fetch_decode_execute_loop_height_ltr_concatenation_KO :
+  forall (bci1s bci2s : list byte_code_instruction)
+         (ds : data_stack)
+         (s1 : string),
+    fetch_decode_execute_loop_height_ltr bci1s ds = KO_h s1 ->
+    fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s1.
+Admitted.
+
+(* [od] no need for refactoring yet: prove the theorem in general: *)
 Lemma main_theorem_aux' :
   forall (ae : arithmetic_expression)
          (ds : data_stack),
@@ -1301,105 +1319,126 @@ Proof.
     case (evaluate_ltr ae1) as [ n1' | s1' ] eqn:H_e_ae1.
     + case (evaluate_ltr ae2) as [ n2' | s2' ] eqn:H_e_ae2.
       * split.
-        -- intros n' H_eq_n1_n2_n'.
-           injection H_eq_n1_n2_n' as H_eq_n1_n2_n'.
-           Check (IHae1 ds).
-           destruct (IHae1 ds) as [IHae1_OK _].
-           clear IHae1.
-           Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK).
-           Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK (compile_ltr_aux ae1) (compile_ltr_aux ae1 ++ ADD :: nil) ds (n1' :: ds) (n' :: ds)).
-           Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK (compile_ltr_aux ae1) (compile_ltr_aux ae1 ++ ADD :: nil) ds (n1' :: ds) (n' :: ds) (list_length nat ds + S (depth_right ae1)) (list_length nat ds + S (Init.Nat.max (depth_right ae1) (S (depth_right ae2))))).
-           Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK (compile_ltr_aux ae1) (compile_ltr_aux ae2 ++ ADD :: nil) ds (n1' :: ds) (n' :: ds) (list_length nat ds + S (depth_right ae1)) (list_length nat ds + S (Init.Nat.max (depth_right ae1) (S (depth_right ae2))))
-                 (IHae1_OK n1' (eq_refl (Expressible_nat n1')))).
-           destruct (IHae2 (n1' :: ds)) as [IHae2_OK _].
-           Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
-                    (compile_ltr_aux ae1)
-                    (compile_ltr_aux ae2 ++ ADD :: nil)
-                    ds (n1' :: ds) (n2' :: n1' :: ds)
-                    (list_length nat ds + S (depth_right ae1))
-                    (list_length nat ds + S (Init.Nat.max (depth_right ae1) (S (depth_right ae2))))
-                    (IHae1_OK n1' (eq_refl (Expressible_nat n1')))
-                 ).
-           Check (IHae2_OK n2' (eq_refl (Expressible_nat n2'))).
-
-           destruct (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
-                       (compile_ltr_aux ae1)
-                       (compile_ltr_aux ae2 ++ ADD :: nil) ds
-                       ds
-                       (n1' :: ds)
-                       (n2' :: n1' :: ds)
-             as [H_fdel_ae1_OK H_fdel_ae1_KO].
-           destruct (IHae1 ds) as [IHae1_OK IHae1_KO].
-
         -- intros n H_eq_n1'n2'_n.
            injection H_eq_n1'n2'_n as H_eq_n1'n2'_n.
            rewrite <- H_eq_n1'n2'_n.
-           rewrite -> fold_unfold_compile_ltr_aux_Plus.
-           rewrite -> fold_unfold_depth_right_Plus.
            destruct (IHae1 ds) as [IHae1_OK _].
            clear IHae1.
            destruct (IHae2 (n1' ::ds)) as [IHae2_OK _].
            clear IHae2.
+           remember (IHae1_OK n1' eq_refl) as IHae1_OK_n1'.
+           clear IHae1_OK HeqIHae1_OK_n1'.
            Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
                     (compile_ltr_aux ae1)
-                    (compile_ltr_aux ae2)
+                    (compile_ltr_aux ae2 ++ ADD :: nil)
                     ds
                     (n1' :: ds)
-                    (n2' :: n1' :: ds)
+                    (n1' :: n2' :: ds)
                     (list_length nat ds + S (depth_right ae1))
-                    (list_length nat (n1' :: ds) + S (depth_right ae2))
-                    (IHae1_OK n1' eq_refl)
-                    (IHae2_OK n2' eq_refl)
+                    (S (depth_right ae2)) (* ??? *)
+                    IHae1_OK_n1'
                  ).
-           remember (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
-                    (compile_ltr_aux ae1)
-                    (compile_ltr_aux ae2)
-                    ds
-                    (n1' :: ds)
-                    (n2' :: n1' :: ds)
-                    (list_length nat ds + S (depth_right ae1))
-                    (list_length nat (n1' :: ds) + S (depth_right ae2))
-                    (IHae1_OK n1' eq_refl)
-                    (IHae2_OK n2' eq_refl)
-                    ) as H_concat_ae1_ae2.
-           clear HeqH_concat_ae1_ae2.
+           (*
+             fetch_decode_execute_loop_height_ltr (compile_ltr_aux ae2 ++ ADD :: nil)
+             (n1' :: ds) = OK_h (n1' + n2' :: ds) (S (depth_right ae2))
+            *)
+           remember (IHae2_OK n2' eq_refl) as IHae2_OK_n2'.
+           clear IHae2_OK HeqIHae2_OK_n2'.
            Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
-                    (compile_ltr_aux ae1 ++ compile_ltr_aux ae2)
+                    (compile_ltr_aux ae2)
                     (ADD :: nil)
-                    ds
+                    (n1' :: ds)
                     (n2' :: n1' :: ds)
                     (n1' + n2' :: ds)
-                    (Init.Nat.max (list_length nat ds + S (depth_right ae1))
-                       (list_length nat (n1' :: ds) + S (depth_right ae2)))
-                    (Init.Nat.max (list_length nat ds + S (depth_right ae1))
-                       (list_length nat (n1' :: ds) + S (depth_right ae2)))
-                    H_concat_ae1_ae2
+                    (list_length nat (n1' :: ds) + S (depth_right ae2))
+                    0 (* ??? *)
+                    IHae2_OK_n2'
                  ).
            remember (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
-                    (compile_ltr_aux ae1 ++ compile_ltr_aux ae2)
+                    (compile_ltr_aux ae2)
                     (ADD :: nil)
-                    ds
+                    (n1' :: ds)
                     (n2' :: n1' :: ds)
                     (n1' + n2' :: ds)
-                    (Init.Nat.max (list_length nat ds + S (depth_right ae1))
-                       (list_length nat (n1' :: ds) + S (depth_right ae2)))
-                    (Init.Nat.max (list_length nat ds + S (depth_right ae1))
-                       (list_length nat (n1' :: ds) + S (depth_right ae2)))
-                    H_concat_ae1_ae2
-                    ) as H_concat_ae1_ae2_ADD.
-           clear HeqH_concat_ae1_ae2_ADD.
-           clear H_concat_ae1_ae2.
-           unfold fetch_decode_execute_loop_height_ltr in H_concat_ae1_ae2_ADD at 1.
-           unfold decode_execute_ltr in H_concat_ae1_ae2_ADD.
-           rewrite ->3 fold_unfold_list_length_cons in H_concat_ae1_ae2_ADD.
+                    (list_length nat (n1' :: ds) + S (depth_right ae2))
+                    0 (* ??? *)
+                    IHae2_OK_n2'
+                    ) as fdel_concat_ae2_ADD.
+           clear Heqfdel_concat_ae2_ADD.
+           Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
+                    (compile_ltr_aux ae1)
+                    (compile_ltr_aux ae2 ++ ADD :: nil)
+                    ds
+                    (n1' :: ds)
+                    (n1' :: n2' :: ds)
+                    (list_length nat ds + S (depth_right ae1))
+                    (S (depth_right ae2)) (* ??? *)
+                    IHae1_OK_n1'
+                 ).
+           admit.
+        -- intros s H_absurd.
+           discriminate H_absurd.
+      * split.
+        -- intros n H_absurd.
+           discriminate H_absurd.
+        -- intros s H_eq_s2'_s.
+           injection H_eq_s2'_s as H_eq_s2'_s.
+           rewrite <- H_eq_s2'_s.
+           destruct (IHae1 ds) as [IHae1_OK _].
+           clear IHae1.
+           destruct (IHae2 (n1' :: ds)) as [_ IHae2_KO].
+           clear IHae2.
+           remember (IHae1_OK n1' eq_refl) as IHae1_OK_n1'.
+           clear IHae1_OK HeqIHae1_OK_n1'.
+           Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_KO
+                    (compile_ltr_aux ae1)
+                    (compile_ltr_aux ae2 ++ ADD :: nil)
+                    ds
+                    (n1' :: ds)
+                    (list_length nat ds + S (depth_right ae1))
+                    s2'
+                    IHae1_OK_n1'
+                 ).
+                 (*
+                   fetch_decode_execute_loop_height_ltr (compile_ltr_aux ae2 ++ ADD :: nil)
+                   (n1' :: ds) = KO_h s2'
+                  *)
+           remember (IHae2_KO s2' eq_refl) as IHae2_KO_s2'.
+           clear IHae2_KO  HeqIHae2_KO_s2'.
+           Check (about_fetch_decode_execute_loop_height_ltr_concatenation_KO
+                    (compile_ltr_aux ae2)
+                    (ADD :: nil)
+                    (n1' :: ds)
+                    s2'
+                    IHae2_KO_s2'
+                 ).
+           remember (about_fetch_decode_execute_loop_height_ltr_concatenation_KO
+                    (compile_ltr_aux ae2)
+                    (ADD :: nil)
+                    (n1' :: ds)
+                    s2'
+                    IHae2_KO_s2'
+                 ) as fdel_concat_ae2_ADD.
+           Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_KO
+                    (compile_ltr_aux ae1)
+                    (compile_ltr_aux ae2 ++ ADD :: nil)
+                    ds
+                    (n1' :: ds)
+                    (list_length nat ds + S (depth_right ae1))
+                    s2'
+                    IHae1_OK_n1'
+                    fdel_concat_ae2_ADD).
+           exact (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_KO
+                    (compile_ltr_aux ae1)
+                    (compile_ltr_aux ae2 ++ ADD :: nil)
+                    ds
+                    (n1' :: ds)
+                    (list_length nat ds + S (depth_right ae1))
+                    s2'
+                    IHae1_OK_n1'
+                    fdel_concat_ae2_ADD).
+    + 
            
-           Check H_concat_ae1_ae2_ADD.
-
-           (list_length nat ds + S (depth_right ae2))).
-           (* [od] and here you need the theorem about applying fetch_decode_execute_loop_height_ltr to the concatenation of byte-code instructions *)
-           destruct (IHae1 ds) as [H_OK_ae1 _].
-           destruct (IHae2 ds) as [H_OK_ae2 _].
-           Check (H_OK_ae1 n1' (eq_refl)).
 Admitted.
 
 (* ***** *)
