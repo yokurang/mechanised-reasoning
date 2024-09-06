@@ -1320,8 +1320,98 @@ Proof.
                     (list_length nat ds + S (Init.Nat.max (depth_right ae1) (S (depth_right ae2))))
                     (IHae1_OK n1' (eq_refl (Expressible_nat n1')))
                  ).
+           (*
+             about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK (compile_ltr_aux ae1)
+             (compile_ltr_aux ae2 ++ ADD :: nil) ds (n1' :: ds) (n2' :: n1' :: ds)
+             (list_length nat ds + S (depth_right ae1))
+             (list_length nat ds + S (Init.Nat.max (depth_right ae1) (S (depth_right ae2))))
+             (IHae1_OK n1' eq_refl)
+             : fetch_decode_execute_loop_height_ltr (compile_ltr_aux ae2 ++ ADD :: nil) (n1' :: ds)      =
+             OK_h (n2' :: n1' :: ds)
+             (list_length nat ds + S (Init.Nat.max (depth_right ae1) (S (depth_right ae2)))) ->
+             fetch_decode_execute_loop_height_ltr
+             (compile_ltr_aux ae1 ++ compile_ltr_aux ae2 ++ ADD :: nil) ds =
+             OK_h (n2' :: n1' :: ds)
+             (Init.Nat.max (list_length nat ds + S (depth_right ae1))
+             (list_length nat ds + S (Init.Nat.max (depth_right ae1) (S (depth_right ae2)))))
+            *)
            Check (IHae2_OK n2' (eq_refl (Expressible_nat n2'))).
+           (*
+             IHae2_OK n2' eq_refl
+             : fetch_decode_execute_loop_height_ltr (compile_ltr_aux ae2) (n1' :: ds) =
+             OK_h (n2' :: n1' :: ds) (list_length nat (n1' :: ds) + S (depth_right ae2))
+            *)
+           Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
+                    (compile_ltr_aux ae2)
+                    (ADD :: nil)
+                 ).
+           (*
+             about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK (compile_ltr_aux ae2)
+             (ADD :: nil)
+             : forall (ds ds' ds'' : data_stack) (mh1 mh2 : nat),
+             fetch_decode_execute_loop_height_ltr (compile_ltr_aux ae2) ds = OK_h ds' mh1 ->
+             fetch_decode_execute_loop_height_ltr (ADD :: nil) ds' = OK_h ds'' mh2 ->
+             fetch_decode_execute_loop_height_ltr (compile_ltr_aux ae2 ++ ADD :: nil) ds =
+             OK_h ds'' (Init.Nat.max mh1 mh2)
+            *)
+           Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
+                    (compile_ltr_aux ae2)
+                    (ADD :: nil)
+                    (n1' :: ds)
+                    (n2' :: n1' :: ds)
+                 ).
 
+           Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
+                    (compile_ltr_aux ae2)
+                    (ADD :: nil)
+                    (n1' :: ds)
+                    (n2' :: n1' :: ds)
+                    (n2' :: n1' :: ds)
+                    (list_length nat (n1' :: ds) + S (depth_right ae2))
+                    (list_length nat ds + S (Init.Nat.max (depth_right ae1) (S (depth_right ae2))))
+                    (IHae2_OK n2' (eq_refl (Expressible_nat n2')))).
+
+           assert (
+               H_fdel_ADD_nil :=
+                  (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
+                    (compile_ltr_aux ae2)
+                    (ADD :: nil)
+                    (n1' :: ds)
+                    (n2' :: n1' :: ds)
+                    (n2' :: n1' :: ds)
+                    (list_length nat (n1' :: ds) + S (depth_right ae2))
+                    (list_length nat ds + S (Init.Nat.max (depth_right ae1) (S (depth_right ae2))))
+                    (IHae2_OK n2' (eq_refl (Expressible_nat n2'))))
+             ).
+           rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons in H_fdel_ADD_nil.
+           unfold decode_execute_ltr in H_fdel_ADD_nil.
+           rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_nil in H_fdel_ADD_nil.
+           
+              (*
+                (IHae2_OK n2' eq_refl) H_fdel_ADD
+                : fetch_decode_execute_loop_height_ltr
+                (compile_ltr_aux ae2 ++ ADD :: nil) (n1' :: ds) =
+                OK_h H_fdel_ADD_OK_ds
+                (Init.Nat.max (list_length nat (n1' :: ds) + S (depth_right ae2)) H_fdel_ADD_OK_mh)
+               *)
+              Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
+                    (compile_ltr_aux ae1)
+                    (compile_ltr_aux ae2 ++ ADD :: nil)
+                    ds (n1' :: ds) (n2' :: n1' :: ds)
+                    (list_length nat ds + S (depth_right ae1))
+                    (list_length nat ds + S (Init.Nat.max (depth_right ae1) (S (depth_right ae2))))
+                    (IHae1_OK n1' (eq_refl (Expressible_nat n1')))
+                    ).
+
+
+              
+           
+
+           
+           Check (IHae2_OK n2' (eq_refl (Expressible_nat n2'))).
+           (*
+
+            *)
            destruct (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
                        (compile_ltr_aux ae1)
                        (compile_ltr_aux ae2 ++ ADD :: nil) ds
