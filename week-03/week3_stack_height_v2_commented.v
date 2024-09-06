@@ -1336,7 +1336,8 @@ Proof.
 Qed.
 
 (* [od] no need for refactoring yet: prove the theorem in general: *)
-Lemma main_theorem_aux' :
+
+Lemma main_theorem_aux_ltr_right_aux :
   forall (ae : arithmetic_expression)
          (ds : data_stack),
     (forall (n : nat),
@@ -1349,10 +1350,96 @@ Lemma main_theorem_aux' :
         fetch_decode_execute_loop_height_ltr (compile_ltr_aux ae) ds =
           KO_h s).
 Proof.
-Admitted.
+  intro ae.
+  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intro ds; split.
+  - intros n' H_n.
+    rewrite -> fold_unfold_compile_ltr_aux_Literal.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons.
+    unfold decode_execute_ltr.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_nil.
+    rewrite -> fold_unfold_evaluate_ltr_Literal in H_n.
+    injection H_n as H_eq_n_n'.
+    rewrite -> H_eq_n_n'.
+    
+
 
 (* ***** *)
 
+Theorem main_theorem_ltr_right :
+  forall (ae : arithmetic_expression),
+    (forall n : nat,
+        interpret_ltr (Source_program ae) = Expressible_nat n ->
+        run_height_ltr (compile_ltr (Source_program ae)) =
+          (Expressible_nat n, S (depth_right ae)))
+    /\
+      (forall s : string,
+        interpret_ltr (Source_program ae) = Expressible_msg s ->
+        run_height_ltr (compile_ltr (Source_program ae)) =
+          (Expressible_msg s, 0)).
+Proof.
+  intro ae.
+  unfold interpret_ltr, run_height_ltr, compile_ltr.
+  split.
+  - intros n H_e_ae.
+    Check (main_theorem_aux_ltr_right_aux).
+    destruct (main_theorem_aux_ltr_right_aux ae nil) as [H_OK _].
+    rewrite -> (H_OK n H_e_ae).
+    rewrite -> fold_unfold_list_length_nil.
+    rewrite -> Nat.add_0_l.
+    reflexivity.
+  - intros s H_e_ae.
+    destruct (main_theorem_aux_ltr_right_aux ae nil) as [_ H_KO].
+    rewrite -> (H_KO s H_e_ae).
+    reflexivity.
+Qed.
+
+Lemma main_theorem_aux_rtl_right_aux :
+  forall (ae : arithmetic_expression)
+         (ds : data_stack),
+    (forall (n : nat),
+        evaluate_rtl ae = Expressible_nat n ->
+        fetch_decode_execute_loop_height_rtl (compile_rtl_aux ae) ds =
+          OK_h (n :: ds) (list_length nat ds + S (depth_left ae)))
+    /\
+      (forall (s : string),
+        evaluate_rtl ae = Expressible_msg s ->
+        fetch_decode_execute_loop_height_rtl (compile_rtl_aux ae) ds =
+          KO_h s).
+Proof.
+Admitted.
+
+Theorem main_theorem_rtl_right :
+  forall (ae : arithmetic_expression),
+    (forall n : nat,
+        interpret_rtl (Source_program ae) = Expressible_nat n ->
+        run_height_rtl (compile_rtl (Source_program ae)) =
+          (Expressible_nat n, S (depth_left ae)))
+    /\
+      (forall s : string,
+        interpret_rtl (Source_program ae) = Expressible_msg s ->
+        run_height_rtl (compile_rtl (Source_program ae)) =
+          (Expressible_msg s, 0)).
+Proof.
+Proof.
+  intro ae.
+  unfold interpret_rtl, run_height_rtl, compile_rtl.
+  split.
+  - intros n H_e_ae.
+    Check (main_theorem_aux_rtl_right_aux).
+    destruct (main_theorem_aux_rtl_right_aux ae nil) as [H_OK _].
+    rewrite -> (H_OK n H_e_ae).
+    rewrite -> fold_unfold_list_length_nil.
+    rewrite -> Nat.add_0_l.
+    reflexivity.
+  - intros s H_e_ae.
+    destruct (main_theorem_aux_rtl_right_aux ae nil) as [_ H_KO].
+    Check (H_KO s).
+    rewrite -> (H_KO s H_e_ae).
+    reflexivity.
+Qed.
+
+
+(*
 Compute (
     let ae := (Plus (Minus (Plus (Minus (Literal 5) (Literal 4)) (Literal 4)) (Literal 4)) (Literal 4)) in
     match (interpret_ltr (Source_program ae)) with
@@ -1394,6 +1481,7 @@ Theorem main_theorem :
         interpret_ltr (Source_program ae) = Expressible_msg s ->
         run_height_ltr (compile_ltr (Source_program (super_refactor_ltr ae))) =
           (Expressible_msg s, 0)).
+
 (* [od] this statement is off because all occurrences of ae should be super-refactored, including the ones in the premiss:
    interpret_ltr (Source_program (super_refactor_ltr ae)) = Expressible_nat n ->
 *)
@@ -1402,7 +1490,7 @@ Proof.
   unfold interpret_ltr, run_height_ltr, compile_ltr.
   split.
   - intros n H_e_ae.
-    destruct (main_theorem_aux' ae nil) as [H_OK _].
+    destruct (main_theorem_aux ae nil) as [H_OK _].
     Check (H_OK n H_e_ae).
     rewrite -> (H_OK n H_e_ae).
     rewrite -> fold_unfold_list_length_nil.
@@ -1413,7 +1501,8 @@ Proof.
     rewrite -> (H_KO s H_e_ae).
     reflexivity.
 Qed.
-
+ *)
+  
 (* [od] 
    Anyway, the main theorem should not involve refactoring.
    And then it should have corollaries where ae is actually the result of refactoring.
