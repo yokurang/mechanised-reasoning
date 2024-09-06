@@ -1277,11 +1277,22 @@ Proof.
     unfold decode_execute_ltr.
     rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_nil.
     split.
-    + intros n' H_eq_n_n'.
+    + (* [od] this subgoal is simple to prove, esp. if you first re-associate max *)
+      intros n' H_eq_n_n'.
       injection H_eq_n_n' as H_eq_n_n'.
       rewrite -> H_eq_n_n'.
-      simpl.
-      admit. (* [od] this subgoal is simple to prove, esp. if you first re-associate max *)
+      rewrite -> fold_unfold_list_length_cons.
+      rewrite -> fold_unfold_depth_right_Literal.
+      Search (_ + 1 = S _).
+      rewrite -> Nat.add_1_r.
+      Search (max _ _).
+      (* max_r: forall n m : nat, n <= m -> Init.Nat.max n m = m *)
+      Search (_ <= _).
+      (* Nat.le_succ_diag_r: forall n : nat, n <= S n *)
+      Check (max_r (list_length nat ds) (S (list_length nat ds)) (Nat.le_succ_diag_r (list_length nat ds))).
+      rewrite -> (max_r (list_length nat ds) (S (list_length nat ds)) (Nat.le_succ_diag_r (list_length nat ds))).
+      rewrite -> Nat.max_id.
+      reflexivity.
     + intros s H_absurd.
       discriminate H_absurd.
   - rewrite -> fold_unfold_evaluate_ltr_Plus.
@@ -1411,7 +1422,7 @@ Proof.
   unfold interpret_ltr, run_height_ltr, compile_ltr.
   split.
   - intros n H_e_ae.
-    destruct (main_theorem_aux ae nil) as [H_OK _].
+    destruct (main_theorem_aux' ae nil) as [H_OK _].
     Check (H_OK n H_e_ae).
     rewrite -> (H_OK n H_e_ae).
     rewrite -> fold_unfold_list_length_nil.
