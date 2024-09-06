@@ -1273,6 +1273,7 @@ Proof.
   induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intro ds.
   - rewrite -> fold_unfold_evaluate_ltr_Literal.
     rewrite -> fold_unfold_compile_ltr_aux_Literal.
+    rewrite -> fold_unfold_depth_right_Literal.
     rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons.
     unfold decode_execute_ltr.
     rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_nil.
@@ -1282,7 +1283,6 @@ Proof.
       injection H_eq_n_n' as H_eq_n_n'.
       rewrite -> H_eq_n_n'.
       rewrite -> fold_unfold_list_length_cons.
-      rewrite -> fold_unfold_depth_right_Literal.
       Search (_ + 1 = S _).
       rewrite -> Nat.add_1_r.
       Search (max _ _).
@@ -1296,9 +1296,30 @@ Proof.
     + intros s H_absurd.
       discriminate H_absurd.
   - rewrite -> fold_unfold_evaluate_ltr_Plus.
+    rewrite -> fold_unfold_compile_ltr_aux_Plus.
+    rewrite -> fold_unfold_depth_right_Plus.
     case (evaluate_ltr ae1) as [ n1' | s1' ] eqn:H_e_ae1.
     + case (evaluate_ltr ae2) as [ n2' | s2' ] eqn:H_e_ae2.
       * split.
+        -- intros n' H_eq_n1_n2_n'.
+           injection H_eq_n1_n2_n' as H_eq_n1_n2_n'.
+           Check (IHae1 ds).
+           destruct (IHae1 ds) as [IHae1_OK _].
+           clear IHae1.
+           Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK).
+           
+           
+           destruct (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
+                       (compile_ltr_aux ae1)
+                       (compile_ltr_aux ae2 ++ ADD :: nil) ds
+                       ds
+                       (n1' :: ds)
+                       (n2' :: n1' :: ds)
+                       
+                      
+             as [H_fdel_ae1_OK H_fdel_ae1_KO].
+           destruct (IHae1 ds) as [IHae1_OK IHae1_KO].
+           
         -- intros n H_eq_n1'n2'_n.
            injection H_eq_n1'n2'_n as H_eq_n1'n2'_n.
            rewrite <- H_eq_n1'n2'_n.
