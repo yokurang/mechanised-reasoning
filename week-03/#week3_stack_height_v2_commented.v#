@@ -505,11 +505,11 @@ Definition test_fetch_decode_execute_loop_height_ltr (candidate : (list byte_cod
   &&
     (eqb_result_of_decoding_and_execution_height
        (candidate (ADD :: ADD :: nil) (1 :: 2 :: 3 :: nil))
-       (OK_h (6 :: nil) 3))
+       (OK_h (6 :: nil) 2))
   &&
     (eqb_result_of_decoding_and_execution_height
        (candidate (SUB :: nil) (2 :: 3 :: nil))
-       (OK_h (1 :: nil) 2))
+       (OK_h (1 :: nil) 1))
   &&
     (eqb_result_of_decoding_and_execution_height
        (candidate (SUB :: SUB :: nil) (4 :: 3 :: 2 :: nil))
@@ -526,13 +526,13 @@ Definition test_fetch_decode_execute_loop_height_ltr (candidate : (list byte_cod
 
 Fixpoint fetch_decode_execute_loop_height_ltr (bcis : list byte_code_instruction) (ds : data_stack) : result_of_decoding_and_execution_height :=
   match bcis with
-  | nil => OK_h ds (list_length nat ds)
+  | nil => OK_h ds 0
   | bci :: bcis' =>
       match decode_execute_ltr bci ds with
       | OK ds' =>
           match fetch_decode_execute_loop_height_ltr bcis' ds' with
           | OK_h ds'' mh'' =>
-              OK_h ds'' (max (max (list_length nat ds) (list_length nat ds')) mh'')
+              OK_h ds'' (max (list_length nat ds') mh'')
           | KO_h s =>
               KO_h s
           end
@@ -545,7 +545,7 @@ Compute (test_fetch_decode_execute_loop_height_ltr fetch_decode_execute_loop_hei
 Lemma fold_unfold_fetch_decode_execute_loop_height_ltr_nil :
   forall (ds: data_stack),
     fetch_decode_execute_loop_height_ltr nil ds =
-      OK_h ds (list_length nat ds).
+      OK_h ds 0.
 Proof.
   fold_unfold_tactic fetch_decode_execute_loop_height_ltr.
 Qed.
@@ -559,7 +559,7 @@ Lemma fold_unfold_fetch_decode_execute_loop_height_ltr_cons :
       | OK ds' =>
           match fetch_decode_execute_loop_height_ltr bcis' ds' with
           | OK_h ds'' mh'' =>
-              OK_h ds'' (max (max (list_length nat ds) (list_length nat ds')) mh'')
+              OK_h ds'' (max (list_length nat ds') mh'')
           | KO_h s =>
               KO_h s
           end
@@ -671,7 +671,7 @@ Definition test_fetch_decode_execute_loop_height_rtl (candidate : (list byte_cod
 
 Fixpoint fetch_decode_execute_loop_height_rtl (bcis : list byte_code_instruction) (ds : data_stack) : result_of_decoding_and_execution_height :=
   match bcis with
-  | nil => OK_h ds (list_length nat ds)
+  | nil => OK_h ds 0
   | bci :: bcis' =>
       match decode_execute_rtl bci ds with
       | OK ds' =>
@@ -690,7 +690,7 @@ Compute (test_fetch_decode_execute_loop_height_rtl fetch_decode_execute_loop_hei
 Lemma fold_unfold_fetch_decode_execute_loop_height_rtl_nil :
   forall (ds: data_stack),
     fetch_decode_execute_loop_height_rtl nil ds =
-    OK_h ds (list_length nat ds).
+    OK_h ds 0.
 Proof.
   fold_unfold_tactic fetch_decode_execute_loop_height_rtl.
 Qed.
@@ -1276,11 +1276,16 @@ Lemma about_fetch_decode_execute_loop_height_ltr_eureka :
          (bcis : list byte_code_instruction)
          (ds : data_stack),
     (forall (ds1 : data_stack) (mh1 : nat),
-      fetch_decode_execute_loop_height_ltr (bci :: bcis) ds = OK_h ds1 mh1 ->
-      exists (ds2 : data_stack) (mh2 : nat),
-        (decode_execute_ltr bci ds = OK ds2) /\
-        (fetch_decode_execute_loop_height_ltr bcis ds2 = OK_h ds1 mh2) /\
-        (mh1 = max (max (list_length nat ds) (list_length nat ds2)) mh2))
+        fetch_decode_execute_loop_height_ltr (bci :: bcis) ds = OK_h ds1 mh1 ->
+        (exists (ds2 : data_stack) (mh2 : nat),
+            (decode_execute_ltr bci ds = OK ds2) /\
+              (fetch_decode_execute_loop_height_ltr bcis ds2 = OK_h ds1 mh2) /\
+              (mh1 = max (list_length nat ds2) mh2))
+        \/ (exists (ds2 : data_stack)
+             (s : string),
+              decode_execute_ltr bci ds = OK ds2
+              /\
+                fetch_decode_execute_loop_height_ltr bcis ds2 = KO_h s))
     /\
     (forall (s : string),
       fetch_decode_execute_loop_height_ltr (bci :: bcis) ds = KO_h s ->
@@ -1288,10 +1293,10 @@ Lemma about_fetch_decode_execute_loop_height_ltr_eureka :
       \/ (exists (ds2 : data_stack),
             decode_execute_ltr bci ds = OK ds2
             /\ fetch_decode_execute_loop_height_ltr bcis ds2 = KO_h s)).
+Admiit
 Proof.
   intros bci bcis ds.
   split.
-  
   - intros ds1 mh1 H_execute_all.
     rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons in H_execute_all.
     destruct (decode_execute_ltr bci ds) as [ds2 | s] eqn:H_de.
@@ -1306,7 +1311,6 @@ Proof.
            ++ symmetry. exact H_mh1.
       * discriminate H_execute_all.
     + discriminate H_execute_all.
-  
   - intros s H.
     rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons in H.
     destruct (decode_execute_ltr bci ds) as [ds2 | s'] eqn:H_de.
@@ -1351,8 +1355,8 @@ intros bci1s bci2s.
       * intros ds2 mh2 H_bci2s.
         rewrite -> fold_unfold_app_nil.
         rewrite -> H_ds1.
-        rewrite -> H_mh1.
-        rewrite -> Nat.max_0_r.
+        rewrite <- H_mh1.
+        rewrite -> Nat.max_0_l.
         exact H_bci2s.
       * intros s2 H_bci2s.
         rewrite -> fold_unfold_app_nil.
@@ -1361,18 +1365,72 @@ intros bci1s bci2s.
     + intros s H_bci1s.
       rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_nil in H_bci1s.
       discriminate H_bci1s.
-  
-  - (* Inductive case: bci1s = bci1 :: bci1s' *)
-    split.
+  - split.
     + intros ds1 mh1 H_bci1s.
-      rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons in H_bci1s.
-      destruct (decode_execute_ltr bci1 ds) as [ds_intermediate | s] eqn:H_bci1.
-      * destruct (fetch_decode_execute_loop_height_ltr bci1s' ds_intermediate) as 
-          [ds_final mh_intermediate | s] eqn:H_bci1s'.
+      rewrite -> fold_unfold_app_cons.
+      rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons.
+      split.
+      * intros ds2 mh2 H_bci2s.
+        rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons in H_bci1s.
+        Check (about_fetch_decode_execute_loop_height_ltr_eureka).
+        Check (about_fetch_decode_execute_loop_height_ltr_eureka bci1 bci1s').
+        Check (about_fetch_decode_execute_loop_height_ltr_eureka bci1 bci1s' ds).
+        destruct (about_fetch_decode_execute_loop_height_ltr_eureka bci1 bci1s' ds)
+          as [H_fdel_OK _].
+        Check (H_fdel_OK ds1 mh1).
+        Check (H_fdel_OK ds1 mh1 H_bci1s).
+        destruct (H_fdel_OK ds1 mh1 H_bci1s) as
+          [ds' [mh' [H_bci1 [H_bci1s' H_mh']]]].
+        rewrite -> H_bci1.
+        Check (IHbci1s' ds').
+        destruct ((IHbci1s' ds')) as [IHbci1s'_OK _].
+        clear IHbci1s'.
+        Check (IHbci1s'_OK ds1 mh').
+        destruct (IHbci1s'_OK ds1 mh') as [IHbci1s'_OK_OK _].
+        -- exact (H_bci1s').
+        -- Check (IHbci1s'_OK_OK ds2 mh2).
+           Check (IHbci1s'_OK_OK ds2 mh2 H_bci2s).
+           rewrite -> (IHbci1s'_OK_OK ds2 mh2 H_bci2s).
+           Check (H_mh').
+           rewrite -> H_mh'.
+           Search (max (max _ _) _). 
+           rewrite -> Nat.max_assoc.
+           reflexivity.
+      * intros s2 H_bci2s.
+        Check (about_fetch_decode_execute_loop_height_ltr_eureka).
+        Check (about_fetch_decode_execute_loop_height_ltr_eureka bci1 bci1s').
+        Check (about_fetch_decode_execute_loop_height_ltr_eureka bci1 bci1s' ds).
+        destruct (about_fetch_decode_execute_loop_height_ltr_eureka bci1 bci1s' ds)
+          as [H_fdel_OK H_fdel_KO].
+  
+        remember (H_fdel_KO s2) as H_fdel_KO_s2.
+        clear HeqH_fdel_KO_s2.
+        clear H_fdel_KO.
+        Check (H_fdel_KO_s2).
+        Check (H_fdel_OK 
+        Check (IHbci1s'
+        
+        
+        
+        
+        
+        rewrite -> gold
+          
+           
+           ++
+        Check (H_IHbci1s'_OK ds1 mh' H_bci1s').
+        assert (H_H_IHbci1s'_OK  := (H_IHbci1s'_OK ds1 mh' H_bci1s')).
+        destruct H_H_IHbci1s'_OK as [H_H_IHbci1s_OK_OK H_H_IHbci1s_OK_KO].
+        
+        
+        
+          
+      * destruct (fetch_decode_execute_loop_height_ltr bci1s' ds') as 
+          [ds'' mh'' | s] eqn:H_bci1s'.
         -- injection H_bci1s as H_ds1 H_mh1.
-           assert (IHbci1s' := IHbci1s' ds_intermediate).
+           assert (IHbci1s' := IHbci1s' ds').
            destruct IHbci1s' as [IHbci1s'_ok _].
-           assert (IHbci1s'_ok := IHbci1s'_ok ds_final mh_intermediate H_bci1s').
+           assert (IHbci1s'_ok := IHbci1s'_ok ds'' mh'' H_bci1s').
            destruct IHbci1s'_ok as [IHbci1s'_ok_ok IHbci1s'_ok_ko].
            split.
            ++ intros ds2 mh2 H_bci2s.
