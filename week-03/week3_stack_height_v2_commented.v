@@ -1392,7 +1392,7 @@ Proof.
              rewrite -> (Nat.add_max_distr_l (depth_right ae2) 0 (S (S (list_length nat ds)))).
              rewrite -> Nat.max_0_r.
              reflexivity.
-           }.
+           }
            rewrite -> bigger in fdel_concat_ae2.
            clear bigger.
            Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
@@ -1484,7 +1484,58 @@ Proof.
                     s2'
                     IHae1_OK_n1'
                     fdel_concat_ae2_ADD).
-    + 
+    + case (evaluate_ltr ae2) as [n2 | s2] eqn:E_ae2.
+      * split.
+        -- intros n H_absurd.
+           discriminate H_absurd.
+        --  intros s H_eq_s1'_s.
+            injection H_eq_s1'_s as H_eq_s1'_s.
+            destruct (IHae1 ds) as [_ IHae1_KO].
+            clear IHae1.
+            remember (IHae1_KO s1' (eq_refl (Expressible_msg s1'))) as IHae1_KO_s1'.
+            clear HeqIHae1_KO_s1'.
+            Check (about_fetch_decode_execute_loop_height_ltr_concatenation_KO
+                     (compile_ltr_aux ae1)
+                     (compile_ltr_aux ae2 ++ ADD :: nil)
+                     ds
+                     s1'
+                     IHae1_KO_s1').
+            rewrite -> (about_fetch_decode_execute_loop_height_ltr_concatenation_KO
+                         (compile_ltr_aux ae1)
+                         (compile_ltr_aux ae2 ++ ADD :: nil)
+                         ds
+                         s1'
+                         IHae1_KO_s1').
+            rewrite -> H_eq_s1'_s.
+            reflexivity.
+      * split.
+        -- intros n H_absurd.
+           discriminate H_absurd.
+        -- intros s H_eq_s1'_s.
+            injection H_eq_s1'_s as H_eq_s1'_s.
+            destruct (IHae1 ds) as [_ IHae1_KO].
+            clear IHae1.
+            remember (IHae1_KO s1' (eq_refl (Expressible_msg s1'))) as IHae1_KO_s1'.
+            clear HeqIHae1_KO_s1'.
+            Check (about_fetch_decode_execute_loop_height_ltr_concatenation_KO
+                     (compile_ltr_aux ae1)
+                     (compile_ltr_aux ae2 ++ ADD :: nil)
+                     ds
+                     s1'
+                     IHae1_KO_s1').
+            rewrite -> (about_fetch_decode_execute_loop_height_ltr_concatenation_KO
+                         (compile_ltr_aux ae1)
+                         (compile_ltr_aux ae2 ++ ADD :: nil)
+                         ds
+                         s1'
+                         IHae1_KO_s1').
+            rewrite -> H_eq_s1'_s.
+            reflexivity.
+  - 
+            
+            
+        
+        
 Admitted.
 
 (* ***** *)
