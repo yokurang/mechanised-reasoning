@@ -1059,9 +1059,9 @@ Qed.
 
 (* Depth *)
 
-(*** depth_left ***)
+(*** depth_rtl ***)
 
-Definition test_depth_left (candidate : arithmetic_expression -> nat) : bool :=
+Definition test_depth_rtl (candidate : arithmetic_expression -> nat) : bool :=
   let ae1 := (Literal 1) in
   let ae1 := (Literal 1) in
   let ae2 := (Plus
@@ -1077,45 +1077,45 @@ Definition test_depth_left (candidate : arithmetic_expression -> nat) : bool :=
     (Nat.eqb (candidate ae2) 2) &&
     (Nat.eqb (candidate ae3) 3).
 
-Fixpoint depth_left (ae : arithmetic_expression) : nat :=
+Fixpoint depth_rtl (ae : arithmetic_expression) : nat :=
   match ae with
   | Literal n => 0
   | Plus ae1 ae2 =>
-      let n1 := depth_left ae1 in
-      let n2 := depth_left ae2 in
+      let n1 := depth_rtl ae1 in
+      let n2 := depth_rtl ae2 in
       max (S n1) n2
   | Minus ae1 ae2 =>
-      let n1 := depth_left ae1 in
-      let n2 := depth_left ae2 in
+      let n1 := depth_rtl ae1 in
+      let n2 := depth_rtl ae2 in
       max (S n1) n2
 end.
 
-Compute (test_depth_left depth_left).
+Compute (test_depth_rtl depth_rtl).
 
-Lemma fold_unfold_depth_left_Literal :
+Lemma fold_unfold_depth_rtl_Literal :
   forall (n : nat),
-    depth_left (Literal n) = 0.
+    depth_rtl (Literal n) = 0.
 Proof.
-  fold_unfold_tactic depth_left.
+  fold_unfold_tactic depth_rtl.
 Qed.
 
-Lemma fold_unfold_depth_left_Plus :
+Lemma fold_unfold_depth_rtl_Plus :
   forall (ae1 ae2: arithmetic_expression),
-    depth_left (Plus ae1 ae2) = max (S (depth_left ae1)) (depth_left ae2).
+    depth_rtl (Plus ae1 ae2) = max (S (depth_rtl ae1)) (depth_rtl ae2).
 Proof.
-  fold_unfold_tactic depth_left.
+  fold_unfold_tactic depth_rtl.
 Qed.
 
-Lemma fold_unfold_depth_left_Minus :
+Lemma fold_unfold_depth_rtl_Minus :
   forall (ae1 ae2: arithmetic_expression),
-    depth_left (Minus ae1 ae2) = max (S (depth_left ae1)) (depth_left ae2).
+    depth_rtl (Minus ae1 ae2) = max (S (depth_rtl ae1)) (depth_rtl ae2).
 Proof.
-  fold_unfold_tactic depth_left.
+  fold_unfold_tactic depth_rtl.
 Qed.
 
-(*** depth_right ***)
+(*** depth_ltr ***)
 
-Definition test_depth_right (candidate : arithmetic_expression -> nat) : bool :=
+Definition test_depth_ltr (candidate : arithmetic_expression -> nat) : bool :=
   let ae1 := (Literal 1) in
   let ae1 := (Literal 1) in
   let ae2 := (Plus
@@ -1131,40 +1131,40 @@ Definition test_depth_right (candidate : arithmetic_expression -> nat) : bool :=
     (Nat.eqb (candidate ae2) 2) &&
     (Nat.eqb (candidate ae3) 2).
 
-Fixpoint depth_right (ae : arithmetic_expression) : nat :=
+Fixpoint depth_ltr (ae : arithmetic_expression) : nat :=
   match ae with
   | Literal n => 0
   | Plus ae1 ae2 =>
-      let n1 := depth_right ae1 in
-      let n2 := depth_right ae2 in
+      let n1 := depth_ltr ae1 in
+      let n2 := depth_ltr ae2 in
       max n1 (S n2)
   | Minus ae1 ae2 =>
-      let n1 := depth_right ae1 in
-      let n2 := depth_right ae2 in
+      let n1 := depth_ltr ae1 in
+      let n2 := depth_ltr ae2 in
       max n1 (S n2)
 end.
 
-Compute (test_depth_right depth_right).
+Compute (test_depth_ltr depth_ltr).
 
-Lemma fold_unfold_depth_right_Literal :
+Lemma fold_unfold_depth_ltr_Literal :
   forall (n : nat),
-    depth_right (Literal n) = 0.
+    depth_ltr (Literal n) = 0.
 Proof.
-  fold_unfold_tactic depth_right.
+  fold_unfold_tactic depth_ltr.
 Qed.
 
-Lemma fold_unfold_depth_right_Plus :
+Lemma fold_unfold_depth_ltr_Plus :
   forall (ae1 ae2: arithmetic_expression),
-    depth_right (Plus ae1 ae2) = max (depth_right ae1) (S (depth_right ae2)).
+    depth_ltr (Plus ae1 ae2) = max (depth_ltr ae1) (S (depth_ltr ae2)).
 Proof.
-  fold_unfold_tactic depth_right.
+  fold_unfold_tactic depth_ltr.
 Qed.
 
-Lemma fold_unfold_depth_right_Minus :
+Lemma fold_unfold_depth_ltr_Minus :
   forall (ae1 ae2: arithmetic_expression),
-    depth_right (Minus ae1 ae2) = max (depth_right ae1) (S (depth_right ae2)).
+    depth_ltr (Minus ae1 ae2) = max (depth_ltr ae1) (S (depth_ltr ae2)).
 Proof.
-  fold_unfold_tactic depth_right.
+  fold_unfold_tactic depth_ltr.
 Qed.
 
 (* ********** *)
@@ -1176,7 +1176,7 @@ Compute (let ae := (Plus (Minus (Plus (Literal 1) (Literal 1)) (Plus (Literal 1)
          match evaluate_ltr ae with
          | Expressible_nat n =>
              fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
-               OK_h (n :: ds) (list_length nat ds + S (depth_right (super_refactor_ltr ae)))
+               OK_h (n :: ds) (list_length nat ds + S (depth_ltr (super_refactor_ltr ae)))
          | Expressible_msg s =>
              fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
                KO_h s
@@ -1187,7 +1187,7 @@ Compute (let ae := (Plus (Minus (Plus (Minus (Literal 5) (Literal 4)) (Literal 4
          match evaluate_ltr ae with
          | Expressible_nat n =>
              fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
-               OK_h (n :: ds) (list_length nat ds + S (depth_right (super_refactor_ltr ae)))
+               OK_h (n :: ds) (list_length nat ds + S (depth_ltr (super_refactor_ltr ae)))
          | Expressible_msg s =>
              fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
                KO_h s
@@ -1198,7 +1198,7 @@ Compute (let ae := (Plus (Literal 4) (Minus (Literal 30) (Plus (Literal 2) (Plus
          match evaluate_ltr ae with
          | Expressible_nat n =>
              fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
-               OK_h (n :: ds) (list_length nat ds + S (depth_right (super_refactor_ltr ae)))
+               OK_h (n :: ds) (list_length nat ds + S (depth_ltr (super_refactor_ltr ae)))
          | Expressible_msg s =>
              fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
                KO_h s
@@ -1209,7 +1209,7 @@ Compute (let ae := (Minus (Literal 1) (Literal 2)) in
          match evaluate_ltr ae with
          | Expressible_nat n =>
              fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
-               OK_h (n :: ds) (list_length nat ds + S (depth_right (super_refactor_ltr ae)))
+               OK_h (n :: ds) (list_length nat ds + S (depth_ltr (super_refactor_ltr ae)))
          | Expressible_msg s =>
              fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
                KO_h s
@@ -1221,7 +1221,7 @@ Lemma main_theorem_aux :
     (forall (n : nat),
         evaluate_ltr ae = Expressible_nat n ->
         fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
-          OK_h (n :: ds) (list_length nat ds + S (depth_right (super_refactor_ltr ae))))
+          OK_h (n :: ds) (list_length nat ds + S (depth_ltr (super_refactor_ltr ae))))
     /\
       (forall (s : string),
         evaluate_ltr ae = Expressible_msg s ->
@@ -1265,7 +1265,7 @@ Compute (
     match (interpret_ltr (Source_program ae)) with
     | Expressible_nat n =>
         run_height_ltr (compile_ltr (Source_program (super_refactor_ltr ae))) =
-          (Expressible_nat n, S (depth_right (super_refactor_ltr ae)))
+          (Expressible_nat n, S (depth_ltr (super_refactor_ltr ae)))
     | Expressible_msg s =>
         (Expressible_msg s, 0) = (Expressible_msg s, 0)
     end).
@@ -1275,7 +1275,7 @@ Compute (
     match (interpret_ltr (Source_program ae)) with
     | Expressible_nat n =>
         run_height_ltr (compile_ltr (Source_program (super_refactor_ltr ae))) =
-          (Expressible_nat n, S (depth_right (super_refactor_ltr ae)))
+          (Expressible_nat n, S (depth_ltr (super_refactor_ltr ae)))
     | Expressible_msg s =>
         (Expressible_msg s, 0) = (Expressible_msg s, 0)
     end).
@@ -1285,7 +1285,7 @@ Compute (
     match (interpret_ltr (Source_program ae)) with
     | Expressible_nat n =>
         run_height_ltr (compile_ltr (Source_program (super_refactor_ltr ae))) =
-          (Expressible_nat n, S (depth_right (super_refactor_ltr ae)))
+          (Expressible_nat n, S (depth_ltr (super_refactor_ltr ae)))
     | Expressible_msg s =>
         (Expressible_msg s, 0) = (Expressible_msg s, 0)
     end).
@@ -1295,7 +1295,7 @@ Theorem main_theorem :
     (forall n : nat,
         interpret_ltr (Source_program ae) = Expressible_nat n ->
         run_height_ltr (compile_ltr (Source_program (super_refactor_ltr ae))) =
-          (Expressible_nat n, S (depth_right (super_refactor_ltr ae))))
+          (Expressible_nat n, S (depth_ltr (super_refactor_ltr ae))))
     /\
       (forall s : string,
         interpret_ltr (Source_program ae) = Expressible_msg s ->
