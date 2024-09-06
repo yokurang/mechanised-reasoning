@@ -1297,16 +1297,23 @@ Proof.
       clear Heqlesser_mh.
       rewrite -> Nat.max_comm.
       rewrite -> (Nat.max_r mh2 mh1 lesser_mh).
-      
-      rewrite -> eq_ll_ds_mh1.
-      reflexivity.
-    simpl.
-    unfold decode_execute_ltr.
+      rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons.
+      rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons in H_OK_ds'_ds''.
+      rewrite -> eq_ds_ds' .
+      case (decode_execute_ltr bci2 ds') as [ ds2' | s2' ] eqn:H_de_n.
+      -- case (fetch_decode_execute_loop_height_ltr bci2s' ds2') as [ ds2'' | s2' ] eqn:H_de_bci2.
+         ++ simpl.
+            rewrite -> H_OK_ds'_ds''.
+            admit.
+         ++ discriminate H_OK_ds'_ds''.
+      -- discriminate H_OK_ds'_ds''.
+  - rewrite <- app_comm_cons.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_nil.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons.
     intros H_OK_ds_ds' H_OK_ds'_ds''.
-    injection H_OK_ds_ds' as eq_ds_ds' eq_ll_ds_mh1.
-    unfold fetch_decode_execute_loop_height_ltr.
-    
-    
+    injection H_OK_ds'_ds'' as eq_ds'_ds'' eq_ll_ds_mh1.
+Admitted.
 
 Lemma about_fetch_decode_execute_loop_height_ltr_concatenation_OK_KO :
   forall (bci1s bci2s : list byte_code_instruction)
