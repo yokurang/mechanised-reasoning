@@ -120,14 +120,6 @@ Inductive expressible_value : Type :=
   Expressible_nat : nat -> expressible_value
 | Expressible_msg : string -> expressible_value.
 
-Definition String_eqb (s1 s2 : string) : bool :=
-  match String.string_dec s1 s2 with
-    left _ =>
-      true
-  | right _ =>
-      false
-  end.
-
 Definition expressible_value_eqb (ev1 ev2 : expressible_value) : bool :=
   match ev1 with
   | Expressible_nat n1 =>
@@ -142,7 +134,7 @@ Definition expressible_value_eqb (ev1 ev2 : expressible_value) : bool :=
       | Expressible_nat n2 =>
           false
       | Expressible_msg s2 =>
-          String_eqb s1 s2
+          String.eqb s1 s2
       end
   end.
 
@@ -171,29 +163,29 @@ Fixpoint evaluate_ltr (ae : arithmetic_expression) : expressible_value :=
       Expressible_nat n
   | Plus ae1 ae2 =>
       match evaluate_ltr ae1 with
-      | Expressible_nat n1 =>
-          match evaluate_ltr ae2 with
-          | Expressible_nat n2 =>
-              Expressible_nat (n1 + n2)
-          | Expressible_msg s2 =>
-              Expressible_msg s2
-          end
       | Expressible_msg s1 =>
           Expressible_msg s1
+      | Expressible_nat n1 =>
+          match evaluate_ltr ae2 with
+          | Expressible_msg s2 =>
+              Expressible_msg s2
+          | Expressible_nat n2 =>
+              Expressible_nat (n1 + n2)
+          end
       end
   | Minus ae1 ae2 =>
       match evaluate_ltr ae1 with
+      | Expressible_msg s1 =>
+          Expressible_msg s1
       | Expressible_nat n1 =>
           match evaluate_ltr ae2 with
+          | Expressible_msg s2 =>
+              Expressible_msg s2
           | Expressible_nat n2 =>
               if n1 <? n2
               then Expressible_msg (String.append "numerical underflow: -" (string_of_nat (n2 - n1)))
               else Expressible_nat (n1 - n2)
-          | Expressible_msg s2 =>
-              Expressible_msg s2
           end
-      | Expressible_msg s1 =>
-          Expressible_msg s1
       end
   end.
 
@@ -210,16 +202,16 @@ Qed.
 Lemma fold_unfold_evaluate_ltr_Plus :
   forall (ae1 ae2 : arithmetic_expression),
     evaluate_ltr (Plus ae1 ae2) =
-       match evaluate_ltr ae1 with
-      | Expressible_nat n1 =>
-          match evaluate_ltr ae2 with
-          | Expressible_nat n2 =>
-              Expressible_nat (n1 + n2)
-          | Expressible_msg s2 =>
-              Expressible_msg s2
-          end
+      match evaluate_ltr ae1 with
       | Expressible_msg s1 =>
           Expressible_msg s1
+      | Expressible_nat n1 =>
+          match evaluate_ltr ae2 with
+          | Expressible_msg s2 =>
+              Expressible_msg s2
+          | Expressible_nat n2 =>
+              Expressible_nat (n1 + n2)
+          end
       end.
 Proof.
   fold_unfold_tactic evaluate_ltr.
@@ -228,18 +220,18 @@ Qed.
 Lemma fold_unfold_evaluate_ltr_Minus :
   forall (ae1 ae2 : arithmetic_expression),
     evaluate_ltr (Minus ae1 ae2) =
-       match evaluate_ltr ae1 with
+      match evaluate_ltr ae1 with
+      | Expressible_msg s1 =>
+          Expressible_msg s1
       | Expressible_nat n1 =>
           match evaluate_ltr ae2 with
+          | Expressible_msg s2 =>
+              Expressible_msg s2
           | Expressible_nat n2 =>
               if n1 <? n2
               then Expressible_msg (String.append "numerical underflow: -" (string_of_nat (n2 - n1)))
               else Expressible_nat (n1 - n2)
-          | Expressible_msg s2 =>
-              Expressible_msg s2
           end
-      | Expressible_msg s1 =>
-          Expressible_msg s1
       end.
 Proof.
   fold_unfold_tactic evaluate_ltr.
@@ -266,29 +258,29 @@ Fixpoint evaluate_rtl (ae : arithmetic_expression) : expressible_value :=
       Expressible_nat n
   | Plus ae1 ae2 =>
       match evaluate_rtl ae2 with
-      | Expressible_nat n2 =>
-          match evaluate_rtl ae1 with
-          | Expressible_nat n1 =>
-              Expressible_nat (n1 + n2)
-          | Expressible_msg s1 =>
-              Expressible_msg s1
-          end
       | Expressible_msg s2 =>
           Expressible_msg s2
+      | Expressible_nat n2 =>
+          match evaluate_rtl ae1 with
+          | Expressible_msg s1 =>
+              Expressible_msg s1
+          | Expressible_nat n1 =>
+              Expressible_nat (n1 + n2)
+          end
       end
   | Minus ae1 ae2 =>
       match evaluate_rtl ae2 with
+      | Expressible_msg s2 =>
+          Expressible_msg s2
       | Expressible_nat n2 =>
           match evaluate_rtl ae1 with
+          | Expressible_msg s1 =>
+              Expressible_msg s1
           | Expressible_nat n1 =>
               if n1 <? n2
               then Expressible_msg (String.append "numerical underflow: -" (string_of_nat (n2 - n1)))
               else Expressible_nat (n1 - n2)
-          | Expressible_msg s1 =>
-              Expressible_msg s1
           end
-      | Expressible_msg s2 =>
-          Expressible_msg s2
       end
   end.
 
@@ -305,16 +297,16 @@ Qed.
 Lemma fold_unfold_evaluate_rtl_Plus :
   forall (ae1 ae2 : arithmetic_expression),
     evaluate_rtl (Plus ae1 ae2) =
-       match evaluate_rtl ae2 with
-      | Expressible_nat n2 =>
-          match evaluate_rtl ae1 with
-          | Expressible_nat n1 =>
-              Expressible_nat (n1 + n2)
-          | Expressible_msg s1 =>
-              Expressible_msg s1
-          end
+      match evaluate_rtl ae2 with
       | Expressible_msg s2 =>
           Expressible_msg s2
+      | Expressible_nat n2 =>
+          match evaluate_rtl ae1 with
+          | Expressible_msg s1 =>
+              Expressible_msg s1
+          | Expressible_nat n1 =>
+              Expressible_nat (n1 + n2)
+          end
       end.
 Proof.
   fold_unfold_tactic evaluate_rtl.
@@ -324,17 +316,17 @@ Lemma fold_unfold_evaluate_rtl_Minus :
   forall (ae1 ae2 : arithmetic_expression),
     evaluate_rtl (Minus ae1 ae2) =
       match evaluate_rtl ae2 with
+      | Expressible_msg s2 =>
+          Expressible_msg s2
       | Expressible_nat n2 =>
           match evaluate_rtl ae1 with
+          | Expressible_msg s1 =>
+              Expressible_msg s1
           | Expressible_nat n1 =>
               if n1 <? n2
               then Expressible_msg (String.append "numerical underflow: -" (string_of_nat (n2 - n1)))
               else Expressible_nat (n1 - n2)
-          | Expressible_msg s1 =>
-              Expressible_msg s1
           end
-      | Expressible_msg s2 =>
-          Expressible_msg s2
       end.
 Proof.
   fold_unfold_tactic evaluate_rtl.
@@ -347,7 +339,17 @@ Qed.
 (*** interpret_ltr ***)
 
 Definition test_interpret_ltr (candidate : source_program -> expressible_value) : bool :=
-  test_evaluate_ltr (fun ae => candidate (Source_program ae)).
+  (expressible_value_eqb (candidate (Source_program (Literal 5))) (Expressible_nat 5))
+  && (expressible_value_eqb (candidate (Source_program (Plus (Literal 5) (Literal 5)))) (Expressible_nat 10))
+  && (expressible_value_eqb (candidate (Source_program (Plus (Plus (Literal 1) (Literal 2)) (Literal 3)))) (Expressible_nat 6))
+  && (expressible_value_eqb (candidate (Source_program (Minus (Literal 5) (Literal 5)))) (Expressible_nat 0))
+  && (expressible_value_eqb (candidate (Source_program (Minus (Literal 5) (Literal 4)))) (Expressible_nat 1))
+  && (expressible_value_eqb (candidate (Source_program (Minus (Literal 4) (Literal 5)))) (Expressible_msg "numerical underflow: -1"))
+  && (expressible_value_eqb (candidate (Source_program (Minus (Minus (Literal 4) (Literal 5)) (Literal 5)))) (Expressible_msg "numerical underflow: -1"))
+  && (expressible_value_eqb (candidate (Source_program (Plus (Minus (Literal 4) (Literal 5)) (Literal 5)))) (Expressible_msg "numerical underflow: -1"))
+  && (expressible_value_eqb (candidate (Source_program (Minus (Literal 5) (Minus (Literal 4)(Literal 5))))) (Expressible_msg "numerical underflow: -1"))
+  && (expressible_value_eqb (candidate (Source_program (Plus (Literal 5) (Minus (Literal 4) (Literal 5))))) (Expressible_msg "numerical underflow: -1"))
+  && (expressible_value_eqb (candidate (Source_program (Plus (Minus (Literal 4) (Literal 5)) (Minus (Literal 3) (Literal 5))))) (Expressible_msg "numerical underflow: -1")).
 
 Definition interpret_ltr (sp : source_program) : expressible_value :=
   match sp with
@@ -359,7 +361,17 @@ Compute (test_interpret_ltr interpret_ltr = true).
 (*** interpret_rtl ***)
 
 Definition test_interpret_rtl (candidate : source_program -> expressible_value) : bool :=
-  test_evaluate_rtl (fun ae => candidate (Source_program ae)).
+  (expressible_value_eqb (candidate (Source_program (Literal 5))) (Expressible_nat 5))
+  && (expressible_value_eqb (candidate (Source_program (Plus (Literal 5) (Literal 5)))) (Expressible_nat 10))
+  && (expressible_value_eqb (candidate (Source_program (Plus (Plus (Literal 1) (Literal 2)) (Literal 3)))) (Expressible_nat 6))
+  && (expressible_value_eqb (candidate (Source_program (Minus (Literal 5) (Literal 5)))) (Expressible_nat 0))
+  && (expressible_value_eqb (candidate (Source_program (Minus (Literal 5) (Literal 4)))) (Expressible_nat 1))
+  && (expressible_value_eqb (candidate (Source_program (Minus (Literal 4) (Literal 5)))) (Expressible_msg "numerical underflow: -1"))
+  && (expressible_value_eqb (candidate (Source_program (Minus (Minus (Literal 4) (Literal 5)) (Literal 5)))) (Expressible_msg "numerical underflow: -1"))
+  && (expressible_value_eqb (candidate (Source_program (Plus (Minus (Literal 4) (Literal 5)) (Literal 5)))) (Expressible_msg "numerical underflow: -1"))
+  && (expressible_value_eqb (candidate (Source_program (Minus (Literal 5) (Minus (Literal 4)(Literal 5))))) (Expressible_msg "numerical underflow: -1"))
+  && (expressible_value_eqb (candidate (Source_program (Plus (Literal 5) (Minus (Literal 4) (Literal 5))))) (Expressible_msg "numerical underflow: -1"))
+  && (expressible_value_eqb (candidate (Source_program (Plus (Minus (Literal 4) (Literal 5)) (Minus (Literal 3) (Literal 5))))) (Expressible_msg "numerical underflow: -2")).
 
 Definition interpret_rtl (sp : source_program) : expressible_value :=
   match sp with
@@ -410,7 +422,7 @@ Definition eqb_result_of_decoding_and_execution (rde1 rde2 : result_of_decoding_
       | OK vs2 =>
           false
       | KO s2 =>
-          String_eqb s1 s2
+          String.eqb s1 s2
       end
   end.
 
@@ -473,7 +485,7 @@ Definition eqb_result_of_decoding_and_execution_height (rde1 rde2 : result_of_de
       | OK_h vs2 mh2 =>
           false
       | KO_h s2 =>
-          String_eqb s1 s2
+          String.eqb s1 s2
       end
   end.
 
@@ -652,7 +664,7 @@ Fixpoint fetch_decode_execute_loop_height_rtl (bcis : list byte_code_instruction
       | OK ds' =>
           match fetch_decode_execute_loop_height_rtl bcis' ds' with
           | OK_h ds'' mh'' =>
-              OK_h ds'' (max (max (list_length nat ds) (list_length nat ds')) mh'')
+              OK_h ds'' (max (list_length nat ds) mh'')
           | KO_h s =>
               KO_h s
           end
@@ -1159,51 +1171,148 @@ Qed.
 
 (*** Proving time ***)
 
-Compute (let ae := (Plus (Minus (Plus (Literal 1) (Literal 1)) (Plus (Literal 1) (Literal 1))) (Minus (Plus (Literal 1) (Literal 1)) (Plus (Literal 1) (Literal 1)))) in
-         let ds := (42 :: nil) in
-         match evaluate_ltr ae with
-         | Expressible_nat n =>
-             fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
-               OK_h (n :: ds) (list_length nat ds + S (depth_right (super_refactor_ltr ae)))
-         | Expressible_msg s =>
-             fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
-               KO_h s
-        end).
+(* test 1 : right skew ae1, right skew ae2, ds nil *)
+Compute(
+    let ae1 := (Plus (Literal 1) (Plus (Literal 2) (Plus (Literal 3) (Literal 4)))) in
+    let ae2 := (Plus (Literal 1) (Plus (Literal 2) (Plus (Literal 3) (Literal 4)))) in
+    let ds := nil in
+    match fetch_decode_execute_loop_height_ltr
+            (compile_ltr_aux (super_refactor_ltr ae1)) ds with
+    | OK_h (n1 :: ds') mh =>
+        fetch_decode_execute_loop_height_ltr
+          (compile_ltr_aux (super_refactor_ltr ae1)) ds =
+          OK_h (n1 :: ds)
+            (list_length nat ds + S (depth_right (super_refactor_ltr ae1))) ->
+        fetch_decode_execute_loop_height_ltr
+          (compile_ltr_aux (super_refactor_ltr_aux ae1 ae2)) ds =
+          match evaluate_ltr ae2 with
+          | Expressible_nat n2 =>
+              OK_h (n1 + n2 :: ds)
+                (list_length nat ds + S (depth_right (super_refactor_ltr_aux ae1 ae2)))
+          | Expressible_msg s2 =>
+              KO_h s2
+          end
+    | OK_h nil mh => mh = mh
+    | KO_h s => s = s
+    end).
 
-Compute (let ae := (Plus (Minus (Plus (Minus (Literal 5) (Literal 4)) (Literal 4)) (Literal 4)) (Literal 4)) in
-         let ds := (42 :: nil) in
-         match evaluate_ltr ae with
-         | Expressible_nat n =>
-             fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
-               OK_h (n :: ds) (list_length nat ds + S (depth_right (super_refactor_ltr ae)))
-         | Expressible_msg s =>
-             fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
-               KO_h s
-        end).
+(* test 2 : right skew ae1, right skew ae2, ds non-nil *)
+Compute(
+    let ae1 := (Plus (Plus (Plus (Literal 1) (Literal 2)) (Literal 3)) (Literal 4)) in
+    let ae2 := (Plus (Plus (Plus (Literal 1) (Literal 2)) (Literal 3)) (Literal 4)) in
+    let ds := (20 :: nil) in
+    match fetch_decode_execute_loop_height_ltr
+            (compile_ltr_aux (super_refactor_ltr ae1)) ds with
+    | OK_h (n1 :: ds') mh =>
+        fetch_decode_execute_loop_height_ltr
+          (compile_ltr_aux (super_refactor_ltr ae1)) ds =
+          OK_h (n1 :: ds)
+            (list_length nat ds + S (depth_right (super_refactor_ltr ae1))) ->
+        fetch_decode_execute_loop_height_ltr
+          (compile_ltr_aux (super_refactor_ltr_aux ae1 ae2)) ds =
+          match evaluate_ltr ae2 with
+          | Expressible_nat n2 =>
+              OK_h (n1 + n2 :: ds)
+                (list_length nat ds + S (depth_right (super_refactor_ltr_aux ae1 ae2)))
+          | Expressible_msg s2 =>
+              KO_h s2
+          end
+    | OK_h nil mh => mh = mh
+    | KO_h s => s = s
+    end).
 
-Compute (let ae := (Plus (Literal 4) (Minus (Literal 30) (Plus (Literal 2) (Plus (Literal 1) (Literal 0))))) in
-         let ds := (42 :: nil) in
-         match evaluate_ltr ae with
-         | Expressible_nat n =>
-             fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
-               OK_h (n :: ds) (list_length nat ds + S (depth_right (super_refactor_ltr ae)))
-         | Expressible_msg s =>
-             fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
-               KO_h s
-        end).
+(* test 3 : left skew ae1, right skew ae2, ds non-nil *)
+Compute(
+    let ae1 := (Plus (Literal 1) (Plus (Literal 2) (Plus (Literal 3) (Literal 4)))) in
+    let ae2 := (Plus (Plus (Plus (Literal 1) (Literal 2)) (Literal 3)) (Literal 4)) in
+    let ds := (20 :: nil) in
+    match fetch_decode_execute_loop_height_ltr
+            (compile_ltr_aux (super_refactor_ltr ae1)) ds with
+    | OK_h (n1 :: ds') mh =>
+        fetch_decode_execute_loop_height_ltr
+          (compile_ltr_aux (super_refactor_ltr ae1)) ds =
+          OK_h (n1 :: ds)
+            (list_length nat ds + S (depth_right (super_refactor_ltr ae1))) ->
+        fetch_decode_execute_loop_height_ltr
+          (compile_ltr_aux (super_refactor_ltr_aux ae1 ae2)) ds =
+          match evaluate_ltr ae2 with
+          | Expressible_nat n2 =>
+              OK_h (n1 + n2 :: ds)
+                (list_length nat ds + S (depth_right (super_refactor_ltr_aux ae1 ae2)))
+          | Expressible_msg s2 =>
+              KO_h s2
+          end
+    | OK_h nil mh => mh = mh
+    | KO_h s => s = s
+    end).
 
-Compute (let ae := (Minus (Literal 1) (Literal 2)) in
-         let ds := (42 :: nil) in
-         match evaluate_ltr ae with
-         | Expressible_nat n =>
-             fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
-               OK_h (n :: ds) (list_length nat ds + S (depth_right (super_refactor_ltr ae)))
-         | Expressible_msg s =>
-             fetch_decode_execute_loop_height_ltr (compile_ltr_aux (super_refactor_ltr ae)) ds =
-               KO_h s
-        end).
+(* test 4 : right skew ae1, left skew ae2, ds non-nil *)
+Compute(
+    let ae2 := (Plus (Literal 1) (Plus (Literal 2) (Plus (Literal 3) (Literal 4)))) in
+    let ae1 := (Plus (Plus (Plus (Literal 1) (Literal 2)) (Literal 3)) (Literal 4)) in
+    let ds := (20 :: nil) in
+    match fetch_decode_execute_loop_height_ltr
+            (compile_ltr_aux (super_refactor_ltr ae1)) ds with
+    | OK_h (n1 :: ds') mh =>
+        fetch_decode_execute_loop_height_ltr
+          (compile_ltr_aux (super_refactor_ltr ae1)) ds =
+          OK_h (n1 :: ds)
+            (list_length nat ds + S (depth_right (super_refactor_ltr ae1))) ->
+        fetch_decode_execute_loop_height_ltr
+          (compile_ltr_aux (super_refactor_ltr_aux ae1 ae2)) ds =
+          match evaluate_ltr ae2 with
+          | Expressible_nat n2 =>
+              OK_h (n1 + n2 :: ds)
+                (list_length nat ds + S (depth_right (super_refactor_ltr_aux ae1 ae2)))
+          | Expressible_msg s2 =>
+              KO_h s2
+          end
+    | OK_h nil mh =>
+        mh = mh
+    | KO_h s =>
+        s = s
+    end).
 
-Lemma main_theorem_aux :
+Lemma about_compile_ltr_refactor_ltr_OK :
+  forall (ae1 ae2 : arithmetic_expression)
+         (ds : data_stack)
+         (n1 : nat),
+    fetch_decode_execute_loop_height_ltr
+      (compile_ltr_aux (super_refactor_ltr ae1)) ds =
+      OK_h (n1 :: ds)
+        (list_length nat ds + S (depth_right (super_refactor_ltr ae1))) ->
+    fetch_decode_execute_loop_height_ltr
+      (compile_ltr_aux (super_refactor_ltr_aux ae1 ae2)) ds =
+      match evaluate_ltr ae2 with
+      | Expressible_nat n2 =>
+          OK_h (n1 + n2 :: ds)
+            (list_length nat ds + S (depth_right (super_refactor_ltr_aux ae1 ae2)))
+      | Expressible_msg s2 =>
+          KO_h s2
+      end.
+Proof.
+Admitted.
+
+Lemma about_compile_ltr_refactor_ltr_KO :
+  forall (ae1 ae2 : arithmetic_expression)
+         (ds : data_stack)
+         (s : string),
+    fetch_decode_execute_loop_height_ltr
+      (compile_ltr_aux (super_refactor_ltr ae1)) ds =
+      KO_h s ->
+    fetch_decode_execute_loop_height_ltr
+      (compile_ltr_aux (super_refactor_ltr_aux ae1 ae2)) ds =
+      KO_h s.
+Admitted.
+
+(* Proven in wk 2 *)
+Theorem super_refactoring_ltr_preserves_evaluation :
+  forall ae : arithmetic_expression,
+    evaluate_ltr (super_refactor_ltr ae) = evaluate_ltr ae.
+Proof.
+Admitted.
+
+Lemma running_ltr_on_refactor_ltr_gives_S_depth_right_aux :
   forall (ae : arithmetic_expression)
          (ds : data_stack),
     (forall (n : nat),
@@ -1242,124 +1351,40 @@ Proof.
         -- intros n H_eq_n1'n2'_n.
            injection H_eq_n1'n2'_n as H_eq_n1'n2'_n.
            destruct (IHae1 ds) as [H_OK_ae1 _].
-           destruct (IHae2 ds) as [H_OK_ae2 _].
-           Check (H_OK_ae1 n1' (eq_refl)).
-Admitted.
-
-Lemma about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK :
-  forall (bci1s bci2s : list byte_code_instruction)
-         (ds ds' ds'' : data_stack)
-         (mh1 mh2 : nat),
-    fetch_decode_execute_loop_height_ltr bci1s ds = OK_h ds' mh1 ->
-    fetch_decode_execute_loop_height_ltr bci2s ds' = OK_h ds'' mh2 ->
-    fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = OK_h ds'' (max mh1 mh2).
-Admitted.
-(* [od] no need for refactoring yet: prove the theorem in general: *)
-
-Lemma main_theorem_aux' :
-  forall (ae : arithmetic_expression)
-         (ds : data_stack),
-    (forall (n : nat),
-        evaluate_ltr ae = Expressible_nat n ->
-        fetch_decode_execute_loop_height_ltr (compile_ltr_aux ae) ds =
-          OK_h (n :: ds) (list_length nat ds + S (depth_right ae)))
-    /\
-      (forall (s : string),
-        evaluate_ltr ae = Expressible_msg s ->
-        fetch_decode_execute_loop_height_ltr (compile_ltr_aux ae) ds =
-          KO_h s).
-Proof.
-  intro ae.
-  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intro ds.
-  - rewrite -> fold_unfold_evaluate_ltr_Literal.
-    rewrite -> fold_unfold_compile_ltr_aux_Literal.
-    rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons.
-    unfold decode_execute_ltr.
-    rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_nil.
-    split.
-    + intros n' H_eq_n_n'.
-      injection H_eq_n_n' as H_eq_n_n'.
-      rewrite -> H_eq_n_n'.
-      simpl.
-      admit. (* [od] this subgoal is simple to prove, esp. if you first re-associate max *)
-    + intros s H_absurd.
-      discriminate H_absurd.
-  - rewrite -> fold_unfold_evaluate_ltr_Plus.
-    case (evaluate_ltr ae1) as [ n1' | s1' ] eqn:H_e_ae1.
-    + case (evaluate_ltr ae2) as [ n2' | s2' ] eqn:H_e_ae2.
+           remember (H_OK_ae1 n1' eq_refl) as H .
+           Check (about_compile_ltr_refactor_ltr_OK ae1 (super_refactor_ltr ae2) ds n1' H).
+           rewrite -> (about_compile_ltr_refactor_ltr_OK ae1 (super_refactor_ltr ae2) ds n1' H).
+           Check (super_refactoring_ltr_preserves_evaluation ae2).
+           rewrite -> (super_refactoring_ltr_preserves_evaluation ae2).
+           rewrite -> H_e_ae2.
+           rewrite -> H_eq_n1'n2'_n.
+           reflexivity.
+        -- intros s H_absurd.
+           discriminate H_absurd.
       * split.
-        -- intros n H_eq_n1'n2'_n.
-           injection H_eq_n1'n2'_n as H_eq_n1'n2'_n.
-           rewrite <- H_eq_n1'n2'_n.
-           rewrite -> fold_unfold_compile_ltr_aux_Plus.
-           rewrite -> fold_unfold_depth_right_Plus.
-           destruct (IHae1 ds) as [IHae1_OK _].
-           clear IHae1.
-           destruct (IHae2 (n1' ::ds)) as [IHae2_OK _].
-           clear IHae2.
-           Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
-                    (compile_ltr_aux ae1)
-                    (compile_ltr_aux ae2)
-                    ds
-                    (n1' :: ds)
-                    (n2' :: n1' :: ds)
-                    (list_length nat ds + S (depth_right ae1))
-                    (list_length nat (n1' :: ds) + S (depth_right ae2))
-                    (IHae1_OK n1' eq_refl)
-                    (IHae2_OK n2' eq_refl)
-                 ).
-           remember (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
-                    (compile_ltr_aux ae1)
-                    (compile_ltr_aux ae2)
-                    ds
-                    (n1' :: ds)
-                    (n2' :: n1' :: ds)
-                    (list_length nat ds + S (depth_right ae1))
-                    (list_length nat (n1' :: ds) + S (depth_right ae2))
-                    (IHae1_OK n1' eq_refl)
-                    (IHae2_OK n2' eq_refl)
-                    ) as H_concat_ae1_ae2.
-           clear HeqH_concat_ae1_ae2.
-           Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
-                    (compile_ltr_aux ae1 ++ compile_ltr_aux ae2)
-                    (ADD :: nil)
-                    ds
-                    (n2' :: n1' :: ds)
-                    (n1' + n2' :: ds)
-                    (Init.Nat.max (list_length nat ds + S (depth_right ae1))
-                       (list_length nat (n1' :: ds) + S (depth_right ae2)))
-                    (Init.Nat.max (list_length nat ds + S (depth_right ae1))
-                       (list_length nat (n1' :: ds) + S (depth_right ae2)))
-                    H_concat_ae1_ae2
-                 ).
-           remember (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
-                    (compile_ltr_aux ae1 ++ compile_ltr_aux ae2)
-                    (ADD :: nil)
-                    ds
-                    (n2' :: n1' :: ds)
-                    (n1' + n2' :: ds)
-                    (Init.Nat.max (list_length nat ds + S (depth_right ae1))
-                       (list_length nat (n1' :: ds) + S (depth_right ae2)))
-                    (Init.Nat.max (list_length nat ds + S (depth_right ae1))
-                       (list_length nat (n1' :: ds) + S (depth_right ae2)))
-                    H_concat_ae1_ae2
-                    ) as H_concat_ae1_ae2_ADD.
-           clear HeqH_concat_ae1_ae2_ADD.
-           clear H_concat_ae1_ae2.
-           unfold fetch_decode_execute_loop_height_ltr in H_concat_ae1_ae2_ADD at 1.
-           unfold decode_execute_ltr in H_concat_ae1_ae2_ADD.
-           rewrite ->3 fold_unfold_list_length_cons in H_concat_ae1_ae2_ADD.
-           
-           Check H_concat_ae1_ae2_ADD.
-
-           (list_length nat ds + S (depth_right ae2))).
-           (* [od] and here you need the theorem about applying fetch_decode_execute_loop_height_ltr to the concatenation of byte-code instructions *)
+        -- intros n H_absurd.
+           discriminate H_absurd.
+        -- intros s H_eq_s2'_s.
+           injection H_eq_s2'_s as H_eq_s2'_s.
            destruct (IHae1 ds) as [H_OK_ae1 _].
-           destruct (IHae2 ds) as [H_OK_ae2 _].
-           Check (H_OK_ae1 n1' (eq_refl)).
+           remember (H_OK_ae1 n1' eq_refl) as H.
+           Check (about_compile_ltr_refactor_ltr_OK ae1 (super_refactor_ltr ae2) ds n1' H).
+           rewrite -> (about_compile_ltr_refactor_ltr_OK ae1 (super_refactor_ltr ae2) ds n1' H).
+           rewrite -> (super_refactoring_ltr_preserves_evaluation ae2).
+           rewrite -> H_e_ae2.
+           rewrite -> H_eq_s2'_s.
+           reflexivity.
+    + split.
+      * intros n H_absurd.
+        discriminate H_absurd.
+      * intros s H_eq_s1'_s.
+        destruct (IHae1 ds) as [_ H_KO_ae1].
+        remember (H_KO_ae1 s H_eq_s1'_s) as H.
+        Check (about_compile_ltr_refactor_ltr_KO ae1 (super_refactor_ltr ae2) ds s H).
+        rewrite -> (about_compile_ltr_refactor_ltr_KO ae1 (super_refactor_ltr ae2) ds s H).
+        reflexivity.
+  - 
 Admitted.
-
-(* ***** *)
 
 Compute (
     let ae := (Plus (Minus (Plus (Minus (Literal 5) (Literal 4)) (Literal 4)) (Literal 4)) (Literal 4)) in
@@ -1391,7 +1416,7 @@ Compute (
         (Expressible_msg s, 0) = (Expressible_msg s, 0)
     end).
 
-Theorem main_theorem :
+Theorem running_ltr_on_refactor_ltr_gives_S_depth_right :
   forall (ae : arithmetic_expression),
     (forall n : nat,
         interpret_ltr (Source_program ae) = Expressible_nat n ->
@@ -1402,10 +1427,6 @@ Theorem main_theorem :
         interpret_ltr (Source_program ae) = Expressible_msg s ->
         run_height_ltr (compile_ltr (Source_program (super_refactor_ltr ae))) =
           (Expressible_msg s, 0)).
-(* [od] this statement is off because all occurrences of ae should be super-refactored, including the ones in the premiss:
-
-        interpret_ltr (Source_program (super_refactor_ltr ae)) = Expressible_nat n ->
-*)
 Proof.
   intro ae.
   unfold interpret_ltr, run_height_ltr, compile_ltr.
@@ -1422,121 +1443,6 @@ Proof.
     rewrite -> (H_KO s H_e_ae).
     reflexivity.
 Qed.
-
-(* [od] 
-   Anyway, the main theorem should not involve refactoring.
-   And then it should have corollaries where ae is actually the result of refactoring.
-   A simple way would be to quantify ae to be not an arithmetic_expression
-   but an arithmetic_expression_right (or _left)
-   and then adjust interpret_ltr and compile_ltr to operate on arithmetic_expression_right:
-
-Theorem main_theorem_ltr_right :
-  forall (aer : arithmetic_expression_right),
-    (forall n : nat,
-        interpret_ltr_right (Source_program_right aer) = Expressible_nat n ->
-        run_height_ltr (compile_ltr_right (Source_program_right aer)) =
-          (Expressible_nat n, S (depth_right_right aer)))
-    /\
-      (forall s : string,
-        interpret_ltr_right (Source_program_right aer) = Expressible_msg s ->
-        run_height_ltr (compile_ltr_right (Source_program_right aer)) =
-          (Expressible_msg s, 0)).
-
-Theorem main_theorem_ltr_left :
-  forall (ael : arithmetic_expression_left),
-    (forall n : nat,
-        interpret_ltr_left (Source_program_left ael) = Expressible_nat n ->
-        run_height_ltr (compile_ltr_left (Source_program_left ael)) =
-          (Expressible_nat n, S (depth_right_left ael)))
-    /\
-      (forall s : string,
-        interpret_ltr_left (Source_program_left ael) = Expressible_msg s ->
-        run_height_ltr (compile_ltr_left (Source_program_left ael)) =
-          (Expressible_msg s, 0)).
-
-Theorem main_theorem_rtl_right :
-  forall (aer : arithmetic_expression_right),
-    (forall n : nat,
-        interpret_rtl_right (Source_program_right aer) = Expressible_nat n ->
-        run_height_rtl (compile_rtl_right (Source_program_right aer)) =
-          (Expressible_nat n, S (depth_right_right aer)))
-    /\
-      (forall s : string,
-        interpret_rtl_right (Source_program_right aer) = Expressible_msg s ->
-        run_height_rtl (compile_rtl_right (Source_program_right aer)) =
-          (Expressible_msg s, 0)).
-
-Theorem main_theorem_rtl_left :
-  forall (ael : arithmetic_expression_left),
-    (forall n : nat,
-        interpret_rtl_left (Source_program_left ael) = Expressible_nat n ->
-        run_height_rtl (compile_rtl_left (Source_program_left ael)) =
-          (Expressible_nat n, S (depth_right_left ael)))
-    /\
-      (forall s : string,
-        interpret_rtl_left (Source_program_left ael) = Expressible_msg s ->
-        run_height_rtl (compile_rtl_left (Source_program_left ael)) =
-          (Expressible_msg s, 0)).
-
-These are the four cases, and, e.g.,
-
-   Definition depth_right_right (aer : arithmetic_expression_right) : nat :=
-     depth_right (super_refactor_right (arithmetic_expression_from_arithmetic_expression_right)).
-
-etc.
-
-But these four theorems are too much work.
-So for your handin, just consider one version per evaluation order:
-
-Theorem main_theorem_ltr_right :
-  forall (ae : arithmetic_expression),
-    (forall n : nat,
-        interpret_ltr (Source_program ae) = Expressible_nat n ->
-        run_height_ltr (compile_ltr (Source_program ae)) =
-          (Expressible_nat n, S (depth_ltr ae)))
-    /\
-      (forall s : string,
-        interpret_ltr (Source_program ae) = Expressible_msg s ->
-        run_height_ltr (compile_ltr (Source_program ae)) =
-          (Expressible_msg s, 0)).
-
-for a suitable definition of depth_ltr (maybe / probably either depth_left or depth_right; run some tests).
-
-This is a simple variation on what you did in your term project.
-
-Mutatis mutandis:
-
-Theorem main_theorem_rtl_right :
-  forall (ae : arithmetic_expression),
-    (forall n : nat,
-        interpret_rtl (Source_program ae) = Expressible_nat n ->
-        run_height_rtl (compile_rtl (Source_program ae)) =
-          (Expressible_nat n, S (depth_rtl ae)))
-    /\
-      (forall s : string,
-        interpret_rtl (Source_program ae) = Expressible_msg s ->
-        run_height_rtl (compile_rtl (Source_program ae)) =
-          (Expressible_msg s, 0)).
-
-for a suitable definition of depth_rtl (maybe / probably either depth_right or depth_left; run some tests).
-
-
-And then you can, by hand (no theorem and no proofs), characterize the result of depth_ltr and of depth_rtl
-when the input is left-refactored and when it is right-refactored.
-
-Hopefully your characterization can explain why
-
-* refactoring the source expression on the left is a good idea when using ltr evaluation (it requires a smaller stack at run time)
-
-* refactoring the source expression on the right is a bad idea when using ltr evaluation (it requires a bigger stack at run time)
-
-* refactoring the source expression on the left is a bad idea when using rtl evaluation (it requires a bigger stack at run time)
-
-* refactoring the source expression on the right is a good idea when using rtl evaluation (it requires a smaller stack at run time)
-
-since that is the point of this handin.
-
-*)
 
 (* ********** *)
 
