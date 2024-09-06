@@ -116,6 +116,9 @@ Inductive source_program : Type :=
 
 (* Semantics: *)
 
+Definition msg_underflow_minus (n1 n2 : nat) : string :=
+  String.append "numerical underflow: -" (string_of_nat (n2 - n1)).
+
 Inductive expressible_value : Type :=
   Expressible_nat : nat -> expressible_value
 | Expressible_msg : string -> expressible_value.
@@ -187,7 +190,7 @@ Fixpoint evaluate_ltr (ae : arithmetic_expression) : expressible_value :=
           match evaluate_ltr ae2 with
           | Expressible_nat n2 =>
               if n1 <? n2
-              then Expressible_msg (String.append "numerical underflow: -" (string_of_nat (n2 - n1)))
+              then Expressible_msg (msg_underflow_minus n1 n2)
               else Expressible_nat (n1 - n2)
           | Expressible_msg s2 =>
               Expressible_msg s2
@@ -233,7 +236,7 @@ Lemma fold_unfold_evaluate_ltr_Minus :
           match evaluate_ltr ae2 with
           | Expressible_nat n2 =>
               if n1 <? n2
-              then Expressible_msg (String.append "numerical underflow: -" (string_of_nat (n2 - n1)))
+              then Expressible_msg (msg_underflow_minus n1 n2)
               else Expressible_nat (n1 - n2)
           | Expressible_msg s2 =>
               Expressible_msg s2
@@ -282,7 +285,7 @@ Fixpoint evaluate_rtl (ae : arithmetic_expression) : expressible_value :=
           match evaluate_rtl ae1 with
           | Expressible_nat n1 =>
               if n1 <? n2
-              then Expressible_msg (String.append "numerical underflow: -" (string_of_nat (n2 - n1)))
+              then Expressible_msg (msg_underflow_minus n1 n2)
               else Expressible_nat (n1 - n2)
           | Expressible_msg s1 =>
               Expressible_msg s1
@@ -328,7 +331,7 @@ Lemma fold_unfold_evaluate_rtl_Minus :
           match evaluate_rtl ae1 with
           | Expressible_nat n1 =>
               if n1 <? n2
-              then Expressible_msg (String.append "numerical underflow: -" (string_of_nat (n2 - n1)))
+              then Expressible_msg (msg_underflow_minus n1 n2)
               else Expressible_nat (n1 - n2)
           | Expressible_msg s1 =>
               Expressible_msg s1
@@ -443,7 +446,7 @@ Definition decode_execute_ltr (bci : byte_code_instruction) (ds : data_stack) : 
           | n1 :: ds'' =>
               match n1 <? n2 with
               | true =>
-                  KO (String.append "numerical underflow: -" (string_of_nat (n2 - n1)))
+                  KO (msg_underflow_minus n1 n2)
               | false =>
                   OK ((n1 - n2) :: ds'')
               end
@@ -497,7 +500,11 @@ Definition test_fetch_decode_execute_loop_height_ltr (candidate : (list byte_cod
     (eqb_result_of_decoding_and_execution_height
        (candidate
           (PUSH 1 :: PUSH 2 :: ADD :: PUSH 3 :: ADD :: PUSH 4 :: ADD :: nil) nil)
-       (OK_h (10 :: nil) 2)).
+       (OK_h (10 :: nil) 2))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate (SUB :: nil) (4 :: 3 :: nil))
+       (KO_h "numerical underflow: -1")).
 
 Fixpoint fetch_decode_execute_loop_height_ltr (bcis : list byte_code_instruction) (ds : data_stack) : result_of_decoding_and_execution_height :=
   match bcis with
@@ -611,7 +618,7 @@ Definition decode_execute_rtl (bci : byte_code_instruction) (ds : data_stack) : 
           | n2 :: ds'' =>
               match n1 <? n2 with
               | true =>
-                  KO (String.append "numerical underflow: -" (string_of_nat (n2 - n1)))
+                  KO (msg_underflow_minus n1 n2)
               | false =>
                   OK ((n1 - n2) :: ds'')
               end
@@ -1531,10 +1538,109 @@ Proof.
                          IHae1_KO_s1').
             rewrite -> H_eq_s1'_s.
             reflexivity.
-  - 
-            
-            
+  - rewrite -> fold_unfold_evaluate_ltr_Minus.
+    rewrite -> fold_unfold_compile_ltr_aux_Minus.
+    rewrite -> fold_unfold_depth_right_Minus.
+    case (evaluate_ltr ae1) as [n1 | s1] eqn:E_ae1.
+    + case (evaluate_ltr ae2) as [n2 | s2] eqn:E_ae2.
+      * case (n1 <? n2) as [ | ] eqn: H_lt_n1_n2.
+        -- split.
+           ++ intros n H_absurd.
+              discriminate H_absurd.
+           ++ intros s H_eq_err_s.
+              injection H_eq_err_s as H_eq_err_s.
+              destruct (IHae1 ds) as [IHae1_OK _].
+              clear IHae1.
+              destruct (IHae2 (n1 :: ds)) as [IHae2_OK _].
+              clear IHae2.
+              remember (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_KO
+                       (compile_ltr_aux ae1)
+                       (compile_ltr_aux ae2 ++ SUB :: nil)
+                       (ds)
+                       (n1 :: ds)
+                       (list_length nat ds + S (depth_right ae1))
+                       s
+                       (IHae1_OK n1 eq_refl)
+                       ) as H_fdel_OK_KO.
+              clear HeqH_fdel_OK_KO.
+              Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_KO
+                       (compile_ltr_aux ae2)
+                       (SUB :: nil)
+                       (n1 :: ds)
+                       (n2 :: n1 :: ds)
+                       (list_length nat (n1 :: ds) + S (depth_right ae2))
+                       s
+                       (IHae2_OK n2 eq_refl)
+                    ).
+              assert (fdel_SUB_KO :=
+                        (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_KO
+                           (compile_ltr_aux ae2)
+                           (SUB :: nil)
+                           (n1 :: ds)
+                           (n2 :: n1 :: ds)
+                           (list_length nat (n1 :: ds) + S (depth_right ae2))
+                           s
+                           (IHae2_OK n2 eq_refl)
+                     )).
+              rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons in fdel_SUB_KO.
+              unfold decode_execute_ltr in fdel_SUB_KO.
+              rewrite -> H_lt_n1_n2 in fdel_SUB_KO.
+              rewrite -> H_eq_err_s in fdel_SUB_KO.
+              Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_KO
+                       (compile_ltr_aux ae1)
+                       (compile_ltr_aux ae2 ++ SUB :: nil)
+                       (ds)
+                       (n1 :: ds)
+                       (list_length nat ds + S (depth_right ae1))
+                       s
+                       (IHae1_OK n1 eq_refl)
+                       (fdel_SUB_KO eq_refl)
+                    ).
+              rewrite -> (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_KO
+                           (compile_ltr_aux ae1)
+                           (compile_ltr_aux ae2 ++ SUB :: nil)
+                           (ds)
+                           (n1 :: ds)
+                           (list_length nat ds + S (depth_right ae1))
+                           s
+                           (IHae1_OK n1 eq_refl)
+                           (fdel_SUB_KO eq_refl)
+                ).
+              reflexivity.
+        -- split.
+           ++ intros n H_eq_minus_n1_n2_n.
+              injection H_eq_minus_n1_n2_n as H_eq_minus_n1_n2_n.
+              destruct (IHae1 ds) as [IHae1_OK _].
+              clear IHae1.
+              destruct (IHae2 (n1 :: ds)) as [IHae2_OK _].
+              clear IHae2.
+              Check (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
+                       (compile_ltr_aux ae1)
+                       (compile_ltr_aux ae2 ++ SUB :: nil)
+                       ds
+                       (n1 :: ds)
+                       (n2 :: n1 :: ds)
+                       (list_length nat ds + S (depth_right ae1))
+                       (list_length nat (n1 :: ds) + S (depth_right ae2))
+                       (IHae1_OK n1 eq_refl)).
+              remember (about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK
+                       (compile_ltr_aux ae1)
+                       (compile_ltr_aux ae2 ++ SUB :: nil)
+                       ds
+                       (n1 :: ds)
+                       (n2 :: n1 :: ds)
+                       (list_length nat ds + S (depth_right ae1))
+                       (list_length nat (n1 :: ds) + S (depth_right ae2))
+                       (IHae1_OK n1 eq_refl)) as H_fdel_OK_OK.
+              clear HeqH_fdel_OK_OK.
+              
+             admit.
+           ++ intros s H_absurd.
+              discriminate H_absurd.
         
+              
+              
+             
         
 Admitted.
 
