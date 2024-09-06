@@ -1260,6 +1260,59 @@ Lemma about_fetch_decode_execute_loop_height_ltr_concatenation_OK_OK :
     fetch_decode_execute_loop_height_ltr bci1s ds = OK_h ds' mh1 ->
     fetch_decode_execute_loop_height_ltr bci2s ds' = OK_h ds'' mh2 ->
     fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = OK_h ds'' (max mh1 mh2).
+Proof.
+  intro bci1s.
+  induction bci1s as [ | bci bci1s' IHbci1s' ];
+    intros [ | bci2 bci2s' ] ds ds' ds''  mh1 mh2.
+  - rewrite ->3 fold_unfold_fetch_decode_execute_loop_height_ltr_nil.
+    intros H_OK_ds_ds' H_OK_ds'_ds''.
+    injection H_OK_ds_ds' as eq_ds_ds' eq_ll_ds_mh1.
+    injection H_OK_ds'_ds'' as eq_ds'_ds'' eq_ll_ds'_mh2.
+    rewrite -> (eq_trans eq_ds_ds' eq_ds'_ds'') at 1.
+    case (mh1 <=? mh2) eqn:greater_mh.
+    + Search (_ <=? _ = true -> _).
+      Check (leb_complete mh1 mh2 greater_mh).
+      Search (_ <= _ -> max _ _ = _).
+      Check (Nat.max_r mh1 mh2 (leb_complete mh1 mh2 greater_mh)).
+      rewrite -> (Nat.max_r mh1 mh2 (leb_complete mh1 mh2 greater_mh)).
+      rewrite -> eq_ds_ds'.
+      rewrite -> eq_ll_ds'_mh2.
+      reflexivity.
+    + Search (_ <=? _ = false -> _).
+      remember (Nat.lt_le_incl  mh2 mh1 (leb_complete_conv mh2 mh1 greater_mh)) as lesser_mh.
+      clear Heqlesser_mh.
+      rewrite -> Nat.max_comm.
+      rewrite -> (Nat.max_r mh2 mh1 lesser_mh).
+      rewrite -> eq_ll_ds_mh1.
+      reflexivity.
+  - rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_nil.
+    rewrite -> app_nil_l.
+    intros H_OK_ds_ds' H_OK_ds'_ds''.
+    injection H_OK_ds_ds' as eq_ds_ds' eq_ll_ds_mh1.
+    case (mh1 <=? mh2) eqn:greater_mh.
+    + rewrite -> (Nat.max_r mh1 mh2 (leb_complete mh1 mh2 greater_mh)).
+      rewrite -> eq_ds_ds'.
+      exact H_OK_ds'_ds''.
+    + remember (Nat.lt_le_incl mh2 mh1 (leb_complete_conv mh2 mh1 greater_mh)) as lesser_mh.
+      clear Heqlesser_mh.
+      rewrite -> Nat.max_comm.
+      rewrite -> (Nat.max_r mh2 mh1 lesser_mh).
+      rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons.
+      rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons in H_OK_ds'_ds''.
+      rewrite -> eq_ds_ds' .
+      case (decode_execute_ltr bci2 ds') as [ ds2' | s2' ] eqn:H_de_n.
+      -- case (fetch_decode_execute_loop_height_ltr bci2s' ds2') as [ ds2'' | s2' ] eqn:H_de_bci2.
+         ++ simpl.
+            rewrite -> H_OK_ds'_ds''.
+            admit.
+         ++ discriminate H_OK_ds'_ds''.
+      -- discriminate H_OK_ds'_ds''.
+  - rewrite <- app_comm_cons.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_nil.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons.
+    intros H_OK_ds_ds' H_OK_ds'_ds''.
+    injection H_OK_ds'_ds'' as eq_ds'_ds'' eq_ll_ds_mh1.
 Admitted.
 
 Lemma about_fetch_decode_execute_loop_height_ltr_concatenation_OK_KO :
