@@ -526,7 +526,8 @@ Definition test_fetch_decode_execute_loop_height_ltr (candidate : (list byte_cod
 
 Fixpoint fetch_decode_execute_loop_height_ltr (bcis : list byte_code_instruction) (ds : data_stack) : result_of_decoding_and_execution_height :=
   match bcis with
-  | nil => OK_h ds 0
+  | nil =>
+      OK_h ds 0
   | bci :: bcis' =>
       match decode_execute_ltr bci ds with
       | OK ds' =>
@@ -618,19 +619,24 @@ Definition test_decode_execute_rtl (candidate : byte_code_instruction -> data_st
 
 Definition decode_execute_rtl (bci : byte_code_instruction) (ds : data_stack) : result_of_decoding_and_execution :=
   match bci with
-  | PUSH n => OK (n :: ds)
+  | PUSH n =>
+      OK (n :: ds)
   | ADD =>
       match ds with
-      | nil => KO "ADD: stack underflow"
+      | nil =>
+          KO "ADD: stack underflow"
       | n1 :: ds' =>
           match ds' with
-          | n2 :: ds'' => OK ((n1 + n2) :: ds'')
-          | nil => KO "ADD: stack underflow"
+          | n2 :: ds'' =>
+              OK ((n1 + n2) :: ds'')
+          | nil =>
+              KO "ADD: stack underflow"
           end
       end
   | SUB =>
       match ds with
-      | nil => KO "SUB: stack underflow"
+      | nil =>
+          KO "SUB: stack underflow"
       | n1 :: ds' =>
           match ds' with
           | n2 :: ds'' =>
@@ -640,7 +646,8 @@ Definition decode_execute_rtl (bci : byte_code_instruction) (ds : data_stack) : 
               | false =>
                   OK ((n1 - n2) :: ds'')
               end
-          | nil => KO "SUB: stack underflow"
+          | nil =>
+              KO "SUB: stack underflow"
           end
       end
   end.
@@ -671,7 +678,8 @@ Definition test_fetch_decode_execute_loop_height_rtl (candidate : (list byte_cod
 
 Fixpoint fetch_decode_execute_loop_height_rtl (bcis : list byte_code_instruction) (ds : data_stack) : result_of_decoding_and_execution_height :=
   match bcis with
-  | nil => OK_h ds 0
+  | nil =>
+      OK_h ds 0
   | bci :: bcis' =>
       match decode_execute_rtl bci ds with
       | OK ds' =>
@@ -681,7 +689,8 @@ Fixpoint fetch_decode_execute_loop_height_rtl (bcis : list byte_code_instruction
           | KO_h s =>
               KO_h s
           end
-      | KO s => KO_h s
+      | KO s =>
+          KO_h s
       end
   end.
 
@@ -741,10 +750,12 @@ Definition run_height_rtl (tp : target_program) : expressible_value * nat :=
         | (n :: ds') =>
             match ds' with
             | nil => ((Expressible_nat n), mh)
-            | (n' :: ds'') => ((Expressible_msg "too many results on the data stack"), 0)
+            | (n' :: ds'') =>
+                ((Expressible_msg "too many results on the data stack"), 0)
             end
         end
-    | KO_h s => ((Expressible_msg s), 0)
+    | KO_h s =>
+        ((Expressible_msg s), 0)
     end
   end.
 
@@ -818,9 +829,12 @@ Definition test_compile_ltr_aux (candidate : arithmetic_expression -> (list byte
 
 Fixpoint compile_ltr_aux (ae : arithmetic_expression) : list byte_code_instruction :=
     match ae with
-    | Literal n => PUSH n :: nil
-    | Plus ae1 ae2 => compile_ltr_aux ae1 ++ compile_ltr_aux ae2 ++ (ADD :: nil)
-    | Minus ae1 ae2 => compile_ltr_aux ae1 ++ compile_ltr_aux ae2 ++ (SUB :: nil)
+    | Literal n =>
+        PUSH n :: nil
+    | Plus ae1 ae2 =>
+        compile_ltr_aux ae1 ++ compile_ltr_aux ae2 ++ (ADD :: nil)
+    | Minus ae1 ae2 =>
+        compile_ltr_aux ae1 ++ compile_ltr_aux ae2 ++ (SUB :: nil)
     end.
 
 Compute (test_compile_ltr_aux compile_ltr_aux = true).
@@ -859,7 +873,8 @@ Definition test_compile_ltr (candidate : source_program -> target_program) : boo
 
 Definition compile_ltr (sp : source_program) : target_program :=
   match sp with
-  | Source_program ae => Target_program (compile_ltr_aux ae)
+  | Source_program ae =>
+      Target_program (compile_ltr_aux ae)
   end.
 
 Compute (test_compile_ltr compile_ltr = true).
@@ -876,9 +891,12 @@ Definition test_compile_rtl_aux (candidate : arithmetic_expression -> (list byte
 
 Fixpoint compile_rtl_aux (ae : arithmetic_expression) : list byte_code_instruction :=
     match ae with
-    | Literal n => PUSH n :: nil
-    | Plus ae1 ae2 => compile_rtl_aux ae2 ++ compile_rtl_aux ae1 ++ (ADD :: nil)
-    | Minus ae1 ae2 => compile_rtl_aux ae2 ++ compile_rtl_aux ae1 ++ (SUB :: nil)
+    | Literal n =>
+        PUSH n :: nil
+    | Plus ae1 ae2 =>
+        compile_rtl_aux ae2 ++ compile_rtl_aux ae1 ++ (ADD :: nil)
+    | Minus ae1 ae2 =>
+        compile_rtl_aux ae2 ++ compile_rtl_aux ae1 ++ (SUB :: nil)
     end.
 
 Compute (test_compile_rtl_aux compile_rtl_aux = true).
@@ -917,7 +935,8 @@ Definition test_compile_rtl (candidate : source_program -> target_program) : boo
 
 Definition compile_rtl (sp : source_program) : target_program :=
   match sp with
-  | Source_program ae => Target_program (compile_rtl_aux ae)
+  | Source_program ae =>
+      Target_program (compile_rtl_aux ae)
   end.
 
 Compute (test_compile_rtl compile_rtl = true).
@@ -1092,7 +1111,8 @@ Definition test_depth_left (candidate : arithmetic_expression -> nat) : bool :=
 
 Fixpoint depth_left (ae : arithmetic_expression) : nat :=
   match ae with
-  | Literal n => 0
+  | Literal n =>
+      0
   | Plus ae1 ae2 =>
       let n1 := depth_left ae1 in
       let n2 := depth_left ae2 in
@@ -1146,7 +1166,8 @@ Definition test_depth_right (candidate : arithmetic_expression -> nat) : bool :=
 
 Fixpoint depth_right (ae : arithmetic_expression) : nat :=
   match ae with
-  | Literal n => 0
+  | Literal n =>
+      0
   | Plus ae1 ae2 =>
       let n1 := depth_right ae1 in
       let n2 := depth_right ae2 in
@@ -1199,9 +1220,8 @@ Lemma about_fetch_decode_execute_loop_height_ltr_OK_eureka :
 Proof.
   intros bci bcis ds ds1 mh1 H_execute_all.
   rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons in H_execute_all.
-  destruct (decode_execute_ltr bci ds) as [ds2 | s] eqn:H_de.
-  - destruct (fetch_decode_execute_loop_height_ltr bcis ds2) as
-      [ ds3 mh2 | s ] eqn:H_fdel.
+  destruct (decode_execute_ltr bci ds) as [ ds2 | s ] eqn:H_de.
+  - destruct (fetch_decode_execute_loop_height_ltr bcis ds2) as [ ds3 mh2 | s ] eqn:H_fdel.
     + injection H_execute_all as H_ds1 H_mh1.
       exists ds2, mh2.
       split.
@@ -1237,27 +1257,25 @@ Proof.
     rewrite -> H_ds'.
     intro ly.
     exact ly.
-  - intros H_bcis_ds ds'' mh'' H_bci2s_ds'_eq_ds''_mh''.
+  - intros H_bci1s_ds_OK_ds'_mh' ds'' mh'' H_bci2s_ds'_OK_ds''_mh''.
     rewrite <- app_comm_cons.
     Check (about_fetch_decode_execute_loop_height_ltr_OK_eureka
              bci1
              bci1s'
              ds ds'
-             mh' H_bcis_ds).
+             mh' H_bci1s_ds_OK_ds'_mh').
     destruct (about_fetch_decode_execute_loop_height_ltr_OK_eureka
                 bci1
                 bci1s'
                 ds ds'
-                mh' H_bcis_ds) as [ds2
-                                     [mh2
-                                        [del_bci1_ds_eq_OK_ds2
-                                           [fdel_bci1s'_ds2_eq_OK_ds'_mh2 mh'_eq]]]].
+                mh' H_bci1s_ds_OK_ds'_mh')
+      as [ds2 [mh2 [H_bci1_ds_OK_ds2 [H_bci1s'_ds2_OK_ds'_mh2 mh'_eq]]]].
     rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons.
-    rewrite -> del_bci1_ds_eq_OK_ds2.
-    Check (IHbci1s' bci2s ds2 ds' mh2 fdel_bci1s'_ds2_eq_OK_ds'_mh2 ds'' mh''
-             H_bci2s_ds'_eq_ds''_mh'').
-    rewrite -> (IHbci1s' bci2s ds2 ds' mh2 fdel_bci1s'_ds2_eq_OK_ds'_mh2 ds'' mh''
-                  H_bci2s_ds'_eq_ds''_mh'').
+    rewrite -> H_bci1_ds_OK_ds2.
+    Check (IHbci1s' bci2s ds2 ds' mh2 H_bci1s'_ds2_OK_ds'_mh2 ds'' mh''
+             H_bci2s_ds'_OK_ds''_mh'').
+    rewrite -> (IHbci1s' bci2s ds2 ds' mh2 H_bci1s'_ds2_OK_ds'_mh2 ds'' mh''
+             H_bci2s_ds'_OK_ds''_mh'').
     rewrite -> Nat.max_assoc.
     rewrite -> mh'_eq.
     reflexivity.
@@ -1269,9 +1287,9 @@ Lemma about_fetch_decode_execute_loop_height_ltr_concatenate_OK_KO :
          (ds' : data_stack)
          (mh' : nat),
     fetch_decode_execute_loop_height_ltr bci1s ds = OK_h ds' mh' ->
-    (forall (s : string),
-        fetch_decode_execute_loop_height_ltr bci2s ds' = KO_h s ->
-        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s).
+    (forall (s'' : string),
+        fetch_decode_execute_loop_height_ltr bci2s ds' = KO_h s'' ->
+        fetch_decode_execute_loop_height_ltr (bci1s ++ bci2s) ds = KO_h s'').
 Proof.
   intros bci1s.
   induction bci1s as [ | bci1 bci1s' IHbci1s' ];
@@ -1279,25 +1297,23 @@ Proof.
   - intro H_injection.
     rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_nil in H_injection.
     injection H_injection as H_ds' H_mh'.
-    intros ds''.
+    intro s''.
     rewrite -> app_nil_l.
     rewrite -> H_ds'.
     intro ly.
     exact ly.
-  - intros H_bcis_ds s H_bci2s_ds'_eq_ds''.
+  - intros H_bci1s_ds_OK_ds'_mh' s'' H_bci2s_ds'_KO_s''.
     rewrite <- app_comm_cons.
     destruct (about_fetch_decode_execute_loop_height_ltr_OK_eureka
                 bci1
                 bci1s'
                 ds ds'
-                mh' H_bcis_ds) as [ds2
-                                     [mh2
-                                        [del_bci1_ds_eq_OK_ds2
-                                           [fdel_bci1s'_ds2_eq_OK_ds'_mh2 mh'_eq]]]].
+                mh' H_bci1s_ds_OK_ds'_mh') as
+      [ds2 [mh2 [H_bci1_ds_OK_ds2 [H_bci1s'_ds2_OK_ds'_mh2 mh'_eq]]]].
     rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons.
-    rewrite -> del_bci1_ds_eq_OK_ds2.
-    Check (IHbci1s' bci2s ds2 ds' mh2 fdel_bci1s'_ds2_eq_OK_ds'_mh2 s H_bci2s_ds'_eq_ds'').
-    rewrite -> (IHbci1s' bci2s ds2 ds' mh2 fdel_bci1s'_ds2_eq_OK_ds'_mh2 s H_bci2s_ds'_eq_ds'').
+    rewrite -> H_bci1_ds_OK_ds2.
+    Check (IHbci1s' bci2s ds2 ds' mh2 H_bci1s'_ds2_OK_ds'_mh2 s'' H_bci2s_ds'_KO_s'').
+    rewrite -> (IHbci1s' bci2s ds2 ds' mh2 H_bci1s'_ds2_OK_ds'_mh2 s'' H_bci2s_ds'_KO_s'').
     reflexivity.
 Qed.  
 
@@ -1310,29 +1326,29 @@ Lemma about_fetch_decode_execute_loop_height_ltr_concatenate_KO :
 Proof.
   intro bci1s.
   induction bci1s as [ | bci1 bci1s' IHbci1s ].
-  - intros bci2s ds s1 H_absurd.
+  - intros bci2s ds s H_absurd.
     rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_nil in H_absurd.
     discriminate H_absurd.
   - intros [ | bci2 bci2s' ].
     + intros ds s ly.
       rewrite -> app_nil_r.
       exact ly.
-    + intros ds s H_fdel_bci1s'.
+    + intros ds s H_bci1s_ds_KO_s.
       Search (_ :: _ ++ _ = _).
       rewrite <- app_comm_cons.
       rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons.
       destruct (decode_execute_ltr bci1 ds) as [ ds' | s' ] eqn:H_de_bci1.
-      * rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons in H_fdel_bci1s'.
-        rewrite -> H_de_bci1 in H_fdel_bci1s'.
+      * rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons in H_bci1s_ds_KO_s.
+        rewrite -> H_de_bci1 in H_bci1s_ds_KO_s.
         Check (IHbci1s (bci2 :: bci2s') ds' s).
-        case (fetch_decode_execute_loop_height_ltr bci1s' ds') as [ ds'' mh'' | s'' ] eqn:H_fdel_bci1s'_bci1s'.
-        -- discriminate H_fdel_bci1s'.
-        -- Check (IHbci1s (bci2 :: bci2s') ds' s'' H_fdel_bci1s'_bci1s').
-           rewrite -> (IHbci1s (bci2 :: bci2s') ds' s'' H_fdel_bci1s'_bci1s').
-           exact H_fdel_bci1s'.
-      * rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons in H_fdel_bci1s'.
-        rewrite -> H_de_bci1 in H_fdel_bci1s'.
-        exact H_fdel_bci1s'.
+        case (fetch_decode_execute_loop_height_ltr bci1s' ds') as [ ds'' mh'' | s'' ] eqn:H_fdel_bci1s'_ds'.
+        -- discriminate H_bci1s_ds_KO_s.
+        -- Check (IHbci1s (bci2 :: bci2s') ds' s'' H_fdel_bci1s'_ds').
+           rewrite -> (IHbci1s (bci2 :: bci2s') ds' s'' H_fdel_bci1s'_ds').
+           exact H_bci1s_ds_KO_s.
+      * rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons in H_bci1s_ds_KO_s.
+        rewrite -> H_de_bci1 in H_bci1s_ds_KO_s.
+        exact H_bci1s_ds_KO_s.
 Qed.
 
 (* [od] no need for refactoring yet: prove the theorem in general: *)
