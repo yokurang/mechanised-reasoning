@@ -1315,7 +1315,7 @@ Proof.
     Check (IHbci1s' bci2s ds2 ds' mh2 H_bci1s'_ds2_OK_ds'_mh2 s'' H_bci2s_ds'_KO_s'').
     rewrite -> (IHbci1s' bci2s ds2 ds' mh2 H_bci1s'_ds2_OK_ds'_mh2 s'' H_bci2s_ds'_KO_s'').
     reflexivity.
-Qed.  
+Qed.
 
 Lemma about_fetch_decode_execute_loop_height_ltr_concatenate_KO :
   forall (bci1s bci2s : list byte_code_instruction)
@@ -1350,6 +1350,44 @@ Proof.
         rewrite -> H_de_bci1 in H_bci1s_ds_KO_s.
         exact H_bci1s_ds_KO_s.
 Qed.
+
+(* ***** *)
+
+Lemma about_fetch_decode_execute_loop_height_rtl_concatenate_OK_OK :
+  forall (bci1s bci2s : list byte_code_instruction)
+         (ds : data_stack)
+         (ds' : data_stack)
+         (mh' : nat),
+    fetch_decode_execute_loop_height_rtl bci1s ds = OK_h ds' mh' ->
+    (forall (ds'' : data_stack)
+            (mh'' : nat),
+        fetch_decode_execute_loop_height_rtl bci2s ds' = OK_h ds'' mh'' ->
+        fetch_decode_execute_loop_height_rtl (bci1s ++ bci2s) ds = OK_h ds'' (Nat.max mh' mh'')).
+Proof.
+Admitted.
+
+Lemma about_fetch_decode_execute_loop_height_rtl_concatenate_OK_KO :
+  forall (bci1s bci2s : list byte_code_instruction)
+         (ds : data_stack)
+         (ds' : data_stack)
+         (mh' : nat),
+    fetch_decode_execute_loop_height_rtl bci1s ds = OK_h ds' mh' ->
+    (forall (s'' : string),
+        fetch_decode_execute_loop_height_rtl bci2s ds' = KO_h s'' ->
+        fetch_decode_execute_loop_height_rtl (bci1s ++ bci2s) ds = KO_h s'').
+Proof.
+Admitted.
+
+Lemma about_fetch_decode_execute_loop_height_rtl_concatenate_KO :
+  forall (bci1s bci2s : list byte_code_instruction)
+         (ds : data_stack)
+         (s : string),
+        fetch_decode_execute_loop_height_rtl bci1s ds = KO_h s ->
+        fetch_decode_execute_loop_height_rtl (bci1s ++ bci2s) ds = KO_h s.
+Proof.
+Admitted.
+
+(* ***** *)
 
 (* [od] no need for refactoring yet: prove the theorem in general: *)
 
@@ -1720,7 +1758,6 @@ Proof.
       clear IHae1.
       assert (IHae1_KO := IHae1_KO s1 eq_refl).
       Check (about_fetch_decode_execute_loop_height_ltr_concatenate_KO).
-      
       Check (about_fetch_decode_execute_loop_height_ltr_concatenate_KO
                (compile_ltr_aux ae1)
                (compile_ltr_aux ae2 ++ SUB :: nil)
@@ -1812,6 +1849,325 @@ Proof.
     reflexivity.
 Qed.
 
+Compute (let ae := (Plus (Minus (Plus (Minus (Literal 5) (Literal 4)) (Literal 4)) (Literal 4)) (Literal 4)) in
+         let ds := nil in
+         match (evaluate_rtl ae) with
+         | Expressible_nat n =>
+             fetch_decode_execute_loop_height_rtl (compile_rtl_aux ae) ds =
+               OK_h (n :: ds) (list_length nat ds + S (depth_left ae))
+         | Expressible_msg s =>
+             fetch_decode_execute_loop_height_rtl (compile_rtl_aux ae) ds =
+               KO_h s
+         end).
+
+Compute (let ae := (Plus (Literal 4) (Minus (Literal 30) (Plus (Literal 2) (Plus (Literal 1) (Literal 0))))) in
+         let ds := nil in
+         match (evaluate_rtl ae) with
+         | Expressible_nat n =>
+             fetch_decode_execute_loop_height_rtl (compile_rtl_aux ae) ds =
+               OK_h (n :: ds) (list_length nat ds + S (depth_left ae))
+         | Expressible_msg s =>
+             fetch_decode_execute_loop_height_rtl (compile_rtl_aux ae) ds =
+               KO_h s
+         end).
+
+Compute (let ae := (Plus (Minus (Plus (Literal 1) (Literal 1)) (Plus (Literal 1) (Literal 1))) (Minus (Plus (Literal 1) (Literal 1)) (Plus (Literal 1) (Literal 1)))) in
+         let ds := nil in
+         match (evaluate_rtl ae) with
+         | Expressible_nat n =>
+             fetch_decode_execute_loop_height_rtl (compile_rtl_aux ae) ds =
+               OK_h (n :: ds) (list_length nat ds + S (depth_left ae))
+         | Expressible_msg s =>
+             fetch_decode_execute_loop_height_rtl (compile_rtl_aux ae) ds =
+               KO_h s
+         end).
+
+Lemma main_theorem_aux_rtl_left_aux :
+  forall (ae : arithmetic_expression)
+         (ds : data_stack),
+    (forall (n : nat),
+        evaluate_rtl ae = Expressible_nat n ->
+        fetch_decode_execute_loop_height_rtl (compile_rtl_aux ae) ds =
+          OK_h (n :: ds) (list_length nat ds + S (depth_left ae)))
+    /\
+      (forall (s : string),
+          evaluate_rtl ae = Expressible_msg s ->
+          fetch_decode_execute_loop_height_rtl (compile_rtl_aux ae) ds =
+            KO_h s).
+Proof.
+  intro ae.
+  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ];
+    intro ds; split.
+  - intros n' H_n.
+    rewrite -> fold_unfold_compile_rtl_aux_Literal.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_rtl_cons.
+    unfold decode_execute_rtl.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_height_rtl_nil.
+    rewrite -> fold_unfold_depth_left_Literal.
+    rewrite -> fold_unfold_evaluate_rtl_Literal in H_n.
+    injection H_n as H_eq_n_n'.
+    rewrite -> H_eq_n_n'.
+    rewrite -> Nat.max_0_r.
+    rewrite -> fold_unfold_list_length_cons.
+    Search (_ <= S _).
+    rewrite -> (Nat.max_r (list_length nat ds) (S (list_length nat ds)) (Nat.le_succ_diag_r (list_length nat ds))).
+    rewrite -> Nat.add_1_r.
+    reflexivity.
+  - intros s H_absurd.
+    rewrite -> fold_unfold_evaluate_rtl_Literal in H_absurd.
+    discriminate H_absurd.
+  - intros n' H_n'.
+    rewrite -> fold_unfold_compile_rtl_aux_Plus.
+    rewrite -> fold_unfold_depth_left_Plus.
+    rewrite -> fold_unfold_evaluate_rtl_Plus in H_n'.
+    case (evaluate_rtl ae2) as [n2 | s2] eqn:E_ae2.
+    + case (evaluate_rtl ae1) as [n1 | s1] eqn:E_ae1.
+      injection H_n' as H_n'.
+      * Check (about_fetch_decode_execute_loop_height_rtl_concatenate_OK_OK
+                 (compile_rtl_aux ae2)
+                 (compile_rtl_aux ae1 ++ ADD :: nil)
+                 ds (n2 :: ds)
+                 (list_length nat ds + S (depth_left ae2))).
+        assert (H_fdel_OK_ae2 := (about_fetch_decode_execute_loop_height_rtl_concatenate_OK_OK
+                                    (compile_rtl_aux ae2)
+                                    (compile_rtl_aux ae1 ++ ADD :: nil)
+                                    ds (n2 :: ds)
+                                    (list_length nat ds + S (depth_left ae2)))).
+        destruct (IHae2 ds) as [IHae2_OK _].
+        clear IHae2.
+        Check (IHae2_OK n2 eq_refl).
+        assert (H_fdel_OK_ae2 := H_fdel_OK_ae2 (IHae2_OK n2 eq_refl)).
+        clear IHae2_OK.
+        assert (H_fdel_OK_ae1 := (about_fetch_decode_execute_loop_height_rtl_concatenate_OK_OK
+                                    (compile_rtl_aux ae1)
+                                    (ADD :: nil)
+                                    (n2 :: ds) (n1 :: n2 :: ds)
+                                    (list_length nat (n2 :: ds) + S (depth_left ae1)))).
+        destruct (IHae1 (n2 :: ds)) as [IHae1_OK _].
+        clear IHae1.
+        Check (IHae1_OK n1 eq_refl).
+        assert (H_fdel_OK_ae1 := H_fdel_OK_ae1 (IHae1_OK n1 eq_refl)).
+        clear IHae1_OK.
+        assert (H_fdel_OK_ae1 := (H_fdel_OK_ae1 (n2 + n1 :: ds) (S (S (list_length nat ds))))).
+        rewrite -> fold_unfold_fetch_decode_execute_loop_height_rtl_cons in H_fdel_OK_ae1.
+        unfold decode_execute_rtl in H_fdel_OK_ae1.
+        rewrite -> fold_unfold_fetch_decode_execute_loop_height_rtl_nil in H_fdel_OK_ae1.
+        rewrite -> Nat.max_0_r in H_fdel_OK_ae1.
+        rewrite ->3 fold_unfold_list_length_cons in H_fdel_OK_ae1.
+        rewrite -> Nat.max_comm in H_fdel_OK_ae1.
+        rewrite -> (Nat.max_r (S (list_length nat ds)) (S (S (list_length nat ds))) (Nat.le_succ_diag_r (S (list_length nat ds)))) in H_fdel_OK_ae1.
+        rewrite -> Nat.add_comm in H_fdel_OK_ae1.
+        assert (H_fdel_OK_ae1 := H_fdel_OK_ae1 eq_refl).
+        assert (H_fdel_OK_ae2 := H_fdel_OK_ae2 (n2 + n1 :: ds) (Nat.max (S (list_length nat ds) + S (depth_left ae1)) (S (S (list_length nat ds)))) H_fdel_OK_ae1).
+        clear H_fdel_OK_ae1.
+        rewrite -> H_fdel_OK_ae2.
+        rewrite <- H_n'.
+        rewrite -> Nat.add_comm.
+        rewrite <- (Nat.add_succ_comm (S (list_length nat ds)) (depth_left ae1)).
+        rewrite -> (Nat.max_l (S (S (list_length nat ds)) + depth_left ae1) (S (S (list_length nat ds))) (Nat.le_add_r (S (S (list_length nat ds))) (depth_left ae1))).
+        rewrite ->2 Nat.add_succ_comm.
+        rewrite -> (Nat.add_max_distr_l (S (depth_left ae2)) (S (S (depth_left ae1))) (list_length nat ds)).
+        rewrite <- Nat.succ_max_distr.
+        rewrite -> Nat.max_comm.
+        reflexivity.
+      * discriminate H_n'.
+    + discriminate H_n'.
+  - intros s H_s.
+    rewrite -> fold_unfold_evaluate_rtl_Plus in H_s.
+    rewrite -> fold_unfold_compile_rtl_aux_Plus.
+    case (evaluate_rtl ae2) as [n2 | s2] eqn:E_ae2.
+    + case (evaluate_rtl ae1) as [n1 | s1] eqn:E_ae1.
+      * discriminate H_s.
+      * injection H_s as H_s.
+        destruct (IHae2 ds) as [IHae2_OK _].
+        clear IHae2.
+        assert (IHae2_OK := (IHae2_OK n2 eq_refl)).
+        destruct (IHae1 (n2 :: ds)) as [_ IHae1_KO].
+        assert (IHae1_KO := IHae1_KO s1 eq_refl).
+        assert (H_fdel_OK_KO := (about_fetch_decode_execute_loop_height_rtl_concatenate_OK_KO
+                                   (compile_rtl_aux ae2)
+                                   (compile_rtl_aux ae1 ++ ADD :: nil)
+                                   ds)).
+        assert (H_fdel_KO := (about_fetch_decode_execute_loop_height_rtl_concatenate_KO
+                                (compile_rtl_aux ae1)
+                                (ADD :: nil)
+                                (n2 :: ds) s1
+                                IHae1_KO)).
+        rewrite <- H_s.
+        exact (H_fdel_OK_KO
+                 (n2 :: ds)
+                 (list_length nat ds + S (depth_left ae2))
+                 IHae2_OK
+                 s1
+                 H_fdel_KO).
+    + case (evaluate_rtl ae1) as [n1 | s1] eqn:E_ae1.
+      * destruct (IHae2 ds) as [_ IHae2_KO].
+        injection H_s as H_s.
+        assert (IHae2_KO := IHae2_KO s2 eq_refl).
+        rewrite -> H_s in IHae2_KO.
+        exact (about_fetch_decode_execute_loop_height_rtl_concatenate_KO
+                 (compile_rtl_aux ae2)
+                 (compile_rtl_aux ae1 ++ ADD :: nil)
+                 ds s
+                 IHae2_KO).
+      * destruct (IHae2 ds) as [_ IHae2_KO].
+        injection H_s as H_s.
+        assert (IHae2_KO := IHae2_KO s2 eq_refl).
+        rewrite -> H_s in IHae2_KO.
+        exact (about_fetch_decode_execute_loop_height_rtl_concatenate_KO
+                 (compile_rtl_aux ae2)
+                 (compile_rtl_aux ae1 ++ ADD :: nil)
+                 ds s
+                 IHae2_KO).
+  - rewrite -> fold_unfold_compile_rtl_aux_Minus.
+    rewrite -> fold_unfold_evaluate_rtl_Minus.
+    rewrite -> fold_unfold_depth_left_Minus.
+    case (evaluate_rtl ae2) as [n2 | s2] eqn:E_ae2.
+    + case (evaluate_rtl ae1) as [n1 | s1] eqn:E_ae1.
+      * case (n1 <? n2) as [|] eqn:H_lt_n1_n2.
+        -- intros n H_absurd.
+           discriminate H_absurd.
+        -- intros n H_n.
+           injection H_n as H_n.
+           assert (H_fdel_OK_ae2 := (about_fetch_decode_execute_loop_height_rtl_concatenate_OK_OK
+                                       (compile_rtl_aux ae2)
+                                       (compile_rtl_aux ae1 ++ SUB :: nil)
+                                       ds (n2 :: ds)
+                                       (list_length nat ds + S (depth_left ae2)))).
+           destruct (IHae2 ds) as [IHae2_OK _].
+           clear IHae2.
+           Check (IHae2_OK n2 eq_refl).
+           assert (H_fdel_OK_ae2 := H_fdel_OK_ae2 (IHae2_OK n2 eq_refl)).
+           clear IHae2_OK.
+           assert (H_fdel_OK_ae1 := (about_fetch_decode_execute_loop_height_rtl_concatenate_OK_OK
+                                       (compile_rtl_aux ae1)
+                                       (SUB :: nil)
+                                       (n2 :: ds) (n1 :: n2 :: ds)
+                                       (list_length nat (n2 :: ds) + S (depth_left ae1)))).
+           destruct (IHae1 (n2 :: ds)) as [IHae1_OK _].
+           clear IHae1.
+           Check (IHae1_OK n1 eq_refl).
+           assert (H_fdel_OK_ae1 := H_fdel_OK_ae1 (IHae1_OK n1 eq_refl)).
+           clear IHae1_OK.
+           assert (H_fdel_OK_ae1 := (H_fdel_OK_ae1 (n1 - n2 :: ds) (S (S (list_length nat ds))))).
+           rewrite -> fold_unfold_fetch_decode_execute_loop_height_rtl_cons in H_fdel_OK_ae1.
+           unfold decode_execute_rtl in H_fdel_OK_ae1.
+           rewrite -> H_lt_n1_n2 in H_fdel_OK_ae1.
+           rewrite -> fold_unfold_fetch_decode_execute_loop_height_rtl_nil in H_fdel_OK_ae1.
+           rewrite -> Nat.max_0_r in H_fdel_OK_ae1.
+           rewrite ->3 fold_unfold_list_length_cons in H_fdel_OK_ae1.
+           rewrite -> Nat.max_comm in H_fdel_OK_ae1.
+           rewrite -> (Nat.max_r (S (list_length nat ds)) (S (S (list_length nat ds))) (Nat.le_succ_diag_r (S (list_length nat ds)))) in H_fdel_OK_ae1.
+           assert (H_fdel_OK_ae1 := H_fdel_OK_ae1 eq_refl).
+           assert (H_fdel_OK_ae2 := H_fdel_OK_ae2 (n1 - n2 :: ds) (Nat.max (S (list_length nat ds) + S (depth_left ae1)) (S (S (list_length nat ds)))) H_fdel_OK_ae1).
+           clear H_fdel_OK_ae1.
+           rewrite -> H_fdel_OK_ae2.
+           rewrite <- H_n.
+           rewrite <- (Nat.add_succ_comm (S (list_length nat ds)) (depth_left ae1)).
+           rewrite -> (Nat.max_l (S (S (list_length nat ds)) + depth_left ae1) (S (S (list_length nat ds))) (Nat.le_add_r (S (S (list_length nat ds))) (depth_left ae1))).
+           rewrite ->2 Nat.add_succ_comm.
+           rewrite -> (Nat.add_max_distr_l (S (depth_left ae2)) (S (S (depth_left ae1))) (list_length nat ds)).
+           rewrite <- Nat.succ_max_distr.
+           rewrite -> Nat.max_comm.
+           reflexivity.
+      * intros n H_absurd.
+        discriminate H_absurd.
+    + intros n H_absurd.
+      discriminate H_absurd.
+  - rewrite -> fold_unfold_evaluate_rtl_Minus.
+    rewrite -> fold_unfold_compile_rtl_aux_Minus.
+    case (evaluate_rtl ae2) as [n2 | s2] eqn:E_ae2.
+    + case (evaluate_rtl ae1) as [n1 | s1] eqn:E_ae1.
+      * case (n1 <? n2) as [|] eqn:H_lt_n1_n2.
+        -- intros s H_s.
+           injection H_s as H_s.
+           destruct (IHae2 ds) as [IHae2_OK _].
+           assert (H_fdel_ae2_OK_KO := (about_fetch_decode_execute_loop_height_rtl_concatenate_OK_KO
+                                          (compile_rtl_aux ae2)
+                                          (compile_rtl_aux ae1 ++ SUB :: nil)
+                                          ds (n2 :: ds)
+                                          (list_length nat ds + S (depth_left ae2))
+                                          (IHae2_OK n2 eq_refl))
+                                         s).
+           clear IHae2 IHae2_OK.
+           destruct (IHae1 (n2 :: ds)) as [IHae1_OK _].
+           assert (H_fdel_ae1_OK_KO := (about_fetch_decode_execute_loop_height_rtl_concatenate_OK_KO
+                                          (compile_rtl_aux ae1)
+                                          (SUB :: nil)
+                                          (n2 :: ds) (n1 :: n2 :: ds)
+                                          (list_length nat (n2 :: ds) + S (depth_left ae1))
+                                          (IHae1_OK n1 eq_refl)
+                                          s)).
+           clear IHae1 IHae1_OK.
+           rewrite -> fold_unfold_fetch_decode_execute_loop_height_rtl_cons in H_fdel_ae1_OK_KO.
+           unfold decode_execute_rtl in H_fdel_ae1_OK_KO.
+           rewrite -> H_lt_n1_n2 in H_fdel_ae1_OK_KO.
+           rewrite -> H_s in H_fdel_ae1_OK_KO.
+           exact (H_fdel_ae2_OK_KO (H_fdel_ae1_OK_KO eq_refl)).
+        -- intros s H_absurd.
+           discriminate H_absurd.
+      * intros s H_s.
+        injection H_s as H_s.
+        destruct (IHae2 ds) as [IHae2_OK _].
+        clear IHae2.
+        assert (IHae2_OK := (IHae2_OK n2 eq_refl)).
+        destruct (IHae1 (n2 :: ds)) as [_ IHae1_KO].
+        assert (IHae1_KO := IHae1_KO s1 eq_refl).
+        assert (H_fdel_OK_KO := (about_fetch_decode_execute_loop_height_rtl_concatenate_OK_KO
+                                   (compile_rtl_aux ae2)
+                                   (compile_rtl_aux ae1 ++ SUB :: nil)
+                                   ds)).
+        assert (H_fdel_KO := (about_fetch_decode_execute_loop_height_rtl_concatenate_KO
+                                (compile_rtl_aux ae1)
+                                (SUB :: nil)
+                                (n2 :: ds) s1
+                                IHae1_KO)).
+        rewrite <- H_s.
+        exact (H_fdel_OK_KO
+                 (n2 :: ds)
+                 (list_length nat ds + S (depth_left ae2))
+                 IHae2_OK
+                 s1
+                 H_fdel_KO).
+    + intros s H_s.
+      destruct (IHae2 ds) as [_ IHae2_KO].
+      injection H_s as H_s.
+      assert (IHae2_KO := IHae2_KO s2 eq_refl).
+      rewrite -> H_s in IHae2_KO.
+      exact (about_fetch_decode_execute_loop_height_rtl_concatenate_KO
+               (compile_rtl_aux ae2)
+               (compile_rtl_aux ae1 ++ SUB :: nil)
+               ds s
+               IHae2_KO).
+Qed.
+
+Theorem main_theorem_rtl_left :
+  forall (ae : arithmetic_expression),
+    (forall n : nat,
+        interpret_rtl (Source_program ae) = Expressible_nat n ->
+        run_height_rtl (compile_rtl (Source_program ae)) =
+          (Expressible_nat n, S (depth_left ae)))
+    /\
+      (forall s : string,
+        interpret_rtl (Source_program ae) = Expressible_msg s ->
+        run_height_rtl (compile_rtl (Source_program ae)) =
+          (Expressible_msg s, 0)).
+Proof.
+  intro ae.
+  unfold interpret_rtl, run_height_rtl, compile_rtl.
+  split.
+  - intros n H_e_ae.
+    Check (main_theorem_aux_rtl_left_aux ae nil).
+    destruct (main_theorem_aux_rtl_left_aux ae nil) as [H_OK _].
+    rewrite -> (H_OK n H_e_ae).
+    rewrite -> fold_unfold_list_length_nil.
+    rewrite -> Nat.add_0_l.
+    reflexivity.
+  - intros s H_e_ae.
+    destruct (main_theorem_aux_rtl_left_aux ae nil) as [_ H_KO].
+    rewrite -> (H_KO s H_e_ae).
+    reflexivity.
+Qed.
 
 (*
 Compute (
@@ -1876,8 +2232,8 @@ Proof.
     reflexivity.
 Qed.
  *)
-  
-(* [od] 
+
+(* [od]
    Anyway, the main theorem should not involve refactoring.
    And then it should have corollaries where ae is actually the result of refactoring.
    A simple way would be to quantify ae to be not an arithmetic_expression
