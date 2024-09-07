@@ -1624,58 +1624,118 @@ Proof.
            destruct (IHae1 ds) as [IHae1_OK _].
            clear IHae1.
            assert (IHae1_OK := IHae1_OK n1 eq_refl).
-           Check (about_fetch_decode_execute_loop_height_ltr_concatenate_OK_OK).
-           Check (about_fetch_decode_execute_loop_height_ltr_concatenate_OK_OK
+           Check (about_fetch_decode_execute_loop_height_ltr_concatenate_OK_KO).
+           Check (about_fetch_decode_execute_loop_height_ltr_concatenate_OK_KO
                     (compile_ltr_aux ae1)
                     (compile_ltr_aux ae2 ++ (SUB :: nil))
                     ds
                     (n1 :: ds)
                     (list_length nat ds + S (depth_right ae1))
-                    IHae1_OK).
-                   
-           assert (H_fdel_ae1_OK_OK :=
+                    IHae1_OK
+                    s).
+           assert (H_fdel_ae1_OK_KO :=
                      (about_fetch_decode_execute_loop_height_ltr_concatenate_OK_KO
                         (compile_ltr_aux ae1)
                         (compile_ltr_aux ae2 ++ (SUB :: nil))
                         ds
                         (n1 :: ds)
                         (list_length nat ds + S (depth_right ae1))
-                        IHae1_OK)).
+                        IHae1_OK
+                        s)).
            destruct (IHae2 (n1 :: ds)) as [IHae2_OK _].
            assert (IHae2_OK := IHae2_OK n2 eq_refl).
-           Check (about_fetch_decode_execute_loop_height_ltr_concatenate_OK_OK
+           Check (about_fetch_decode_execute_loop_height_ltr_concatenate_OK_KO
                     (compile_ltr_aux ae2)
                     (SUB :: nil)
                     (n1 :: ds)
                     (n2 :: n1 :: ds)
                     (list_length nat (n1 :: ds) + S (depth_right ae2))
-                    IHae2_OK).
-           assert (H_fdel_ae2_OK_OK :=
-                     (about_fetch_decode_execute_loop_height_ltr_concatenate_OK_OK
+                    IHae2_OK
+                    s).
+           assert (H_fdel_ae2_OK_KO :=
+                     (about_fetch_decode_execute_loop_height_ltr_concatenate_OK_KO
                         (compile_ltr_aux ae2)
                         (SUB :: nil)
                         (n1 :: ds)
                         (n2 :: n1 :: ds)
                         (list_length nat (n1 :: ds) + S (depth_right ae2))
-                        IHae2_OK)).
-           rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons in H_fdel_ae2_OK_OK.
-           
-                                                     
-Admitted.
-           
-         
-           
-     
-               
-        
-   
-    
-         
-         
-         
-                              
- 
-
+                        IHae2_OK
+                        s)).
+           rewrite -> fold_unfold_fetch_decode_execute_loop_height_ltr_cons in H_fdel_ae2_OK_KO.
+           unfold decode_execute_ltr in H_fdel_ae2_OK_KO.
+           rewrite -> H_lt_n1_n2 in H_fdel_ae2_OK_KO.
+           rewrite -> H_s' in H_fdel_ae2_OK_KO.
+           assert (H_fdel_ae2_OK_KO := H_fdel_ae2_OK_KO eq_refl).
+           assert (H_fdel_ae1_OK_KO :=   H_fdel_ae1_OK_KO  H_fdel_ae2_OK_KO).
+           rewrite -> H_fdel_ae1_OK_KO.
+           reflexivity.
+        -- intros s H_absurd.
+           discriminate H_absurd.
+      * intros s H_s'.
+        injection H_s' as H_s'.
+        destruct (IHae1 ds) as [IHae1_OK _].
+        clear IHae1.
+        assert (IHae1_OK := IHae1_OK n1 eq_refl).
+        Check (about_fetch_decode_execute_loop_height_ltr_concatenate_OK_KO).
+        Check (about_fetch_decode_execute_loop_height_ltr_concatenate_OK_KO
+                 (compile_ltr_aux ae1)
+                 (compile_ltr_aux ae2 ++ (SUB :: nil))
+                 ds
+                 (n1 :: ds)
+                 (list_length nat ds + S (depth_right ae1))
+                 IHae1_OK
+                 s).
+        assert (H_fdel_ae1_OK_KO :=
+                  (about_fetch_decode_execute_loop_height_ltr_concatenate_OK_KO
+                     (compile_ltr_aux ae1)
+                     (compile_ltr_aux ae2 ++ (SUB :: nil))
+                     ds
+                     (n1 :: ds)
+                     (list_length nat ds + S (depth_right ae1))
+                     IHae1_OK
+                     s)).
+        destruct (IHae2 (n1 :: ds)) as [_ IHae2_KO].
+        assert (IHae2_KO := IHae2_KO s2 eq_refl).
+        Check (about_fetch_decode_execute_loop_height_ltr_concatenate_KO).
+        Check (about_fetch_decode_execute_loop_height_ltr_concatenate_KO
+                 (compile_ltr_aux ae2)
+                 (SUB :: nil)
+                 (n1 :: ds)
+                 s2
+                 IHae2_KO).
+        assert (H_fdel_ae2_KO :=
+                  (about_fetch_decode_execute_loop_height_ltr_concatenate_KO
+                     (compile_ltr_aux ae2)
+                     (SUB :: nil)
+                     (n1 :: ds)
+                     s2
+                     IHae2_KO)).
+        rewrite -> H_s' in H_fdel_ae2_KO.
+        assert (H_fdel_ae1_OK_KO := H_fdel_ae1_OK_KO H_fdel_ae2_KO).
+        rewrite -> H_fdel_ae1_OK_KO.
+        reflexivity.
+    + intros s H_s.
+      injection H_s as H_s.
+      destruct (IHae1 ds) as [_ IHae1_KO].
+      clear IHae1.
+      assert (IHae1_KO := IHae1_KO s1 eq_refl).
+      Check (about_fetch_decode_execute_loop_height_ltr_concatenate_KO).
+      
+      Check (about_fetch_decode_execute_loop_height_ltr_concatenate_KO
+               (compile_ltr_aux ae1)
+               (compile_ltr_aux ae2 ++ SUB :: nil)
+               ds
+               s1
+               IHae1_KO).
+      rewrite -> (about_fetch_decode_execute_loop_height_ltr_concatenate_KO
+                   (compile_ltr_aux ae1)
+                   (compile_ltr_aux ae2 ++ SUB :: nil)
+                   ds
+                   s1
+                   IHae1_KO).
+      rewrite -> H_s.
+      reflexivity.
+Qed.
 
 (* ***** *)
 
@@ -1689,7 +1749,7 @@ Theorem main_theorem_ltr_right :
       (forall s : string,
         interpret_ltr (Source_program ae) = Expressible_msg s ->
         run_height_ltr (compile_ltr (Source_program ae)) =
-          (Expressible_msg s, 0))a.
+          (Expressible_msg s, 0)).
 Proof.
   intro ae.
   unfold interpret_ltr, run_height_ltr, compile_ltr.
