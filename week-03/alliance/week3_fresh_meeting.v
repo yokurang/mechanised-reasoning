@@ -1470,7 +1470,6 @@ Proof.
          Check (Nat.max_l).
          rewrite -> (Nat.max_l (S (S (list_length nat ds))) (S (list_length nat ds)) (Nat.lt_le_incl (S (list_length nat ds)) (S (S (list_length nat ds))) (Nat.lt_succ_diag_r (S (list_length nat ds))))).
          Search (Nat.max (S _) (S _)).
-        
          Search (S _ + _).
          rewrite -> Nat.add_succ_l.
          rewrite -> Nat.add_succ_l.
@@ -1510,7 +1509,6 @@ Proof.
            rewrite <- Nat.add_succ_l.
            reflexivity.
          }
-
       ++ rewrite -> (fold_unfold_evaluate_rtl_Minus ae1 ae2) in H_ae.
          rewrite -> H_ae2 in H_ae.
          rewrite -> H_ae1 in H_ae.
