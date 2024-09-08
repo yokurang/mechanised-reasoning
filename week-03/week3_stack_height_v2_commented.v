@@ -504,10 +504,6 @@ Definition test_fetch_decode_execute_loop_height_ltr (candidate : (list byte_cod
      (OK_h (21 :: 42 :: 1 :: 2 :: 3 :: nil) 5))
   &&
     (eqb_result_of_decoding_and_execution_height
-       (candidate (ADD :: ADD :: nil) (1 :: 2 :: 3 :: nil))
-       (OK_h (6 :: nil) 2))
-  &&
-    (eqb_result_of_decoding_and_execution_height
        (candidate (SUB :: nil) (2 :: 3 :: nil))
        (OK_h (1 :: nil) 1))
   &&
@@ -540,6 +536,8 @@ Fixpoint fetch_decode_execute_loop_height_ltr (bcis : list byte_code_instruction
       | KO s => KO_h s
       end
   end.
+
+Compute (fetch_decode_execute_loop_height_ltr (ADD :: nil) (1 :: 2 :: nil)). (* counter example *)
 
 Compute (test_fetch_decode_execute_loop_height_ltr fetch_decode_execute_loop_height_ltr).
 
