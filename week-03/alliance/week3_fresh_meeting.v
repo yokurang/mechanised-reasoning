@@ -744,6 +744,8 @@ with super_refactor_left_aux (a ae1 : arithmetic_expression) : arithmetic_expres
            Plus a (Minus (super_refactor_left ae1) (super_refactor_left ae2))
        end.
 
+Compute (super_refactor_left test_case1).
+
 (* ********** *)
 
 (* Exercise 2 *)
@@ -3099,3 +3101,165 @@ Compute(
 (* for rtl evaluation (compared to each other) :
    refactoring the sp on the left requires more memory allocation for the stack
    refactoring the sp on the right requires less memory allocation for the stack *)
+
+
+(* ***** *)
+(* Comparing applying depth ltr/rtl on the result of applying super refactor left/right *)
+
+Definition compile_test_case_1 := (Plus (Literal 1) (Literal 0)).
+
+Definition compile_test_case_2 := (Minus (Literal 1) (Literal 0)).
+
+Definition compile_test_case_3 := Plus compile_test_case_1 compile_test_case_2.
+
+Definition compile_test_case_4 := Plus (Plus (compile_test_case_1)
+                                             (compile_test_case_1))
+                                       (Plus (compile_test_case_1)
+                                             (compile_test_case_1)).
+
+Definition compile_test_case_5 := Plus (Minus (Plus (compile_test_case_1)
+                                                    (compile_test_case_2))
+                                              (compile_test_case_2))
+                                       (Minus (compile_test_case_4)
+                                              (compile_test_case_1)).
+
+Compute (super_refactor_right compile_test_case_5).
+(* = Plus
+         (Minus (Plus (Literal 1)
+                      (Plus (Literal 0)
+                            (Minus (Literal 1)
+                                   (Literal 0))))
+                (Minus (Literal 1)
+                       (Literal 0)))
+         (Minus (Plus (Literal 1)
+                      (Plus (Literal 0)
+                            (Plus (Literal 1)
+                                  (Plus (Literal 0)
+                                        (Plus (Literal 1)
+                                              (Plus (Literal 0)
+                                                    (Plus (Literal 1)
+                                                          (Literal 0))))))))
+                (Plus (Literal 1)
+                      (Literal 0))) *)
+
+
+Compute (depth_right compile_test_case_5).
+(* = 4 *)
+Compute (run_rtl (compile_rtl (Source_program compile_test_case_5))).
+(* = (Expressible_nat 4, 5) *)
+
+Compute (depth_right (super_refactor_right compile_test_case_5)).
+(* = 3 *)
+Compute (run_rtl (compile_rtl (Source_program (super_refactor_right compile_test_case_5)))).
+(* = (Expressible_nat 4, 4) *)
+
+Compute (depth_right (super_refactor_left compile_test_case_5)).
+(* = 8 *)
+Compute (run_rtl (compile_rtl (Source_program (super_refactor_left compile_test_case_5)))).
+(* = (Expressible_nat 4, 9) *)
+
+Definition test_ev_eqb (candidate : expressible_value -> expressible_value -> bool) : bool :=
+  (Bool.eqb (candidate (Expressible_nat 1) (Expressible_nat 1)) (true))
+  && (Bool.eqb (candidate (Expressible_nat 1) (Expressible_nat 2)) (false))
+  && (Bool.eqb (candidate (Expressible_msg "a") (Expressible_msg "a")) (true))
+  && (Bool.eqb (candidate (Expressible_msg "a") (Expressible_msg "b")) (false)).
+
+Definition ev_eqb (ev1 ev2 : expressible_value) : bool :=
+  match ev1 with
+  | Expressible_nat n1 =>
+      match ev2 with
+      | Expressible_nat n2 =>
+          Nat.eqb n1 n2
+      | Expressible_msg s2 =>
+          false
+      end
+  | Expressible_msg s1 =>
+      match ev2 with
+      | Expressible_nat n2 =>
+          false
+      | Expressible_msg s2 =>
+          String.eqb s1 s2
+      end
+  end.
+
+Compute (test_ev_eqb ev_eqb).
+
+Definition test_tuple_of_ev_nat_eqb (candidate : (expressible_value * nat) -> (expressible_value * nat) -> bool) : bool :=
+  (Bool.eqb (candidate (Expressible_nat 1, 1) (Expressible_nat 1, 1)) (true))
+  && (Bool.eqb (candidate (Expressible_nat 1, 1) (Expressible_nat 2, 1)) (false))
+  && (Bool.eqb (candidate (Expressible_nat 1, 1) (Expressible_nat 1, 2)) (false))
+  && (Bool.eqb (candidate (Expressible_nat 1, 1) (Expressible_nat 2, 2)) (false))
+  && (Bool.eqb (candidate (Expressible_msg "a", 1) (Expressible_msg "a", 1)) (true))
+  && (Bool.eqb (candidate (Expressible_msg "a", 1) (Expressible_msg "b", 1)) (false))
+  && (Bool.eqb (candidate (Expressible_msg "a", 1) (Expressible_msg "a", 2)) (false))
+  && (Bool.eqb (candidate (Expressible_msg "a", 1) (Expressible_msg "b", 2)) (false)).
+
+Definition tuple_of_ev_nat_eqb (tuple1 tuple2 : (expressible_value * nat)) : bool :=
+  match tuple1 with
+  | (e1, n1) =>
+      match tuple2 with
+      | (e2, n2) =>
+          (ev_eqb (e1) (e2)) && (Nat.eqb n1 n2)
+      end
+  end.
+
+Compute (test_tuple_of_ev_nat_eqb tuple_of_ev_nat_eqb).
+
+(* Compile RTL returns predicted stack size *)
+
+Definition test_compile_rtl_returns_predicted_stack_size (candidate : source_program -> target_program) : bool :=
+  (* Refactored left expressions *)
+  tuple_of_ev_nat_eqb
+    (run_rtl (candidate (Source_program (super_refactor_left compile_test_case_4))))
+    (Expressible_nat 4, S (depth_right (super_refactor_left (compile_test_case_4))))
+  (* Refactored right expressions *)
+  && tuple_of_ev_nat_eqb (run_rtl (candidate (Source_program (super_refactor_right compile_test_case_4)))) (Expressible_nat 4, S (depth_right (super_refactor_right (compile_test_case_4))))
+  (* Refactored left with minus *)
+  && tuple_of_ev_nat_eqb (run_rtl (candidate (Source_program (super_refactor_left compile_test_case_5)))) (Expressible_nat 4, S (depth_right (super_refactor_left (compile_test_case_5))))
+  (* Refactored right with minus *)
+  && tuple_of_ev_nat_eqb (run_rtl (candidate (Source_program (super_refactor_right compile_test_case_5)))) (Expressible_nat 4, S (depth_right (super_refactor_right compile_test_case_5))).
+
+(* Compile LTR returns predicted stack size *)
+
+Definition test_compile_ltr_returns_predicted_stack_size (candidate : source_program -> target_program) : bool :=
+  (* Simple balanced expressions *)
+  tuple_of_ev_nat_eqb (run_ltr (candidate (Source_program test_case1))) (Expressible_nat 6, S (depth_left (test_case1)))
+  && tuple_of_ev_nat_eqb (run_ltr (candidate (Source_program test_case3))) (Expressible_nat 16, S (depth_left (test_case3)))
+  && tuple_of_ev_nat_eqb (run_ltr (candidate (Source_program compile_test_case_1))) (Expressible_nat 1, S (depth_left (compile_test_case_1)))
+  && tuple_of_ev_nat_eqb (run_ltr (candidate (Source_program compile_test_case_2))) (Expressible_nat 1, S (depth_left (compile_test_case_2)))
+  && tuple_of_ev_nat_eqb (run_ltr (candidate (Source_program compile_test_case_3))) (Expressible_nat 2, S (depth_left (compile_test_case_3)))
+  (* Refactored left expressions *)
+  && tuple_of_ev_nat_eqb (run_ltr (candidate (Source_program (super_refactor_left compile_test_case_4)))) (Expressible_nat 4, S (depth_left (super_refactor_left (compile_test_case_4))))
+  (* Refactored right expressions *)
+  && tuple_of_ev_nat_eqb (run_ltr (candidate (Source_program (super_refactor_right compile_test_case_4)))) (Expressible_nat 4, S (depth_left (super_refactor_right (compile_test_case_4))))
+  (* Refactored left with minus *)
+  && tuple_of_ev_nat_eqb (run_ltr (candidate (Source_program (super_refactor_left compile_test_case_5)))) (Expressible_nat 4, S (depth_left (super_refactor_left (compile_test_case_5))))
+  (* Refactored right with minus *)
+  && tuple_of_ev_nat_eqb (run_ltr (candidate (Source_program (super_refactor_right compile_test_case_5)))) (Expressible_nat 4, S (depth_left (super_refactor_right compile_test_case_5))).
+
+Compute (test_compile_ltr_returns_predicted_stack_size compile_ltr).
+
+(* Compile RTL performs better with SR left than SR right, and mutatis mutandis for compile LTR *)
+
+Definition tuple_of_ev_nat_gte_tuple_of_ev_nat (tuple1 tuple2 : (expressible_value * nat)) : bool :=
+  match tuple1 with
+  | (e1, n1) =>
+      match tuple2 with
+      | (e2, n2) =>
+          (ev_eqb (e1) (e2)) && (n2 <=? n1)
+      end
+  end.
+
+Definition compile_rtl_performs_better_with_super_refactor_left_than_super_refactor_right_and_mutatis_mutandis (candidate_rtl candidate_ltr : source_program -> target_program) : bool :=
+ tuple_of_ev_nat_gte_tuple_of_ev_nat (run_rtl (candidate_rtl (Source_program (super_refactor_left compile_test_case_1)))) (run_rtl (candidate_rtl (Source_program (super_refactor_right compile_test_case_1))))
+  && tuple_of_ev_nat_gte_tuple_of_ev_nat (run_rtl (candidate_rtl (Source_program (super_refactor_left compile_test_case_2)))) (run_rtl (candidate_rtl (Source_program (super_refactor_right compile_test_case_2))))
+  && tuple_of_ev_nat_gte_tuple_of_ev_nat (run_rtl (candidate_rtl (Source_program (super_refactor_left compile_test_case_3)))) (run_rtl (candidate_rtl (Source_program (super_refactor_right compile_test_case_3))))
+  && tuple_of_ev_nat_gte_tuple_of_ev_nat (run_rtl (candidate_rtl (Source_program (super_refactor_left compile_test_case_4)))) (run_rtl (candidate_rtl (Source_program (super_refactor_right compile_test_case_4))))
+ && tuple_of_ev_nat_gte_tuple_of_ev_nat (run_rtl (candidate_rtl (Source_program (super_refactor_left compile_test_case_5)))) (run_rtl (candidate_rtl (Source_program (super_refactor_right compile_test_case_5))))
+ && tuple_of_ev_nat_gte_tuple_of_ev_nat (run_ltr (candidate_ltr (Source_program (super_refactor_right compile_test_case_1)))) (run_ltr (candidate_ltr (Source_program (super_refactor_left compile_test_case_1))))
+ && tuple_of_ev_nat_gte_tuple_of_ev_nat (run_ltr (candidate_ltr (Source_program (super_refactor_right compile_test_case_2)))) (run_ltr (candidate_ltr (Source_program (super_refactor_left compile_test_case_2))))
+ && tuple_of_ev_nat_gte_tuple_of_ev_nat (run_ltr (candidate_ltr (Source_program (super_refactor_right compile_test_case_3)))) (run_ltr (candidate_ltr (Source_program (super_refactor_left compile_test_case_3))))
+ && tuple_of_ev_nat_gte_tuple_of_ev_nat (run_ltr (candidate_ltr (Source_program (super_refactor_right compile_test_case_4)))) (run_ltr (candidate_ltr (Source_program (super_refactor_left compile_test_case_4))))
+ && tuple_of_ev_nat_gte_tuple_of_ev_nat (run_ltr (candidate_ltr (Source_program (super_refactor_right compile_test_case_5)))) (run_ltr (candidate_ltr (Source_program (super_refactor_left compile_test_case_5)))).
+
+Compute (compile_rtl_performs_better_with_super_refactor_left_than_super_refactor_right_and_mutatis_mutandis compile_rtl compile_ltr).
