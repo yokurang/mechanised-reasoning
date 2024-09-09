@@ -1290,10 +1290,6 @@ Proof.
          Check (Nat.max_l).
          rewrite -> (Nat.max_l (S (S (list_length nat ds))) (S (list_length nat ds)) (Nat.lt_le_incl (S (list_length nat ds)) (S (S (list_length nat ds))) (Nat.lt_succ_diag_r (S (list_length nat ds))))).
          Search (Nat.max (S _) (S _)).
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
          Search (S _ + _).
          rewrite -> Nat.add_succ_l.
          rewrite -> Nat.add_succ_l.
@@ -1577,8 +1573,7 @@ Definition depth_right_sp (sp : source_program) : nat :=
       depth_right ae
   end.
 
-
-Theorem foo:
+Theorem compiling_and_running_rtl_gives_S_depth_right:
   forall sp : source_program,
     (forall n mh: nat,
         run_rtl (compile_rtl sp) = (Expressible_nat n, mh) ->
@@ -2064,7 +2059,7 @@ Definition depth_left_sp (sp : source_program) : nat :=
       depth_left ae
   end.
 
-Theorem bar :
+Theorem compiling_and_running_ltr_gives_S_depth_left :
   forall sp : source_program,
     (forall n mh: nat,
         run_ltr (compile_ltr sp) = (Expressible_nat n, mh) ->
