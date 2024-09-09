@@ -2860,45 +2860,45 @@ Definition depth_left_sp (sp : source_program) : nat :=
 (* compiling_and_running_ltr_gives_S_depth_left *)
 
 Compute (
-    match (run_ltr (compile_ltr (Source_program test_ae1))) with
+    match (run_ltr (compile_ltr (Source_program test_case5))) with
     | (Expressible_nat n, mh) =>
-        interpret_ltr (Source_program test_ae1) = Expressible_nat 10 /\ (S (depth_left_sp (Source_program test_ae1)) = mh)
+        interpret_ltr (Source_program test_case5) = Expressible_nat 10 /\ (S (depth_left_sp (Source_program test_case5)) = mh)
     | (Expressible_msg s, _) =>
-        interpret_ltr (Source_program test_ae1) = Expressible_msg s
+        interpret_ltr (Source_program test_case5) = Expressible_msg s
     end).
 
 
 Compute (
-    match (run_ltr (compile_ltr (Source_program test_ae2))) with
+    match (run_ltr (compile_ltr (Source_program test_case6))) with
     | (Expressible_nat n, mh) =>
-        interpret_ltr (Source_program test_ae2) = Expressible_nat 10 /\ (S (depth_left_sp (Source_program test_ae2)) = mh)
+        interpret_ltr (Source_program test_case6) = Expressible_nat 10 /\ (S (depth_left_sp (Source_program test_case6)) = mh)
     | (Expressible_msg s, _) =>
-        interpret_ltr (Source_program test_ae2) = Expressible_msg s
+        interpret_ltr (Source_program test_case6) = Expressible_msg s
     end).
 
 Compute (
-    match (run_ltr (compile_ltr (Source_program test_ae3))) with
+    match (run_ltr (compile_ltr (Source_program test_case7))) with
     | (Expressible_nat n, mh) =>
-        interpret_ltr (Source_program test_ae3) = Expressible_nat 6 /\ (S (depth_left_sp (Source_program test_ae3)) = mh)
+        interpret_ltr (Source_program test_case7) = Expressible_nat 6 /\ (S (depth_left_sp (Source_program test_case7)) = mh)
     | (Expressible_msg s, _) =>
-        interpret_ltr (Source_program test_ae3) = Expressible_msg s
+        interpret_ltr (Source_program test_case7) = Expressible_msg s
     end).
 
 
 Compute (
-    match (run_ltr (compile_ltr (Source_program test_ae4))) with
+    match (run_ltr (compile_ltr (Source_program test_case8))) with
     | (Expressible_nat n, mh) =>
-        interpret_ltr (Source_program test_ae4) = Expressible_nat 1 /\ (S (depth_left_sp (Source_program test_ae4)) = mh)
+        interpret_ltr (Source_program test_case8) = Expressible_nat 1 /\ (S (depth_left_sp (Source_program test_case8)) = mh)
     | (Expressible_msg s, _) =>
-        interpret_ltr (Source_program test_ae4) = Expressible_msg s
+        interpret_ltr (Source_program test_case8) = Expressible_msg s
     end).
 
 Compute (
-    match (run_ltr (compile_ltr (Source_program test_ae5))) with
+    match (run_ltr (compile_ltr (Source_program test_case9))) with
     | (Expressible_nat n, mh) =>
-        interpret_ltr (Source_program test_ae5) = Expressible_nat 42 /\ (S (depth_left_sp (Source_program test_ae5)) = mh)
+        interpret_ltr (Source_program test_case9) = Expressible_nat 42 /\ (S (depth_left_sp (Source_program test_case9)) = mh)
     | (Expressible_msg s, _) =>
-        interpret_ltr (Source_program test_ae5) = Expressible_msg s
+        interpret_ltr (Source_program test_case9) = Expressible_msg s
     end).
 
 Theorem compiling_and_running_ltr_gives_S_depth_left :
