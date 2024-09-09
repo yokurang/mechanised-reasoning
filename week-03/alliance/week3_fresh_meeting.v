@@ -824,7 +824,6 @@ Fixpoint evaluate_rtl (ae : arithmetic_expression) : expressible_value :=
       end
   end.
 
-
 Lemma fold_unfold_evaluate_rtl_Literal :
   forall n : nat,
     evaluate_rtl (Literal n) = Expressible_nat n.
@@ -912,7 +911,6 @@ Proof.
   fold_unfold_tactic compile_rtl_aux.
 Qed.
 
-
 (* decode execute rtl *)
 
 Definition decode_execute_rtl (bci : byte_code_instruction) (ds : data_stack) : result_of_decoding_and_execution :=
@@ -994,9 +992,7 @@ Proof.
   fold_unfold_tactic fetch_decode_execute_loop_rtl.
 Qed.
 
-
 (* run rtl *)
-
 
 Definition run_rtl (target : target_program) : (expressible_value * nat) :=
   match target with
@@ -1204,9 +1200,7 @@ Lemma about_fde_loop_rtl_and_evaluating:
 Proof.
   intro ae.
   induction ae as [n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2].
-
   - split.
-
     -- rewrite -> (fold_unfold_evaluate_rtl_Literal n).
        intros n' ds n_equals_n'.
        rewrite -> (fold_unfold_compile_rtl_aux_Literal n).
@@ -1227,20 +1221,15 @@ Proof.
        Search (_ < _ -> _ <= _).
        rewrite -> (Nat.max_r (list_length nat ds) (S (list_length nat ds)) (Nat.lt_le_incl (list_length nat ds) (S (list_length nat ds)) H)).
        reflexivity.
-
     -- intros s ds H_absurd.
        rewrite -> (fold_unfold_evaluate_rtl_Literal n) in H_absurd.
        discriminate H_absurd.
-
   - split.
-
     -- intros n ds H_ae.
        rewrite -> (fold_unfold_compile_rtl_aux_Plus ae1 ae2).
        case (evaluate_rtl ae2) as [n2| s2] eqn: H_ae2.
-
     + rewrite -> (fold_unfold_depth_right_Plus ae1 ae2).
       case (evaluate_rtl ae1) as [n1 | s1] eqn: H_ae1.
-
       ++ rewrite -> (fold_unfold_evaluate_rtl_Plus ae1 ae2) in H_ae.
          rewrite -> H_ae2 in H_ae.
          rewrite -> H_ae1 in H_ae.
@@ -1274,9 +1263,6 @@ Proof.
          Check (H_eureka'' (n1 + n2 :: ds) (Nat.max (list_length nat (n1 :: n2 :: ds)) (Nat.max (list_length nat (n1 + n2 :: ds))
                                                                                           (list_length nat (n1 + n2 :: ds))))).
          Check H_eureka''.
-         (*
-         Check Nat.max_id.
-         rewrite -> (Nat.max_id  (list_length nat (n1 + n2 :: ds))) in H_eureka''.*)
          Check (H_eureka''
                   (n1 + n2 :: ds)
                   (Nat.max (list_length nat (n1 :: n2 :: ds)) (Nat.max (list_length nat (n1 + n2 :: ds)) (list_length nat (n1 + n2 :: ds))))
@@ -1304,7 +1290,6 @@ Proof.
          Check (Nat.max_l).
          rewrite -> (Nat.max_l (S (S (list_length nat ds))) (S (list_length nat ds)) (Nat.lt_le_incl (S (list_length nat ds)) (S (S (list_length nat ds))) (Nat.lt_succ_diag_r (S (list_length nat ds))))).
          Search (Nat.max (S _) (S _)).
-        
          Search (S _ + _).
          rewrite -> Nat.add_succ_l.
          rewrite -> Nat.add_succ_l.
@@ -1360,9 +1345,7 @@ Proof.
     + rewrite -> (fold_unfold_evaluate_rtl_Plus ae1 ae2) in H_ae.
       rewrite -> H_ae2 in H_ae.
       case (evaluate_rtl ae1) as [n1 | s1] eqn: H_ae1.
-
       ++ discriminate H_ae.
-
       ++ rewrite -> (fold_unfold_compile_rtl_aux_Plus ae1 ae2).
          Check (about_fde_loop_rtl_concatenation (compile_rtl_aux ae2) (compile_rtl_aux ae1) ds).
          destruct (about_fde_loop_rtl_concatenation (compile_rtl_aux ae2) (compile_rtl_aux ae1) ds) as [H_eureka _].
@@ -1382,7 +1365,6 @@ Proof.
          injection H_ae as H_ae.
          rewrite <- H_ae.
          exact (H_eureka' s1 H_run_ae2_ae1).
-
     + rewrite -> (fold_unfold_evaluate_rtl_Plus ae1 ae2) in H_ae.
       rewrite -> H_ae2 in H_ae.
       injection H_ae as H_ae.
@@ -1394,16 +1376,12 @@ Proof.
       Check (H_eureka s2 (IHae2_s s2 ds (eq_refl (Expressible_msg s2)))).
       rewrite <- H_ae.
       exact (H_eureka s2 (IHae2_s s2 ds (eq_refl (Expressible_msg s2)))).
-
   - split.
-
     -- intros n ds H_ae.
        rewrite -> (fold_unfold_compile_rtl_aux_Minus ae1 ae2).
        case (evaluate_rtl ae2) as [n2| s2] eqn: H_ae2.
-
     + rewrite -> (fold_unfold_depth_right_Minus ae1 ae2).
       case (evaluate_rtl ae1) as [n1 | s1] eqn: H_ae1.
-
       ++ rewrite -> (fold_unfold_evaluate_rtl_Minus ae1 ae2) in H_ae.
          rewrite -> H_ae2 in H_ae.
          rewrite -> H_ae1 in H_ae.
@@ -1440,9 +1418,6 @@ Proof.
          Check (H_eureka'' (n1 - n2 :: ds) (Nat.max (list_length nat (n1 :: n2 :: ds)) (Nat.max (list_length nat (n1 - n2 :: ds))
                                                                                           (list_length nat (n1 - n2 :: ds))))).
          Check H_eureka''.
-         (*
-         Check Nat.max_id.
-         rewrite -> (Nat.max_id  (list_length nat (n1 + n2 :: ds))) in H_eureka''.*)
          Check (H_eureka''
                   (n1 - n2 :: ds)
                   (Nat.max (list_length nat (n1 :: n2 :: ds)) (Nat.max (list_length nat (n1 - n2 :: ds)) (list_length nat (n1 - n2 :: ds))))
@@ -1513,18 +1488,14 @@ Proof.
          rewrite -> H_ae2 in H_ae.
          rewrite -> H_ae1 in H_ae.
          discriminate H_ae.
-
     + rewrite -> (fold_unfold_evaluate_rtl_Minus ae1 ae2) in H_ae.
       rewrite -> H_ae2 in H_ae.
       discriminate H_ae.
-
       -- intros s ds H_ae.
          case (evaluate_rtl ae2) as [n2 | s2] eqn: H_ae2.
-
     + rewrite -> (fold_unfold_evaluate_rtl_Minus ae1 ae2) in H_ae.
       rewrite -> H_ae2 in H_ae.
       case (evaluate_rtl ae1) as [n1 | s1] eqn: H_ae1.
-
       ++ case (n1 <? n2) eqn : n1_lt_n2.
          {
            destruct IHae1 as [IHae1_n _].
@@ -1583,7 +1554,6 @@ Proof.
          injection H_ae as H_ae.
          rewrite <- H_ae.
          exact (H_eureka' s1 H_run_ae2_ae1).
-
     + rewrite -> (fold_unfold_evaluate_rtl_Minus ae1 ae2) in H_ae.
       rewrite -> H_ae2 in H_ae.
       injection H_ae as H_ae.
@@ -1602,7 +1572,6 @@ Definition depth_right_sp (sp : source_program) : nat :=
   | Source_program ae =>
       depth_right ae
   end.
-
 
 
 Theorem foo:
