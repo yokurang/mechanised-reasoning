@@ -232,6 +232,66 @@ Definition eqb_bci (bci1 bci2 : byte_code_instruction) : bool :=
       end
   end.
 
+Definition eqb_list_byte_code_instruction (bcis1 bcis2 : list byte_code_instruction) : bool :=
+  eqb_list byte_code_instruction eqb_bci bcis1 bcis2.
+
+Definition eqb_list_nat (v1s v2s : list nat) : bool :=
+  eqb_list nat Nat.eqb v1s v2s.
+
+Definition String_eqb (s1 s2 : string) : bool :=
+  match String.string_dec s1 s2 with
+    left _ =>
+      true
+  | right _ =>
+      false
+  end.
+
+Definition eqb_result_of_decoding_and_execution (rde1 rde2 : result_of_decoding_and_execution) : bool :=
+  match rde1 with
+  | OK vs1 =>
+      match rde2 with
+      | OK vs2 =>
+          eqb_list_nat vs1 vs2
+      | KO s2 =>
+          false
+      end
+  | KO s1 =>
+      match rde2 with
+      | OK vs2 =>
+          false
+      | KO s2 =>
+          String_eqb s1 s2
+      end
+  end.
+
+Definition eqb_result_of_decoding_and_execution_height (rde1 rde2 : result_of_fetch_decode_execute_loop) : bool :=
+  match rde1 with
+  | OK' ds1 mh1 =>
+      match rde2 with
+      | OK' ds2 mh2 =>
+          (eqb_list_nat ds1 ds2) &&
+            (Nat.eqb mh1 mh2)
+      | KO' s2 =>
+          false
+      end
+  | KO' s1 =>
+      match rde2 with
+      | OK' vs2 mh2 =>
+          false
+      | KO' s2 =>
+          String_eqb s1 s2
+      end
+  end.
+
+Definition eqb_target_program (tp1 tp2 : target_program) : bool :=
+  match tp1 with
+  | Target_program bcis1 =>
+      match tp2 with
+      | Target_program bcis2 =>
+          eqb_list_byte_code_instruction bcis1 bcis2
+      end
+  end.
+
 (* ********** *)
 
 (* evaluate ltr and its fold unfold lemmas *)
@@ -335,6 +395,15 @@ Definition interpret_ltr (sp : source_program) : expressible_value :=
 
 (* decode execute ltr *)
 
+Definition test_decode_execute_ltr (candidate : byte_code_instruction -> data_stack -> result_of_decoding_and_execution) : bool :=
+  (eqb_result_of_decoding_and_execution (candidate (PUSH 42) (1 :: 2 :: 3 :: nil)) (OK (42 :: 1 :: 2 :: 3 :: nil)))
+  && (eqb_result_of_decoding_and_execution (candidate (SUB) (1 :: 5 :: nil)) (OK (4 :: nil)))
+  && (eqb_result_of_decoding_and_execution (candidate (SUB) (5 :: 1 :: nil)) (KO "numerical underflow: -4"))
+  && (eqb_result_of_decoding_and_execution (candidate (ADD) (1 :: nil)) (KO "ADD: stack underflow"))
+  && (eqb_result_of_decoding_and_execution (candidate (SUB) (nil)) (KO "SUB: stack underflow"))
+  && (eqb_result_of_decoding_and_execution (candidate (ADD) (4 :: 3 :: 2 :: 1 :: nil)) (OK (7 :: 2 :: 1 :: nil)))
+  && (eqb_result_of_decoding_and_execution (candidate (SUB) (3 :: 4 :: 2 :: 5 :: nil)) (OK (1 :: 2 :: 5 :: nil))).
+
 Definition decode_execute_ltr (bci : byte_code_instruction) (ds : data_stack) : result_of_decoding_and_execution :=
   match bci with
   | PUSH n =>
@@ -367,9 +436,33 @@ Definition decode_execute_ltr (bci : byte_code_instruction) (ds : data_stack) : 
       end
   end.
 
+Compute (test_decode_execute_ltr decode_execute_ltr).
+
 (* ********** *)
 
 (* fdel ltr and its fold unfold lemmas*)
+
+Definition test_fetch_decode_execute_loop_height_ltr (candidate : (list byte_code_instruction) -> data_stack -> result_of_fetch_decode_execute_loop) :=
+  (eqb_result_of_decoding_and_execution_height
+     (candidate (PUSH 42 :: PUSH 21 :: nil) (1 :: 2 :: 3 :: nil))
+     (OK' (21 :: 42 :: 1 :: 2 :: 3 :: nil) 5))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate (SUB :: nil) (2 :: 3 :: nil))
+       (OK' (1 :: nil) 2))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate (SUB :: SUB :: nil) (4 :: 3 :: 2 :: nil))
+       (KO' "numerical underflow: -1"))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate
+          (PUSH 1 :: PUSH 2 :: ADD :: PUSH 3 :: ADD :: PUSH 4 :: ADD :: nil) nil)
+       (OK' (10 :: nil) 2))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate (SUB :: nil) (4 :: 3 :: nil))
+       (KO' "numerical underflow: -1")).
 
 Fixpoint fetch_decode_execute_loop_ltr (bcis : list byte_code_instruction) (ds : data_stack) : result_of_fetch_decode_execute_loop :=
   match bcis with
@@ -388,6 +481,8 @@ Fixpoint fetch_decode_execute_loop_ltr (bcis : list byte_code_instruction) (ds :
           KO' s
       end
   end.
+
+Compute (test_fetch_decode_execute_loop_height_ltr fetch_decode_execute_loop_ltr).
 
 Lemma fold_unfold_fetch_decode_execute_loop_ltr_nil :
   forall (ds : data_stack),
@@ -478,7 +573,6 @@ Definition run_ltr (target : target_program) : (expressible_value * nat) :=
             (Expressible_msg s, 0)
         end
     end.
-
 
 (* ********** *)
 
@@ -571,7 +665,17 @@ Definition test_case3 : arithmetic_expression :=
 Definition test_case4 : arithmetic_expression :=
   Minus (test_case3)
         (Plus (test_case3)
-              (test_case3)).
+           (test_case3)).
+
+Definition test_case5 : arithmetic_expression := (Plus (Plus (Plus (Plus (Literal 0) (Literal 1)) (Literal 2)) (Literal 3)) (Literal 4)).
+
+Definition test_case6 : arithmetic_expression := (Plus (Literal 0) (Plus (Literal 1) (Plus (Literal 2) (Plus (Literal 3) (Literal 4))))).
+
+Definition test_case7 : arithmetic_expression := (Plus (Plus (Literal 0) (Literal 1)) (Plus (Literal 2) (Literal 3))).
+
+Definition test_case8 : arithmetic_expression := Minus (Literal 1) (Literal 0).
+
+Definition test_case9 : arithmetic_expression := Minus (Literal 0) (Literal 1).
 
 Compute eqb_ae
   (super_refactor_right test_case1)
@@ -703,7 +807,6 @@ Definition test_depth_right (candidate : arithmetic_expression -> nat) : bool :=
   && Nat.eqb (candidate (super_refactor_right test_case4)) 3
   && Nat.eqb (candidate (super_refactor_left test_case4)) 5.
 
-
 Fixpoint depth_right (ae : arithmetic_expression) : nat :=
     match ae with
     | Literal _ =>
@@ -788,6 +891,19 @@ Compute (test_depth_left depth_left).
 
 (* evaluate rtl and its fold unfold lemmas *)
 
+Definition test_evaluate_rtl (candidate : arithmetic_expression -> expressible_value) : bool :=
+  (eqb_expressible_value (candidate (Minus (Minus (Literal 1) (Literal 5)) (Minus (Literal 1) (Literal 4)))) (Expressible_msg "numerical underflow: -3"))
+  && (eqb_expressible_value (candidate (Literal 5)) (Expressible_nat 5))
+  && (eqb_expressible_value (candidate (Plus (Literal 5) (Literal 5))) (Expressible_nat 10))
+  && (eqb_expressible_value (candidate (Plus (Plus (Literal 1) (Literal 2)) (Literal 3))) (Expressible_nat 6))
+  && (eqb_expressible_value (candidate (Minus (Literal 5) (Literal 5))) (Expressible_nat 0))
+  && (eqb_expressible_value (candidate (Minus (Literal 5) (Literal 4))) (Expressible_nat 1))
+  && (eqb_expressible_value (candidate (Minus (Literal 4) (Literal 5))) (Expressible_msg "numerical underflow: -1"))
+  && (eqb_expressible_value (candidate (Minus (Minus (Literal 4) (Literal 5)) (Literal 5))) (Expressible_msg "numerical underflow: -1"))
+  && (eqb_expressible_value (candidate (Plus (Minus (Literal 4) (Literal 5)) (Literal 5))) (Expressible_msg "numerical underflow: -1"))
+  && (eqb_expressible_value (candidate (Minus (Literal 5) (Minus (Literal 4) (Literal 5)))) (Expressible_msg "numerical underflow: -1"))
+  && (eqb_expressible_value (candidate (Plus (Literal 5) (Minus (Literal 4) (Literal 5)))) (Expressible_msg "numerical underflow: -1")).
+
 Fixpoint evaluate_rtl (ae : arithmetic_expression) : expressible_value :=
   match ae with
   | Literal n =>
@@ -823,6 +939,8 @@ Fixpoint evaluate_rtl (ae : arithmetic_expression) : expressible_value :=
           Expressible_msg s1
       end
   end.
+
+Compute (test_evaluate_rtl evaluate_rtl).
 
 Lemma fold_unfold_evaluate_rtl_Literal :
   forall n : nat,
@@ -874,6 +992,14 @@ Qed.
 
 (* compile rtl, compile rtl aux and its fold unfold lemmas *)
 
+Definition test_compile_rtl_aux (candidate : arithmetic_expression -> (list byte_code_instruction)) :=
+  (eqb_list_byte_code_instruction (candidate (Literal 2))
+     (PUSH 2 :: nil))
+  && (eqb_list_byte_code_instruction (candidate (Plus (Literal 5) (Literal 2)))
+        (PUSH 2 :: PUSH 5 :: ADD :: nil))
+  && (eqb_list_byte_code_instruction (candidate (Minus (Literal 5) (Literal 2)))
+        (PUSH 2 :: PUSH 5 :: SUB :: nil)).
+
 Fixpoint compile_rtl_aux (ae : arithmetic_expression) : list byte_code_instruction :=
   match ae with
   | Literal n =>
@@ -884,11 +1010,23 @@ Fixpoint compile_rtl_aux (ae : arithmetic_expression) : list byte_code_instructi
       (compile_rtl_aux ae2) ++ (compile_rtl_aux ae1) ++ (SUB :: nil)
   end.
 
+Compute (test_compile_rtl_aux compile_rtl_aux).
+
+Definition test_compile_rtl (candidate : source_program -> target_program) : bool :=
+  (eqb_target_program
+     (candidate (Source_program (Minus (Literal 3) (Literal 10))))
+     (Target_program (PUSH 10 :: PUSH 3 :: SUB :: nil)))
+  && (eqb_target_program
+        (candidate (Source_program (Minus (Minus (Literal 3) (Literal 1)) (Plus (Literal 3) (Literal 2)))))
+        (Target_program (PUSH 2 :: PUSH 3 :: ADD :: PUSH 1 :: PUSH 3 :: SUB :: SUB :: nil))).
+
 Definition compile_rtl (sp : source_program) : target_program :=
   match sp with
   | Source_program ae =>
       Target_program (compile_rtl_aux ae)
   end.
+
+Compute (test_compile_rtl compile_rtl).
 
 Lemma fold_unfold_compile_rtl_aux_Literal :
   forall n : nat,
@@ -912,6 +1050,15 @@ Proof.
 Qed.
 
 (* decode execute rtl *)
+
+Definition test_decode_execute_rtl (candidate : byte_code_instruction -> data_stack -> result_of_decoding_and_execution) : bool :=
+  (eqb_result_of_decoding_and_execution (candidate (PUSH 42) (1 :: 2 :: 3 :: nil)) (OK (42 :: 1 :: 2 :: 3 :: nil)))
+  && (eqb_result_of_decoding_and_execution (candidate (SUB) (5 :: 1 :: nil)) (OK (4 :: nil)))
+  && (eqb_result_of_decoding_and_execution (candidate (SUB) (1 :: 5 :: nil)) (KO "numerical underflow: -4"))
+  && (eqb_result_of_decoding_and_execution (candidate (ADD) (1 :: nil)) (KO "ADD: stack underflow"))
+  && (eqb_result_of_decoding_and_execution (candidate (SUB) (nil)) (KO "SUB: stack underflow"))
+  && (eqb_result_of_decoding_and_execution (candidate (ADD) (4 :: 3 :: 2 :: 1 :: nil)) (OK (7 :: 2 :: 1 :: nil)))
+  && (eqb_result_of_decoding_and_execution (candidate (SUB) (4 :: 3 :: 2 :: 5 :: nil)) (OK (1 :: 2 :: 5 :: nil))).
 
 Definition decode_execute_rtl (bci : byte_code_instruction) (ds : data_stack) : result_of_decoding_and_execution :=
   match bci with
@@ -945,7 +1092,31 @@ Definition decode_execute_rtl (bci : byte_code_instruction) (ds : data_stack) : 
       end
   end.
 
+Compute (test_decode_execute_rtl decode_execute_rtl).
+
 (* fetch decode execute rtl and its fold unfold lemmas*)
+
+Definition test_fetch_decode_execute_loop_height_rtl (candidate : (list byte_code_instruction) -> data_stack  -> result_of_fetch_decode_execute_loop) :=
+  (eqb_result_of_decoding_and_execution_height
+     (candidate (PUSH 42 :: PUSH 21 :: nil) (1 :: 2 :: 3 :: nil))
+     (OK' (21 :: 42 :: 1 :: 2 :: 3 :: nil) 5))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate (ADD :: ADD :: nil) (1 :: 2 :: 3 :: nil))
+       (OK' (6 :: nil) 3))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate (SUB :: nil) (3 :: 2 :: nil))
+       (OK' (1 :: nil) 2 ))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate (SUB :: SUB :: nil) (4 :: 3 :: 2 :: nil))
+       (KO' "numerical underflow: -1"))
+  &&
+    (eqb_result_of_decoding_and_execution_height
+       (candidate
+          (PUSH 1 :: PUSH 2 :: ADD :: PUSH 3 :: ADD :: PUSH 4 :: ADD :: nil) nil)
+       (OK' (10 :: nil) 2)).
 
 Fixpoint fetch_decode_execute_loop_rtl (bcis : list byte_code_instruction) (ds : data_stack) : result_of_fetch_decode_execute_loop :=
   match bcis with
@@ -964,6 +1135,8 @@ Fixpoint fetch_decode_execute_loop_rtl (bcis : list byte_code_instruction) (ds :
           KO' s
       end
   end.
+
+Compute (test_fetch_decode_execute_loop_height_rtl fetch_decode_execute_loop_rtl).
 
 Lemma fold_unfold_fetch_decode_execute_loop_rtl_nil :
   forall (ds : data_stack),
@@ -994,6 +1167,23 @@ Qed.
 
 (* run rtl *)
 
+Definition test_run_rtl (candidate : target_program -> expressible_value * nat) : bool :=
+  (let (ev1, h1) := (candidate (Target_program (PUSH 42 :: nil))) in
+   (eqb_expressible_value ev1 (Expressible_nat 42)) &&
+     (Nat.eqb h1 1))
+  &&
+    (let (ev2, h2) := (candidate (Target_program (PUSH 42 :: PUSH 1 :: ADD :: PUSH 100 :: ADD :: nil))) in
+     (eqb_expressible_value ev2 (Expressible_nat 143)) &&
+       (Nat.eqb h2 2))
+  &&
+    (let (ev3, h3) := (candidate (Target_program (PUSH 42 :: ADD :: SUB :: nil))) in
+     (eqb_expressible_value ev3 (Expressible_msg "ADD: stack underflow")) &&
+       (Nat.eqb h3 0))
+  &&
+    (let (ev4, h4) := (candidate (Target_program (PUSH 20 :: PUSH 42 :: ADD :: PUSH 20 :: PUSH 30 :: PUSH 40 :: nil))) in
+     (eqb_expressible_value ev4 (Expressible_msg "too many results on the data stack")) &&
+       (Nat.eqb h4 0)).
+
 Definition run_rtl (target : target_program) : (expressible_value * nat) :=
   match target with
     | Target_program bcis =>
@@ -1012,13 +1202,85 @@ Definition run_rtl (target : target_program) : (expressible_value * nat) :=
         end
     end.
 
+Compute (test_run_rtl run_rtl).
+
 (* interpret rtl *)
+
+Definition test_interpret_rtl (candidate : source_program -> expressible_value) : bool :=
+  test_evaluate_rtl (fun ae => candidate (Source_program ae)).
 
 Definition interpret_rtl (sp : source_program) : expressible_value :=
   match sp with
   | Source_program ae =>
       evaluate_rtl ae
   end.
+
+Compute (test_interpret_rtl interpret_rtl).
+
+Compute (
+    let bci := PUSH 1 in
+    let bcis' := (PUSH 2 :: PUSH 1 :: nil) in
+    let ds := nil in
+    match (fetch_decode_execute_loop_rtl (bci :: bcis') ds) with
+    | OK' ds1 mh1 =>
+        decode_execute_rtl bci ds = OK (1 :: nil)
+        /\
+          (fetch_decode_execute_loop_rtl bcis' (1 :: nil) = OK' ds1 3
+           /\ (mh1 = Nat.max (list_length nat ds) (Nat.max (list_length nat (1 :: 2 :: 1 :: nil)) 3)))
+    | KO' s => (fetch_decode_execute_loop_rtl (bci :: bcis') ds) = KO' s
+    end
+  ).
+
+(* tests for about_fde_loop_rtl_stepping *)
+
+Compute (
+  let bci := PUSH 1 in
+  let bcis' := nil in
+  let ds := nil in
+  match (fetch_decode_execute_loop_rtl (bci :: bcis') ds) with
+  | OK' ds1 mh1 => 
+      decode_execute_rtl bci ds = OK (1 :: nil) /\
+      (fetch_decode_execute_loop_rtl bcis' (1 :: nil) = OK' ds1 1 /\
+      (mh1 = Nat.max (list_length nat ds) (Nat.max (list_length nat (1 :: nil)) 1)))
+  | KO' s => (fetch_decode_execute_loop_rtl (bci :: bcis') ds) = KO' s
+  end
+  ).
+
+Compute (
+  let bci := PUSH 3 in
+  let bcis' := (PUSH 2 :: ADD :: PUSH 1 :: SUB :: nil) in
+  let ds := nil in
+  match (fetch_decode_execute_loop_rtl (bci :: bcis') ds) with
+  | OK' ds1 mh1 => 
+      decode_execute_rtl bci ds = OK (3 :: nil) /\
+      (fetch_decode_execute_loop_rtl bcis' (3 :: nil) = OK' ds1 4 /\
+      (mh1 = Nat.max (list_length nat ds) (Nat.max (list_length nat (4 :: nil)) 4)))
+  | KO' s => (fetch_decode_execute_loop_rtl (bci :: bcis') ds) = KO' s
+  end
+  ).
+
+Compute (
+  let bci := PUSH 1 in
+  let bcis' := (SUB :: nil) in
+  let ds := nil in
+  match (fetch_decode_execute_loop_rtl (bci :: bcis') ds) with
+  | OK' ds1 mh1 => False  (* This branch should not be reached *)
+  | KO' s => (fetch_decode_execute_loop_rtl (bci :: bcis') ds) = KO' "Stack underflow"
+  end
+  ).
+
+Compute (
+  let bci := PUSH 1 in
+  let bcis' := (PUSH 2 :: PUSH 3 :: PUSH 4 :: PUSH 5 :: nil) in
+  let ds := (6 :: 7 :: nil) in
+  match (fetch_decode_execute_loop_rtl (bci :: bcis') ds) with
+  | OK' ds1 mh1 => 
+      decode_execute_rtl bci ds = OK (1 :: 6 :: 7 :: nil) /\
+      (fetch_decode_execute_loop_rtl bcis' (1 :: 6 :: 7 :: nil) = OK' ds1 7 /\
+      (mh1 = Nat.max (list_length nat ds) (Nat.max (list_length nat (5 :: 4 :: 3 :: 2 :: 1 :: 6 :: 7 :: nil)) 7)))
+  | KO' s => (fetch_decode_execute_loop_rtl (bci :: bcis') ds) = KO' s
+  end
+).
 
 Lemma about_fde_loop_rtl_stepping :
   forall (bci : byte_code_instruction)
@@ -1047,6 +1309,44 @@ Proof.
     + discriminate H_run_bcis_ds.
   - discriminate H_run_bcis_ds.
 Qed.
+
+(* tests for about_fde_rtl_errors *)
+
+Compute (
+  let bci1s := (SUB :: nil) in
+  let bci2s := (PUSH 1 :: PUSH 2 :: ADD :: nil) in
+  let ds := (5 :: nil) in
+  match (fetch_decode_execute_loop_rtl bci1s ds) with
+  | OK' ds' mh' =>
+      (fetch_decode_execute_loop_rtl bci1s ds) = OK' ds' mh'
+  | KO' s =>
+      fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = KO' s
+  end
+  ).
+
+Compute (
+  let bci1s := (PUSH 1 :: ADD :: nil) in
+  let bci2s := (PUSH 2 :: PUSH 3 :: SUB :: PUSH 4 :: ADD :: PUSH 5 :: SUB :: nil) in
+  let ds := nil in
+  match (fetch_decode_execute_loop_rtl bci1s ds) with
+  | OK' ds' mh' =>
+      (fetch_decode_execute_loop_rtl bci1s ds) = OK' ds' mh'
+  | KO' s =>
+      fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = KO' s
+  end
+  ).
+
+Compute (
+  let bci1s := (PUSH 1 :: SUB :: ADD :: nil) in
+  let bci2s := (SUB :: PUSH 2 :: ADD :: nil) in
+  let ds := (10 :: nil) in
+  match (fetch_decode_execute_loop_rtl bci1s ds) with
+  | OK' ds' mh' =>
+      (fetch_decode_execute_loop_rtl bci1s ds) = OK' ds' mh'
+  | KO' s =>
+      fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = KO' s
+  end
+  ).
 
 Lemma about_fde_rtl_errors :
   forall (bci1s bci2s : list byte_code_instruction)
@@ -1080,6 +1380,98 @@ Proof.
         rewrite -> H_de_bci1 in H_KO.
         exact H_KO.
 Qed.
+
+(* tests for about_fde_loop_rtl_concatenation *)
+
+Compute (
+  let bci1s := (PUSH 1 :: PUSH 2 :: ADD :: nil) in
+  let bci2s := (PUSH 3 :: SUB :: nil) in
+  let ds := nil in
+  match fetch_decode_execute_loop_rtl bci1s ds with
+  | OK' ds1 h1 =>
+      match fetch_decode_execute_loop_rtl bci2s ds1 with
+      | OK' ds2 h2 =>
+          fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = OK' ds2 (Nat.max h1 h2)
+      | KO' s2 => fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = KO' s2
+      end
+  | KO' s1 => fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = KO' s1
+  end
+  ).
+
+Compute (
+  let bci1s := (PUSH 1 :: nil) in
+  let bci2s := (SUB :: nil) in
+  let ds := nil in
+  match fetch_decode_execute_loop_rtl bci1s ds with
+  | OK' ds1 h1 =>
+      match fetch_decode_execute_loop_rtl bci2s ds1 with
+      | OK' ds2 h2 =>
+          fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = OK' ds2 (Nat.max h1 h2)
+      | KO' s2 => fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = KO' s2
+      end
+  | KO' s1 => fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = KO' s1
+  end
+  ).
+
+Compute (
+  let bci1s := (SUB :: nil) in
+  let bci2s := (PUSH 1 :: PUSH 2 :: ADD :: nil) in
+  let ds := nil in
+  match fetch_decode_execute_loop_rtl bci1s ds with
+  | OK' ds1 h1 =>
+      match fetch_decode_execute_loop_rtl bci2s ds1 with
+      | OK' ds2 h2 =>
+          fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = OK' ds2 (Nat.max h1 h2)
+      | KO' s2 => fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = KO' s2
+      end
+  | KO' s1 => fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = KO' s1
+  end
+  ).
+
+Compute (
+  let bci1s := nil in
+  let bci2s := (PUSH 1 :: PUSH 2 :: ADD :: nil) in
+  let ds := nil in
+  match fetch_decode_execute_loop_rtl bci1s ds with
+  | OK' ds1 h1 =>
+      match fetch_decode_execute_loop_rtl bci2s ds1 with
+      | OK' ds2 h2 =>
+          fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = OK' ds2 (Nat.max h1 h2)
+      | KO' s2 => fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = KO' s2
+      end
+  | KO' s1 => fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = KO' s1
+  end
+  ).
+
+Compute (
+  let bci1s := (PUSH 1 :: PUSH 2 :: ADD :: nil) in
+  let bci2s := nil in
+  let ds := nil in
+  match fetch_decode_execute_loop_rtl bci1s ds with
+  | OK' ds1 h1 =>
+      match fetch_decode_execute_loop_rtl bci2s ds1 with
+      | OK' ds2 h2 =>
+          fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = OK' ds2 (Nat.max h1 h2)
+      | KO' s2 => fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = KO' s2
+      end
+  | KO' s1 => fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = KO' s1
+  end
+  ).
+
+Compute (
+  let bci1s := nil in
+  let bci2s := nil in
+  let ds := nil in
+  match fetch_decode_execute_loop_rtl bci1s ds with
+  | OK' ds1 h1 =>
+      match fetch_decode_execute_loop_rtl bci2s ds1 with
+      | OK' ds2 h2 =>
+          fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = OK' ds2 (Nat.max h1 h2)
+      | KO' s2 => fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = KO' s2
+      end
+  | KO' s1 => fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = KO' s1
+  end
+  ).
 
 Theorem about_fde_loop_rtl_concatenation :
   forall (bci1s bci2s : list byte_code_instruction)
@@ -1182,6 +1574,68 @@ Proof.
       Check (about_fde_rtl_errors (bci1 :: bci1s') bci2s ds s1 H_s1).
       exact (about_fde_rtl_errors (bci1 :: bci1s') bci2s ds s1 H_s1).
 Qed.
+
+(* about_fde_loop_rtl_and_evaluating *)
+
+Compute (
+  let ae := Literal 5 in
+  let ds := nil in
+  match evaluate_rtl ae with
+  | Expressible_nat n =>
+      fetch_decode_execute_loop_rtl (compile_rtl_aux ae) ds =
+        OK' (n :: ds) (S (depth_right ae) + list_length nat ds)
+  | Expressible_msg s =>
+      fetch_decode_execute_loop_rtl (compile_rtl_aux ae) ds = KO' s
+  end
+  ).
+
+Compute (
+  let ae := Plus (Literal 3) (Literal 4) in
+  let ds := (1 :: 2 :: nil) in
+  match evaluate_rtl ae with
+  | Expressible_nat n =>
+      fetch_decode_execute_loop_rtl (compile_rtl_aux ae) ds =
+        OK' (n :: ds) (S (depth_right ae) + list_length nat ds)
+  | Expressible_msg s =>
+      fetch_decode_execute_loop_rtl (compile_rtl_aux ae) ds = KO' s
+  end
+  ).
+
+Compute (
+  let ae := Minus (Literal 10) (Literal 3) in
+  let ds := nil in
+  match evaluate_rtl ae with
+  | Expressible_nat n =>
+      fetch_decode_execute_loop_rtl (compile_rtl_aux ae) ds =
+        OK' (n :: ds) (S (depth_right ae) + list_length nat ds)
+  | Expressible_msg s =>
+      fetch_decode_execute_loop_rtl (compile_rtl_aux ae) ds = KO' s
+  end
+  ).
+
+Compute (
+  let ae := Plus (Minus (Literal 10) (Literal 3)) (Plus (Literal 5) (Literal 2)) in
+  let ds := (100 :: nil) in
+  match evaluate_rtl ae with
+  | Expressible_nat n =>
+      fetch_decode_execute_loop_rtl (compile_rtl_aux ae) ds =
+        OK' (n :: ds) (S (depth_right ae) + list_length nat ds)
+  | Expressible_msg s =>
+      fetch_decode_execute_loop_rtl (compile_rtl_aux ae) ds = KO' s
+  end
+  ).
+
+Compute (
+  let ae := Minus (Literal 3) (Literal 5) in
+  let ds := nil in
+  match evaluate_rtl ae with
+  | Expressible_nat n =>
+      fetch_decode_execute_loop_rtl (compile_rtl_aux ae) ds =
+        OK' (n :: ds) (S (depth_right ae) + list_length nat ds)
+  | Expressible_msg s =>
+      fetch_decode_execute_loop_rtl (compile_rtl_aux ae) ds = KO' s
+  end
+).
 
 Lemma about_fde_loop_rtl_and_evaluating:
   forall ae : arithmetic_expression,
@@ -1572,6 +2026,47 @@ Definition depth_right_sp (sp : source_program) : nat :=
       depth_right ae
   end.
 
+(* compiling_and_running_rtl_gives_S_depth_right *)
+Compute (
+    match (run_rtl (compile_rtl (Source_program test_case5))) with
+    | (Expressible_nat n, mh) =>
+        interpret_rtl (Source_program test_case5) = Expressible_nat n /\ (S (depth_right_sp (Source_program test_case5)) = mh)
+    | (Expressible_msg s, _) =>
+        interpret_rtl (Source_program test_case5) = Expressible_msg s
+    end).
+
+Compute (
+    match (run_rtl (compile_rtl (Source_program test_case6))) with
+    | (Expressible_nat n, mh) =>
+        interpret_rtl (Source_program test_case6) = Expressible_nat n /\ (S (depth_right_sp (Source_program test_case6)) = mh)
+    | (Expressible_msg s, _) =>
+        interpret_rtl (Source_program test_case6) = Expressible_msg s
+    end).
+
+Compute (
+    match (run_rtl (compile_rtl (Source_program test_case7))) with
+    | (Expressible_nat n, mh) =>
+        interpret_rtl (Source_program test_case7) = Expressible_nat n /\ (S (depth_right_sp (Source_program test_case7)) = mh)
+    | (Expressible_msg s, _) =>
+        interpret_rtl (Source_program test_case7) = Expressible_msg s
+    end).
+
+Compute (
+    match (run_rtl (compile_rtl (Source_program test_case8))) with
+    | (Expressible_nat n, mh) =>
+        interpret_rtl (Source_program test_case8) = Expressible_nat n /\ (S (depth_right_sp (Source_program test_case8)) = mh)
+    | (Expressible_msg s, _) =>
+        interpret_rtl (Source_program test_case8) = Expressible_msg s
+    end).
+
+Compute (
+    match (run_rtl (compile_rtl (Source_program test_case9))) with
+    | (Expressible_nat n, mh) =>
+        interpret_rtl (Source_program test_case9) = Expressible_nat n /\ (S (depth_right_sp (Source_program test_case9)) = mh)
+    | (Expressible_msg s, _) =>
+        interpret_rtl (Source_program test_case9) = Expressible_msg s
+    end).
+
 Theorem compiling_and_running_rtl_gives_S_depth_right:
   forall sp : source_program,
     (forall n mh: nat,
@@ -1623,6 +2118,98 @@ Qed.
 
 (* ***** *)
 
+(* tests for about_fde_loop_ltr_concatenation *)
+
+Compute (
+  let bci1s := (PUSH 1 :: PUSH 2 :: ADD :: nil) in
+  let bci2s := (PUSH 3 :: SUB :: nil) in
+  let ds := nil in
+  match fetch_decode_execute_loop_ltr bci1s ds with
+  | OK' ds1 h1 =>
+      match fetch_decode_execute_loop_ltr bci2s ds1 with
+      | OK' ds2 h2 =>
+          fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = OK' ds2 (Nat.max h1 h2)
+      | KO' s2 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s2
+      end
+  | KO' s1 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s1
+  end
+  ).
+
+Compute (
+  let bci1s := (PUSH 1 :: nil) in
+  let bci2s := (SUB :: nil) in
+  let ds := nil in
+  match fetch_decode_execute_loop_ltr bci1s ds with
+  | OK' ds1 h1 =>
+      match fetch_decode_execute_loop_ltr bci2s ds1 with
+      | OK' ds2 h2 =>
+          fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = OK' ds2 (Nat.max h1 h2)
+      | KO' s2 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s2
+      end
+  | KO' s1 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s1
+  end
+  ).
+
+Compute (
+  let bci1s := (SUB :: nil) in
+  let bci2s := (PUSH 1 :: PUSH 2 :: ADD :: nil) in
+  let ds := nil in
+  match fetch_decode_execute_loop_ltr bci1s ds with
+  | OK' ds1 h1 =>
+      match fetch_decode_execute_loop_ltr bci2s ds1 with
+      | OK' ds2 h2 =>
+          fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = OK' ds2 (Nat.max h1 h2)
+      | KO' s2 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s2
+      end
+  | KO' s1 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s1
+  end
+  ).
+
+Compute (
+  let bci1s := nil in
+  let bci2s := (PUSH 1 :: PUSH 2 :: ADD :: nil) in
+  let ds := nil in
+  match fetch_decode_execute_loop_ltr bci1s ds with
+  | OK' ds1 h1 =>
+      match fetch_decode_execute_loop_ltr bci2s ds1 with
+      | OK' ds2 h2 =>
+          fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = OK' ds2 (Nat.max h1 h2)
+      | KO' s2 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s2
+      end
+  | KO' s1 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s1
+  end
+  ).
+
+Compute (
+  let bci1s := (PUSH 1 :: PUSH 2 :: ADD :: nil) in
+  let bci2s := nil in
+  let ds := nil in
+  match fetch_decode_execute_loop_ltr bci1s ds with
+  | OK' ds1 h1 =>
+      match fetch_decode_execute_loop_ltr bci2s ds1 with
+      | OK' ds2 h2 =>
+          fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = OK' ds2 (Nat.max h1 h2)
+      | KO' s2 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s2
+      end
+  | KO' s1 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s1
+  end
+  ).
+
+Compute (
+  let bci1s := nil in
+  let bci2s := nil in
+  let ds := nil in
+  match fetch_decode_execute_loop_ltr bci1s ds with
+  | OK' ds1 h1 =>
+      match fetch_decode_execute_loop_ltr bci2s ds1 with
+      | OK' ds2 h2 =>
+          fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = OK' ds2 (Nat.max h1 h2)
+      | KO' s2 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s2
+      end
+  | KO' s1 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s1
+  end
+  ).
+
 Lemma about_fde_loop_ltr_stepping :
   forall (bci : byte_code_instruction)
          (bcis' : list byte_code_instruction)
@@ -1650,6 +2237,44 @@ Proof.
     + discriminate H_run_bcis_ds.
   - discriminate H_run_bcis_ds.
 Qed.
+
+(* tests for about_fde_ltr_errors *)
+
+Compute (
+  let bci1s := (SUB :: nil) in
+  let bci2s := (PUSH 1 :: PUSH 2 :: ADD :: nil) in
+  let ds := (5 :: nil) in
+  match (fetch_decode_execute_loop_ltr bci1s ds) with
+  | OK' ds' mh' =>
+      (fetch_decode_execute_loop_ltr bci1s ds) = OK' ds' mh'
+  | KO' s =>
+      fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s
+  end
+  ).
+
+Compute (
+  let bci1s := (PUSH 1 :: ADD :: nil) in
+  let bci2s := (PUSH 2 :: PUSH 3 :: SUB :: PUSH 4 :: ADD :: PUSH 5 :: SUB :: nil) in
+  let ds := nil in
+  match (fetch_decode_execute_loop_ltr bci1s ds) with
+  | OK' ds' mh' =>
+      (fetch_decode_execute_loop_ltr bci1s ds) = OK' ds' mh'
+  | KO' s =>
+      fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s
+  end
+  ).
+
+Compute (
+  let bci1s := (PUSH 1 :: SUB :: ADD :: nil) in
+  let bci2s := (SUB :: PUSH 2 :: ADD :: nil) in
+  let ds := (10 :: nil) in
+  match (fetch_decode_execute_loop_ltr bci1s ds) with
+  | OK' ds' mh' =>
+      (fetch_decode_execute_loop_ltr bci1s ds) = OK' ds' mh'
+  | KO' s =>
+      fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s
+  end
+  ).
 
 Lemma about_fde_ltr_errors :
   forall (bci1s bci2s : list byte_code_instruction)
@@ -1681,6 +2306,98 @@ Proof.
         rewrite -> H_de_bci1 in H_KO.
         exact H_KO.
 Qed.
+
+(* tests for about_fde_loop_ltr_concatenation *)
+
+Compute (
+  let bci1s := (PUSH 1 :: PUSH 2 :: ADD :: nil) in
+  let bci2s := (PUSH 3 :: SUB :: nil) in
+  let ds := nil in
+  match fetch_decode_execute_loop_ltr bci1s ds with
+  | OK' ds1 h1 =>
+      match fetch_decode_execute_loop_ltr bci2s ds1 with
+      | OK' ds2 h2 =>
+          fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = OK' ds2 (Nat.max h1 h2)
+      | KO' s2 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s2
+      end
+  | KO' s1 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s1
+  end
+).
+
+Compute (
+  let bci1s := (PUSH 1 :: nil) in
+  let bci2s := (SUB :: nil) in
+  let ds := nil in
+  match fetch_decode_execute_loop_ltr bci1s ds with
+  | OK' ds1 h1 =>
+      match fetch_decode_execute_loop_ltr bci2s ds1 with
+      | OK' ds2 h2 =>
+          fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = OK' ds2 (Nat.max h1 h2)
+      | KO' s2 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s2
+      end
+  | KO' s1 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s1
+  end
+).
+
+Compute (
+  let bci1s := (SUB :: nil) in
+  let bci2s := (PUSH 1 :: PUSH 2 :: ADD :: nil) in
+  let ds := nil in
+  match fetch_decode_execute_loop_ltr bci1s ds with
+  | OK' ds1 h1 =>
+      match fetch_decode_execute_loop_ltr bci2s ds1 with
+      | OK' ds2 h2 =>
+          fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = OK' ds2 (Nat.max h1 h2)
+      | KO' s2 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s2
+      end
+  | KO' s1 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s1
+  end
+).
+
+Compute (
+  let bci1s := nil in
+  let bci2s := (PUSH 1 :: PUSH 2 :: ADD :: nil) in
+  let ds := nil in
+  match fetch_decode_execute_loop_ltr bci1s ds with
+  | OK' ds1 h1 =>
+      match fetch_decode_execute_loop_ltr bci2s ds1 with
+      | OK' ds2 h2 =>
+          fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = OK' ds2 (Nat.max h1 h2)
+      | KO' s2 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s2
+      end
+  | KO' s1 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s1
+  end
+).
+
+Compute (
+  let bci1s := (PUSH 1 :: PUSH 2 :: ADD :: nil) in
+  let bci2s := nil in
+  let ds := nil in
+  match fetch_decode_execute_loop_ltr bci1s ds with
+  | OK' ds1 h1 =>
+      match fetch_decode_execute_loop_ltr bci2s ds1 with
+      | OK' ds2 h2 =>
+          fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = OK' ds2 (Nat.max h1 h2)
+      | KO' s2 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s2
+      end
+  | KO' s1 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s1
+  end
+).
+
+Compute (
+  let bci1s := nil in
+  let bci2s := nil in
+  let ds := nil in
+  match fetch_decode_execute_loop_ltr bci1s ds with
+  | OK' ds1 h1 =>
+      match fetch_decode_execute_loop_ltr bci2s ds1 with
+      | OK' ds2 h2 =>
+          fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = OK' ds2 (Nat.max h1 h2)
+      | KO' s2 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s2
+      end
+  | KO' s1 => fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s1
+  end
+).
 
 Theorem about_fde_loop_ltr_concatenation :
   forall (bci1s bci2s : list byte_code_instruction)
@@ -1774,7 +2491,69 @@ Proof.
     + intros s1 H_s1.
       exact (about_fde_ltr_errors (bci1 :: bci1s') bci2s ds s1 H_s1).
 Qed.
-      
+
+(* about_fde_loop_ltr_and_evaluating *)
+
+Compute (
+  let ae := Literal 5 in
+  let ds := nil in
+  match evaluate_ltr ae with
+  | Expressible_nat n =>
+      fetch_decode_execute_loop_ltr (compile_ltr_aux ae) ds =
+        OK' (n :: ds) (S (depth_left ae) + list_length nat ds)
+  | Expressible_msg s =>
+      fetch_decode_execute_loop_ltr (compile_ltr_aux ae) ds = KO' s
+  end
+).
+
+Compute (
+  let ae := Plus (Literal 3) (Literal 4) in
+  let ds := (1 :: 2 :: nil) in
+  match evaluate_ltr ae with
+  | Expressible_nat n =>
+      fetch_decode_execute_loop_ltr (compile_ltr_aux ae) ds =
+        OK' (n :: ds) (S (depth_left ae) + list_length nat ds)
+  | Expressible_msg s =>
+      fetch_decode_execute_loop_ltr (compile_ltr_aux ae) ds = KO' s
+  end
+).
+
+Compute (
+  let ae := Minus (Literal 10) (Literal 3) in
+  let ds := nil in
+  match evaluate_ltr ae with
+  | Expressible_nat n =>
+      fetch_decode_execute_loop_ltr (compile_ltr_aux ae) ds =
+        OK' (n :: ds) (S (depth_left ae) + list_length nat ds)
+  | Expressible_msg s =>
+      fetch_decode_execute_loop_ltr (compile_ltr_aux ae) ds = KO' s
+  end
+).
+
+Compute (
+  let ae := Plus (Minus (Literal 10) (Literal 3)) (Plus (Literal 5) (Literal 2)) in
+  let ds := (100 :: nil) in
+  match evaluate_ltr ae with
+  | Expressible_nat n =>
+      fetch_decode_execute_loop_ltr (compile_ltr_aux ae) ds =
+        OK' (n :: ds) (S (depth_left ae) + list_length nat ds)
+  | Expressible_msg s =>
+      fetch_decode_execute_loop_ltr (compile_ltr_aux ae) ds = KO' s
+  end
+).
+
+Compute (
+  let ae := Minus (Literal 3) (Literal 5) in
+  let ds := nil in
+  match evaluate_ltr ae with
+  | Expressible_nat n =>
+      fetch_decode_execute_loop_ltr (compile_ltr_aux ae) ds =
+        OK' (n :: ds) (S (depth_left ae) + list_length nat ds)
+  | Expressible_msg s =>
+      fetch_decode_execute_loop_ltr (compile_ltr_aux ae) ds = KO' s
+  end
+).
+
 Lemma about_fde_loop_ltr_and_evaluating:
   forall ae : arithmetic_expression,
     (forall (n : nat)
@@ -2077,6 +2856,50 @@ Definition depth_left_sp (sp : source_program) : nat :=
   | Source_program ae =>
       depth_left ae
   end.
+
+(* compiling_and_running_ltr_gives_S_depth_left *)
+
+Compute (
+    match (run_ltr (compile_ltr (Source_program test_ae1))) with
+    | (Expressible_nat n, mh) =>
+        interpret_ltr (Source_program test_ae1) = Expressible_nat 10 /\ (S (depth_left_sp (Source_program test_ae1)) = mh)
+    | (Expressible_msg s, _) =>
+        interpret_ltr (Source_program test_ae1) = Expressible_msg s
+    end).
+
+
+Compute (
+    match (run_ltr (compile_ltr (Source_program test_ae2))) with
+    | (Expressible_nat n, mh) =>
+        interpret_ltr (Source_program test_ae2) = Expressible_nat 10 /\ (S (depth_left_sp (Source_program test_ae2)) = mh)
+    | (Expressible_msg s, _) =>
+        interpret_ltr (Source_program test_ae2) = Expressible_msg s
+    end).
+
+Compute (
+    match (run_ltr (compile_ltr (Source_program test_ae3))) with
+    | (Expressible_nat n, mh) =>
+        interpret_ltr (Source_program test_ae3) = Expressible_nat 6 /\ (S (depth_left_sp (Source_program test_ae3)) = mh)
+    | (Expressible_msg s, _) =>
+        interpret_ltr (Source_program test_ae3) = Expressible_msg s
+    end).
+
+
+Compute (
+    match (run_ltr (compile_ltr (Source_program test_ae4))) with
+    | (Expressible_nat n, mh) =>
+        interpret_ltr (Source_program test_ae4) = Expressible_nat 1 /\ (S (depth_left_sp (Source_program test_ae4)) = mh)
+    | (Expressible_msg s, _) =>
+        interpret_ltr (Source_program test_ae4) = Expressible_msg s
+    end).
+
+Compute (
+    match (run_ltr (compile_ltr (Source_program test_ae5))) with
+    | (Expressible_nat n, mh) =>
+        interpret_ltr (Source_program test_ae5) = Expressible_nat 42 /\ (S (depth_left_sp (Source_program test_ae5)) = mh)
+    | (Expressible_msg s, _) =>
+        interpret_ltr (Source_program test_ae5) = Expressible_msg s
+    end).
 
 Theorem compiling_and_running_ltr_gives_S_depth_left :
   forall sp : source_program,
