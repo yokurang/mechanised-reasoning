@@ -1,7 +1,7 @@
 (* ********** *)
 
 Ltac fold_unfold_tactic name := intros; unfold name; fold name; reflexivity.
-  
+
 Require Import Arith Bool List String Ascii.
 
 (* Type Definitions*)
@@ -106,7 +106,7 @@ Qed.
 
 (* ********** *)
 
-(* Equality functions *) 
+(* Equality functions *)
 
 Definition eqb_string (s1 s2 : string) : bool :=
   match String.string_dec s1 s2 with
@@ -266,7 +266,7 @@ Fixpoint evaluate_ltr (ae : arithmetic_expression) : expressible_value :=
           | Expressible_msg s2 =>
               Expressible_msg s2
           end
-      
+
       | Expressible_msg s1 =>
           Expressible_msg s1
       end
@@ -389,8 +389,8 @@ Fixpoint fetch_decode_execute_loop_ltr (bcis : list byte_code_instruction) (ds :
       end
   end.
 
-Lemma fold_unfold_fetch_decode_execute_ltr_loop_nil :
-  forall (ds : data_stack)(ch: nat),
+Lemma fold_unfold_fetch_decode_execute_loop_ltr_nil :
+  forall (ds : data_stack),
     fetch_decode_execute_loop_ltr nil ds = OK' ds (list_length nat ds).
 Proof.
   fold_unfold_tactic fetch_decode_execute_loop_ltr.
@@ -818,7 +818,7 @@ Fixpoint evaluate_rtl (ae : arithmetic_expression) : expressible_value :=
           | Expressible_msg s2 =>
               Expressible_msg s2
           end
-      
+
       | Expressible_msg s1 =>
           Expressible_msg s1
       end
@@ -1082,7 +1082,7 @@ Proof.
           exact H_KO.
 Qed.
 
-Theorem about_fde_loop_rtl_concatenation : 
+Theorem about_fde_loop_rtl_concatenation :
   forall (bci1s bci2s : list byte_code_instruction)
          (ds: data_stack),
     (forall (ds1 : data_stack)
@@ -1163,7 +1163,7 @@ Proof.
           rewrite -> (Nat.max_assoc (list_length nat ds1') h1' h2).
           rewrite -> (Nat.max_r (list_length nat ds1') h1' (leb_complete (list_length nat ds1') h1' le_ds1'_h1')).
           rewrite -> (Nat.max_assoc (list_length nat ds) h1' h2).
-          reflexivity. }        
+          reflexivity. }
         { rewrite -> (IH_bci1s_OK_OK ds2 h2 H_run_bci2s).
           rewrite -> (Nat.max_assoc (list_length nat ds1') h1' h2).
           Check (Nat.max_assoc (list_length nat ds) (Nat.max (list_length nat ds1') h1') h2).
@@ -1290,6 +1290,10 @@ Proof.
          Check (Nat.max_l).
          rewrite -> (Nat.max_l (S (S (list_length nat ds))) (S (list_length nat ds)) (Nat.lt_le_incl (S (list_length nat ds)) (S (S (list_length nat ds))) (Nat.lt_succ_diag_r (S (list_length nat ds))))).
          Search (Nat.max (S _) (S _)).
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
          Search (S _ + _).
          rewrite -> Nat.add_succ_l.
          rewrite -> Nat.add_succ_l.
@@ -1324,7 +1328,7 @@ Proof.
            rewrite <- Nat.add_succ_l.
            reflexivity.
          }
-         { rewrite <-2 Nat.succ_max_distr.           
+         { rewrite <-2 Nat.succ_max_distr.
            rewrite -> Nat.max_0_r.
            rewrite <- Nat.add_succ_l.
            reflexivity.
@@ -1479,7 +1483,7 @@ Proof.
            rewrite <- Nat.add_succ_l.
            reflexivity.
          }
-         { rewrite <-2 Nat.succ_max_distr.           
+         { rewrite <-2 Nat.succ_max_distr.
            rewrite -> Nat.max_0_r.
            rewrite <- Nat.add_succ_l.
            reflexivity.
@@ -1534,7 +1538,7 @@ Proof.
            exact (H_eureka'' s H_s_eq_err).
          }
          { discriminate H_ae. }
-         
+
       ++ rewrite -> (fold_unfold_compile_rtl_aux_Minus ae1 ae2).
          Check (about_fde_loop_rtl_concatenation (compile_rtl_aux ae2) (compile_rtl_aux ae1) ds).
          destruct (about_fde_loop_rtl_concatenation (compile_rtl_aux ae2) (compile_rtl_aux ae1) ds) as [H_eureka _].
@@ -1621,4 +1625,483 @@ Proof.
        injection H_s' as s_equals_s'.
        rewrite -> s_equals_s'.
        reflexivity.
+Qed.
+
+(* ***** *)
+
+Theorem about_fde_loop_ltr_concatenation :
+  forall (bci1s bci2s : list byte_code_instruction)
+         (ds: data_stack),
+    (forall (ds1 : data_stack)
+            (h1 : nat),
+        fetch_decode_execute_loop_ltr bci1s ds = OK' ds1 h1 ->
+        (forall (ds2 : data_stack)
+                (h2 : nat),
+            fetch_decode_execute_loop_ltr bci2s ds1 = OK' ds2 h2 ->
+            fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = OK' ds2 (Nat.max h1 h2))
+        /\
+        (forall (s2 : string),
+            fetch_decode_execute_loop_ltr bci2s ds1 = KO' s2 ->
+            fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s2))
+    /\
+    (forall s1 : string,
+        fetch_decode_execute_loop_ltr bci1s ds = KO' s1 ->
+        fetch_decode_execute_loop_ltr (bci1s ++ bci2s) ds = KO' s1).
+Proof.
+Admitted.
+
+Lemma about_fde_loop_ltr_and_evaluating:
+  forall ae : arithmetic_expression,
+    (forall (n : nat)
+            (ds : data_stack),
+        evaluate_ltr ae = Expressible_nat n ->
+          fetch_decode_execute_loop_ltr (compile_ltr_aux ae) ds =
+            OK' (n :: ds) (S (depth_left ae) + list_length nat ds))
+    /\
+      (forall (s : string)
+              (ds : data_stack),
+        evaluate_ltr ae = Expressible_msg s ->
+        fetch_decode_execute_loop_ltr (compile_ltr_aux ae) ds =
+            KO' s).
+Proof.
+  intro ae.
+  induction ae as [n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2].
+
+  - split.
+
+    -- rewrite -> (fold_unfold_evaluate_ltr_Literal n).
+       intros n' ds n_equals_n'.
+       rewrite -> (fold_unfold_compile_ltr_aux_Literal n).
+       rewrite -> (fold_unfold_fetch_decode_execute_loop_ltr_cons (PUSH n) nil ds).
+       unfold decode_execute_ltr.
+       rewrite -> (fold_unfold_fetch_decode_execute_loop_ltr_nil (n :: ds)).
+       rewrite -> (fold_unfold_list_length_cons nat n ds).
+       Search (Nat.max _ _).
+       rewrite -> (Nat.max_id (1 + list_length nat ds)).
+       rewrite -> (fold_unfold_depth_left_Literal n).
+       injection n_equals_n' as nat_n_equals_n'.
+       rewrite -> nat_n_equals_n'.
+       Search (_ < S _).
+       assert (H := Nat.lt_succ_diag_r (list_length nat ds)).
+       Search (1 + _ = S _).
+       rewrite -> (Nat.add_1_l (list_length nat ds)).
+       Search (Nat.max _ _).
+       Search (_ < _ -> _ <= _).
+       rewrite -> (Nat.max_r (list_length nat ds) (S (list_length nat ds)) (Nat.lt_le_incl (list_length nat ds) (S (list_length nat ds)) H)).
+       reflexivity.
+
+    -- intros s ds H_absurd.
+       rewrite -> (fold_unfold_evaluate_ltr_Literal n) in H_absurd.
+       discriminate H_absurd.
+
+  - split.
+
+    -- intros n ds H_ae.
+       rewrite -> (fold_unfold_compile_ltr_aux_Plus ae1 ae2).
+       case (evaluate_ltr ae1) as [n1 | s1] eqn: H_ae1.
+
+    + rewrite -> (fold_unfold_depth_left_Plus ae1 ae2).
+      case (evaluate_ltr ae2) as [n2 | s2] eqn: H_ae2.
+
+      ++ rewrite -> (fold_unfold_evaluate_ltr_Plus ae1 ae2) in H_ae.
+         rewrite -> H_ae2 in H_ae.
+         rewrite -> H_ae1 in H_ae.
+         injection H_ae as H_ae.
+         rewrite <- H_ae.
+         destruct IHae1 as [IHae1_n _].
+         destruct IHae2 as [IHae2_n _].
+         Check (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1) (compile_ltr_aux ae2 ++ ADD :: nil) ds).
+         destruct (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1) (compile_ltr_aux ae2) ds) as [H_eureka _].
+         Check (H_eureka (n1 :: ds) (S (depth_left ae1) + list_length nat ds) (IHae1_n n1 ds (eq_refl (Expressible_nat n1)))).
+         destruct (H_eureka (n1 :: ds) (S (depth_left ae1) + list_length nat ds) (IHae1_n n1 ds (eq_refl (Expressible_nat n1)))) as [H_run_ae1 _].
+         Check (H_run_ae1 (n2 :: n1 :: ds) (S (depth_left ae2) + list_length nat (n1 :: ds))).
+         Check (IHae2_n n2 (n1 :: ds) (eq_refl (Expressible_nat n2))).
+         Check (H_run_ae1
+                  (n2 :: n1 :: ds)
+                  (S (depth_left ae2) + list_length nat (n1 :: ds))
+                  (IHae2_n n2 (n1 :: ds) (eq_refl (Expressible_nat n2)))).
+         assert (H_run_ae1_ae2 :=
+                   (H_run_ae1
+                     (n2 :: n1 :: ds)
+                     (S (depth_left ae2) + list_length nat (n1 :: ds))
+                     (IHae2_n n2 (n1 :: ds) (eq_refl (Expressible_nat n2))))).
+         Check (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1 ++ compile_ltr_aux ae2) (ADD :: nil) ds).
+         destruct (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1 ++ compile_ltr_aux ae2) (ADD :: nil) ds) as [H_eureka' _].
+         Check (H_eureka' (n2 :: n1 :: ds) (Nat.max (S (depth_left ae1) + list_length nat ds) (S (depth_left ae2) + list_length nat (n1 :: ds))) H_run_ae1_ae2).
+         destruct (H_eureka' (n2 :: n1 :: ds) (Nat.max (S (depth_left ae1) + list_length nat ds) (S (depth_left ae2) + list_length nat (n1 :: ds))) H_run_ae1_ae2) as [H_eureka'' _].
+         rewrite -> (fold_unfold_fetch_decode_execute_loop_ltr_cons ADD nil (n2 :: n1 :: ds)) in H_eureka''.
+         unfold decode_execute_ltr in H_eureka''.
+         rewrite -> (fold_unfold_fetch_decode_execute_loop_ltr_nil (n1 + n2 :: ds)) in H_eureka''.
+         Check (H_eureka'' (n1 + n2 :: ds) (Nat.max (list_length nat (n2 :: n1 :: ds)) (Nat.max (list_length nat (n1 + n2 :: ds))
+                                                                                          (list_length nat (n1 + n2 :: ds))))).
+         Check H_eureka''.
+         (*
+         Check Nat.max_id.
+         rewrite -> (Nat.max_id  (list_length nat (n1 + n2 :: ds))) in H_eureka''.*)
+         Check (H_eureka''
+                  (n1 + n2 :: ds)
+                  (Nat.max (list_length nat (n2 :: n1 :: ds)) (Nat.max (list_length nat (n1 + n2 :: ds)) (list_length nat (n1 + n2 :: ds))))
+                  (eq_refl
+                     (OK' (n1 + n2 :: ds)
+                     (Nat.max (list_length nat (n2 :: n1 :: ds)) (Nat.max (list_length nat (n1 + n2 :: ds)) (list_length nat (n1 + n2 :: ds))))))).
+         rewrite -> (app_assoc (compile_ltr_aux ae1) (compile_ltr_aux ae2) (ADD :: nil)).
+         rewrite -> (H_eureka''
+                       (n1 + n2 :: ds)
+                       (Nat.max (list_length nat (n2 :: n1 :: ds)) (Nat.max (list_length nat (n1 + n2 :: ds)) (list_length nat (n1 + n2 :: ds))))
+                       (eq_refl
+                          (OK' (n1 + n2 :: ds)
+                             (Nat.max (list_length nat (n2 :: n1 :: ds)) (Nat.max (list_length nat (n1 + n2 :: ds)) (list_length nat (n1 + n2 :: ds))))))).
+         rewrite -> (Nat.max_id (list_length nat (n1 + n2 :: ds))).
+         rewrite -> (fold_unfold_list_length_cons nat n2 (n1 :: ds)).
+         rewrite -> (fold_unfold_list_length_cons nat n1 ds).
+         rewrite -> (fold_unfold_list_length_cons nat (n1 + n2) ds).
+         rewrite -> (Nat.add_1_l (list_length nat ds)).
+         rewrite -> (Nat.add_1_l (S (list_length nat ds))).
+         Search (_ < S _).
+         Check (Nat.lt_succ_diag_r (S (list_length nat ds))).
+         Search (_ < _ -> _ <= _).
+         Check (Nat.lt_le_incl (S (list_length nat ds)) (S (S (list_length nat ds))) (Nat.lt_succ_diag_r (S (list_length nat ds)))).
+         Check (Nat.max_r (S (list_length nat ds)) (S (S (list_length nat ds))) (Nat.lt_le_incl (S (list_length nat ds)) (S (S (list_length nat ds))) (Nat.lt_succ_diag_r (S (list_length nat ds))))).
+         Check (Nat.max_l).
+         rewrite -> (Nat.max_l (S (S (list_length nat ds))) (S (list_length nat ds)) (Nat.lt_le_incl (S (list_length nat ds)) (S (S (list_length nat ds))) (Nat.lt_succ_diag_r (S (list_length nat ds))))).
+         Search (Nat.max (S _) (S _)).
+
+         Search (S _ + _).
+         rewrite -> Nat.add_succ_l.
+         rewrite -> Nat.add_succ_l.
+         rewrite <- Nat.succ_max_distr.
+         rewrite <- Nat.succ_max_distr.
+         Search (_ + S _).
+         rewrite <- Nat.add_succ_comm.
+         Search (Nat.max (_ + _) (_ + _)).
+         rewrite -> Nat.add_max_distr_r.
+         rewrite <- (Nat.add_1_l (list_length nat ds)).
+         rewrite -> Nat.add_max_distr_r.
+         rewrite -> (Nat.max_comm (depth_left ae1) (S (depth_left ae2))).
+         case (depth_left ae2) as [ | h_ae2]; case (depth_left ae1) as [ | h_ae1].
+         { rewrite -> (Nat.max_0_r).
+           rewrite -> (Nat.max_id).
+           Search (1 + 1).
+           rewrite -> BinInt.ZL0.
+           rewrite <- Nat.add_1_l.
+           rewrite -> (Nat.add_assoc).
+           reflexivity.}
+         { rewrite <- Nat.succ_max_distr.
+           rewrite -> Nat.max_0_l.
+           rewrite <- Nat.succ_max_distr.
+           rewrite -> Nat.max_0_r.
+           Search (S (_) + _ ).
+           rewrite <- Nat.add_succ_l.
+           reflexivity.
+         }
+         { rewrite -> Nat.max_0_r.
+           rewrite <- Nat.succ_max_distr.
+           rewrite -> Nat.max_0_r.
+           rewrite <- Nat.add_succ_l.
+           reflexivity.
+         }
+         { rewrite <-2 Nat.succ_max_distr.
+           rewrite -> Nat.max_0_r.
+           rewrite <- Nat.add_succ_l.
+           reflexivity.
+         }
+
+      ++ rewrite -> (fold_unfold_evaluate_ltr_Plus ae1 ae2) in H_ae.
+         rewrite -> H_ae2 in H_ae.
+         rewrite -> H_ae1 in H_ae.
+         discriminate H_ae.
+
+    + rewrite -> (fold_unfold_evaluate_ltr_Plus ae1 ae2) in H_ae.
+      rewrite -> H_ae1 in H_ae.
+      discriminate H_ae.
+
+      -- intros s ds H_ae.
+         case (evaluate_ltr ae1) as [n1 | s1] eqn: H_ae1.
+
+    + rewrite -> (fold_unfold_evaluate_ltr_Plus ae1 ae2) in H_ae.
+      rewrite -> H_ae1 in H_ae.
+      case (evaluate_ltr ae2) as [n2 | s2] eqn: H_ae2.
+
+      ++ discriminate H_ae.
+
+      ++ rewrite -> (fold_unfold_compile_ltr_aux_Plus ae1 ae2).
+         Check (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1) (compile_ltr_aux ae2) ds).
+         destruct (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1) (compile_ltr_aux ae2) ds) as [H_eureka _].
+         Check (H_eureka (n1 :: ds) (S (depth_left ae1) + list_length nat ds)).
+         destruct IHae1 as [IHae1_n _].
+         Check (IHae1_n n1 ds (eq_refl (Expressible_nat n1))).
+         Check (H_eureka (n1 :: ds) (S (depth_left ae1) + list_length nat ds) (IHae1_n n1 ds (eq_refl (Expressible_nat n1)))).
+         destruct (H_eureka (n1 :: ds) (S (depth_left ae1) + list_length nat ds) (IHae1_n n1 ds (eq_refl (Expressible_nat n1)))) as [_ IHae1'].
+         destruct IHae2 as [_ IHae2_s].
+         Check (IHae2_s s2 (n1 :: ds) (eq_refl (Expressible_msg s2))).
+         Check (IHae1' s2 (IHae2_s s2 (n1 :: ds) (eq_refl (Expressible_msg s2)))).
+         assert (H_run_ae1_ae2 := (IHae1' s2 (IHae2_s s2 (n1 :: ds) (eq_refl (Expressible_msg s2))))).
+         Check (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1 ++ compile_ltr_aux ae2) (ADD :: nil) ds).
+         destruct (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1 ++ compile_ltr_aux ae2) (ADD :: nil) ds) as [_ H_eureka'].
+         Check (H_eureka' s2 H_run_ae1_ae2).
+         rewrite -> (app_assoc (compile_ltr_aux ae1) (compile_ltr_aux ae2) (ADD :: nil)).
+         injection H_ae as H_ae.
+         rewrite <- H_ae.
+         exact (H_eureka' s2 H_run_ae1_ae2).
+
+    + rewrite -> (fold_unfold_evaluate_ltr_Plus ae1 ae2) in H_ae.
+      rewrite -> H_ae1 in H_ae.
+      injection H_ae as H_ae.
+      rewrite -> (fold_unfold_compile_ltr_aux_Plus ae1 ae2).
+      destruct (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1) (compile_ltr_aux ae2 ++ ADD :: nil) ds) as [_ H_eureka].
+      Check (H_eureka s1).
+      destruct IHae1 as [_ IHae1_s].
+      Check (IHae1_s s1 ds (eq_refl (Expressible_msg s1))).
+      Check (H_eureka s1 (IHae1_s s1 ds (eq_refl (Expressible_msg s1)))).
+      rewrite <- H_ae.
+      exact (H_eureka s1 (IHae1_s s1 ds (eq_refl (Expressible_msg s1)))).
+
+  - split.
+
+    -- intros n ds H_ae.
+       rewrite -> (fold_unfold_compile_ltr_aux_Minus ae1 ae2).
+       case (evaluate_ltr ae1) as [n1 | s1] eqn: H_ae1.
+
+    + rewrite -> (fold_unfold_depth_left_Minus ae1 ae2).
+      case (evaluate_ltr ae2) as [n2 | s2] eqn: H_ae2.
+
+      ++ rewrite -> (fold_unfold_evaluate_ltr_Minus ae1 ae2) in H_ae.
+         rewrite -> H_ae1 in H_ae.
+         rewrite -> H_ae2 in H_ae.
+         case (n1 <? n2) eqn: n1_lt_n2.
+         { discriminate H_ae. }
+         injection H_ae as H_ae.
+         rewrite <- H_ae.
+         destruct IHae1 as [IHae1_n _].
+         destruct IHae2 as [IHae2_n _].
+         Check (IHae1_n n1 nil (eq_refl (Expressible_nat n1))).
+         Check (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1) (compile_ltr_aux ae2 ++ ADD :: nil) ds).
+         destruct (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1) (compile_ltr_aux ae2) ds) as [H_eureka _].
+         Check (H_eureka (n1 :: ds) (S (depth_left ae1) + list_length nat ds) (IHae1_n n1 ds (eq_refl (Expressible_nat n1)))).
+         destruct (H_eureka (n1 :: ds) (S (depth_left ae1) + list_length nat ds) (IHae1_n n1 ds (eq_refl (Expressible_nat n1)))) as [H_run_ae1 _].
+         Check (H_run_ae1 (n2 :: n1 :: ds) (S (depth_left ae2) + list_length nat (n1 :: ds))).
+         Check (IHae2_n n2 (n1 :: ds) (eq_refl (Expressible_nat n2))).
+         Check (H_run_ae1
+                  (n2 :: n1 :: ds)
+                  (S (depth_left ae2) + list_length nat (n1 :: ds))
+                  (IHae2_n n2 (n1 :: ds) (eq_refl (Expressible_nat n2)))).
+         assert (H_run_ae1_ae2 :=
+                   (H_run_ae1
+                     (n2 :: n1 :: ds)
+                     (S (depth_left ae2) + list_length nat (n1 :: ds))
+                     (IHae2_n n2 (n1 :: ds) (eq_refl (Expressible_nat n2))))).
+         Check (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1 ++ compile_ltr_aux ae2) (SUB :: nil) ds).
+         destruct (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1 ++ compile_ltr_aux ae2) (SUB :: nil) ds) as [H_eureka' _].
+         Check (H_eureka' (n2 :: n1 :: ds) (Nat.max (S (depth_left ae1) + list_length nat ds) (S (depth_left ae2) + list_length nat (n1 :: ds))) H_run_ae1_ae2).
+         destruct (H_eureka' (n2 :: n1 :: ds) (Nat.max (S (depth_left ae1) + list_length nat ds) (S (depth_left ae2) + list_length nat (n1 :: ds))) H_run_ae1_ae2) as [H_eureka'' _].
+         rewrite -> (fold_unfold_fetch_decode_execute_loop_ltr_cons SUB nil (n2 :: n1 :: ds)) in H_eureka''.
+         unfold decode_execute_ltr in H_eureka''.
+         rewrite -> n1_lt_n2 in H_eureka''.
+         rewrite -> (fold_unfold_fetch_decode_execute_loop_ltr_nil (n1 - n2 :: ds)) in H_eureka''.
+         Check (H_eureka'' (n1 - n2 :: ds) (Nat.max (list_length nat (n2 :: n1 :: ds)) (Nat.max (list_length nat (n1 - n2 :: ds))
+                                                                                          (list_length nat (n1 - n2 :: ds))))).
+         Check H_eureka''.
+         (*
+         Check Nat.max_id.
+         rewrite -> (Nat.max_id  (list_length nat (n1 + n2 :: ds))) in H_eureka''.*)
+         Check (H_eureka''
+                  (n1 - n2 :: ds)
+                  (Nat.max (list_length nat (n2 :: n1 :: ds)) (Nat.max (list_length nat (n1 - n2 :: ds)) (list_length nat (n1 - n2 :: ds))))
+                  (eq_refl
+                     (OK' (n1 - n2 :: ds)
+                     (Nat.max (list_length nat (n2 :: n1 :: ds)) (Nat.max (list_length nat (n1 - n2 :: ds)) (list_length nat (n1 - n2 :: ds))))))).
+         rewrite -> (app_assoc (compile_ltr_aux ae1) (compile_ltr_aux ae2) (SUB :: nil)).
+         rewrite -> (H_eureka''
+                       (n1 - n2 :: ds)
+                       (Nat.max (list_length nat (n2 :: n1 :: ds)) (Nat.max (list_length nat (n1 - n2 :: ds)) (list_length nat (n1 - n2 :: ds))))
+                       (eq_refl
+                          (OK' (n1 - n2 :: ds)
+                             (Nat.max (list_length nat (n2 :: n1 :: ds)) (Nat.max (list_length nat (n1 - n2 :: ds)) (list_length nat (n1 - n2 :: ds))))))).
+         rewrite -> (Nat.max_id (list_length nat (n1 - n2 :: ds))).
+         rewrite -> (fold_unfold_list_length_cons nat n2 (n1 :: ds)).
+         rewrite -> (fold_unfold_list_length_cons nat n1 ds).
+         rewrite -> (fold_unfold_list_length_cons nat (n1 - n2) ds).
+         rewrite -> (Nat.add_1_l (list_length nat ds)).
+         rewrite -> (Nat.add_1_l (S (list_length nat ds))).
+         Search (_ < S _).
+         Check (Nat.lt_succ_diag_r (S (list_length nat ds))).
+         Search (_ < _ -> _ <= _).
+         Check (Nat.lt_le_incl (S (list_length nat ds)) (S (S (list_length nat ds))) (Nat.lt_succ_diag_r (S (list_length nat ds)))).
+         Check (Nat.max_r (S (list_length nat ds)) (S (S (list_length nat ds))) (Nat.lt_le_incl (S (list_length nat ds)) (S (S (list_length nat ds))) (Nat.lt_succ_diag_r (S (list_length nat ds))))).
+         Check (Nat.max_l).
+         rewrite -> (Nat.max_l (S (S (list_length nat ds))) (S (list_length nat ds)) (Nat.lt_le_incl (S (list_length nat ds)) (S (S (list_length nat ds))) (Nat.lt_succ_diag_r (S (list_length nat ds))))).
+         Search (Nat.max (S _) (S _)).
+         Search (S _ + _).
+         rewrite -> Nat.add_succ_l.
+         rewrite -> Nat.add_succ_l.
+         rewrite <- Nat.succ_max_distr.
+         rewrite <- Nat.succ_max_distr.
+         Search (_ + S _).
+         rewrite <- Nat.add_succ_comm.
+         Search (Nat.max (_ + _) (_ + _)).
+         rewrite -> Nat.add_max_distr_r.
+         rewrite <- (Nat.add_1_l (list_length nat ds)).
+         rewrite -> Nat.add_max_distr_r.
+         rewrite -> (Nat.max_comm (depth_left ae1) (S (depth_left ae2))).
+         case (depth_left ae2) as [ | h_ae2]; case (depth_left ae1) as [ | h_ae1].
+         { rewrite -> (Nat.max_0_r).
+           rewrite -> (Nat.max_id).
+           Search (1 + 1).
+           rewrite -> BinInt.ZL0.
+           rewrite <- Nat.add_1_l.
+           rewrite -> (Nat.add_assoc).
+           reflexivity.}
+         { rewrite <- Nat.succ_max_distr.
+           rewrite -> Nat.max_0_l.
+           rewrite <- Nat.succ_max_distr.
+           rewrite -> Nat.max_0_r.
+           Search (S (_) + _ ).
+           rewrite <- Nat.add_succ_l.
+           reflexivity.
+         }
+         { rewrite -> Nat.max_0_r.
+           rewrite <- Nat.succ_max_distr.
+           rewrite -> Nat.max_0_r.
+           rewrite <- Nat.add_succ_l.
+           reflexivity.
+         }
+         { rewrite <-2 Nat.succ_max_distr.
+           rewrite -> Nat.max_0_r.
+           rewrite <- Nat.add_succ_l.
+           reflexivity.
+         }
+      ++ rewrite -> (fold_unfold_evaluate_ltr_Minus ae1 ae2) in H_ae.
+         rewrite -> H_ae2 in H_ae.
+         rewrite -> H_ae1 in H_ae.
+         discriminate H_ae.
+
+    + rewrite -> (fold_unfold_evaluate_ltr_Minus ae1 ae2) in H_ae.
+      rewrite -> H_ae1 in H_ae.
+      discriminate H_ae.
+
+      -- intros s ds H_ae.
+         case (evaluate_ltr ae1) as [n1 | s1] eqn: H_ae1.
+
+    + rewrite -> (fold_unfold_evaluate_ltr_Minus ae1 ae2) in H_ae.
+      rewrite -> H_ae1 in H_ae.
+      case (evaluate_ltr ae2) as [n2 | s2] eqn: H_ae2.
+
+      ++ case (n1 <? n2) eqn : n1_lt_n2.
+         {
+           destruct IHae1 as [IHae1_n _].
+           destruct IHae2 as [IHae2_n _].
+           Check (IHae1_n n1 nil (eq_refl (Expressible_nat n1))).
+           Check (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1) (compile_ltr_aux ae2 ++ SUB :: nil) ds).
+           destruct (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1) (compile_ltr_aux ae2) ds) as [H_eureka _].
+           Check (H_eureka (n1 :: ds) (S (depth_left ae1) + list_length nat ds) (IHae1_n n1 ds (eq_refl (Expressible_nat n1)))).
+           destruct (H_eureka (n1 :: ds) (S (depth_left ae1) + list_length nat ds) (IHae1_n n1 ds (eq_refl (Expressible_nat n1)))) as [H_run_ae1 _].
+           Check (H_run_ae1 (n2 :: n1 :: ds) (S (depth_left ae2) + list_length nat (n1 :: ds))).
+           Check (IHae2_n n2 (n1 :: ds) (eq_refl (Expressible_nat n2))).
+           Check (H_run_ae1
+                    (n2 :: n1 :: ds)
+                    (S (depth_left ae2) + list_length nat (n1 :: ds))
+                    (IHae2_n n2 (n1 :: ds) (eq_refl (Expressible_nat n2)))).
+           assert (H_run_ae1_ae2 :=
+                     (H_run_ae1
+                        (n2 :: n1 :: ds)
+                        (S (depth_left ae2) + list_length nat (n1 :: ds))
+                        (IHae2_n n2 (n1 :: ds) (eq_refl (Expressible_nat n2))))).
+           Check (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1 ++ compile_ltr_aux ae2) (SUB :: nil) ds).
+           destruct (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1 ++ compile_ltr_aux ae2) (SUB :: nil) ds) as [H_eureka' _].
+           Check (H_eureka' (n2 :: n1 :: ds) (Nat.max (S (depth_left ae1) + list_length nat ds) (S (depth_left ae2) + list_length nat (n1 :: ds))) H_run_ae1_ae2).
+           destruct (H_eureka' (n2 :: n1 :: ds) (Nat.max (S (depth_left ae1) + list_length nat ds) (S (depth_left ae2) + list_length nat (n1 :: ds))) H_run_ae1_ae2) as [_ H_eureka''].
+           rewrite -> (fold_unfold_fetch_decode_execute_loop_ltr_cons SUB nil (n2 :: n1 :: ds)) in H_eureka''.
+           unfold decode_execute_ltr in H_eureka''.
+           rewrite -> n1_lt_n2 in H_eureka''.
+           injection H_ae as H_ae.
+           assert (H_s_eq_err : KO' ("numerical underflow: -" ++
+                                       string_of_nat (n2 - n1)) = KO' s).
+           { rewrite <- H_ae.
+             reflexivity. }
+           Check (H_eureka'' s H_s_eq_err).
+           rewrite -> (fold_unfold_compile_ltr_aux_Minus ae1 ae2).
+           rewrite -> (app_assoc (compile_ltr_aux ae1) (compile_ltr_aux ae2) (SUB :: nil)).
+           exact (H_eureka'' s H_s_eq_err).
+         }
+         { discriminate H_ae. }
+
+      ++ rewrite -> (fold_unfold_compile_ltr_aux_Minus ae1 ae2).
+         Check (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1) (compile_ltr_aux ae2) ds).
+         destruct (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1) (compile_ltr_aux ae2) ds) as [H_eureka _].
+         Check (H_eureka (n1 :: ds) (S (depth_left ae1) + list_length nat ds)).
+         destruct IHae1 as [IHae1_n _].
+         Check (IHae1_n n1 ds (eq_refl (Expressible_nat n1))).
+         Check (H_eureka (n1 :: ds) (S (depth_left ae1) + list_length nat ds) (IHae1_n n1 ds (eq_refl (Expressible_nat n1)))).
+         destruct (H_eureka (n1 :: ds) (S (depth_left ae1) + list_length nat ds) (IHae1_n n1 ds (eq_refl (Expressible_nat n1)))) as [_ IHae1'].
+         destruct IHae2 as [_ IHae2_s].
+         Check (IHae2_s s2 (n1 :: ds) (eq_refl (Expressible_msg s2))).
+         Check (IHae1' s2 (IHae2_s s2 (n1 :: ds) (eq_refl (Expressible_msg s2)))).
+         assert (H_run_ae1_ae2 := (IHae1' s2 (IHae2_s s2 (n1 :: ds) (eq_refl (Expressible_msg s2))))).
+         Check (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1 ++ compile_ltr_aux ae2) (SUB :: nil) ds).
+         destruct (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1 ++ compile_ltr_aux ae2) (SUB :: nil) ds) as [_ H_eureka'].
+         Check (H_eureka' s2 H_run_ae1_ae2).
+         rewrite -> (app_assoc (compile_ltr_aux ae1) (compile_ltr_aux ae2) (SUB :: nil)).
+         injection H_ae as H_ae.
+         rewrite <- H_ae.
+         exact (H_eureka' s2 H_run_ae1_ae2).
+
+    + rewrite -> (fold_unfold_evaluate_ltr_Minus ae1 ae2) in H_ae.
+      rewrite -> H_ae1 in H_ae.
+      injection H_ae as H_ae.
+      rewrite -> (fold_unfold_compile_ltr_aux_Minus ae1 ae2).
+      destruct (about_fde_loop_ltr_concatenation (compile_ltr_aux ae1) (compile_ltr_aux ae2 ++ SUB :: nil) ds) as [_ H_eureka].
+      Check (H_eureka s1).
+      destruct IHae1 as [_ IHae1_s].
+      Check (IHae1_s s1 ds (eq_refl (Expressible_msg s1))).
+      Check (H_eureka s1 (IHae1_s s1 ds (eq_refl (Expressible_msg s1)))).
+      rewrite <- H_ae.
+      exact (H_eureka s1 (IHae1_s s1 ds (eq_refl (Expressible_msg s1)))).
+Qed.
+
+Definition depth_left_sp (sp : source_program) : nat :=
+  match sp with
+  | Source_program ae =>
+      depth_left ae
+  end.
+
+Theorem bar :
+  forall sp : source_program,
+    (forall n mh: nat,
+        run_ltr (compile_ltr sp) = (Expressible_nat n, mh) ->
+        interpret_ltr sp = Expressible_nat n /\ (S (depth_left_sp sp) = mh))
+    /\
+    (forall s : string,
+        run_ltr (compile_ltr sp) = (Expressible_msg s, 0) ->
+        interpret_ltr sp = Expressible_msg s).
+Proof.
+  intros [ae].
+  Check (about_fde_loop_ltr_and_evaluating ae).
+  destruct (about_fde_loop_ltr_and_evaluating ae) as [H_n H_s].
+  unfold run_ltr, compile_ltr, interpret_ltr.
+  case (evaluate_ltr ae) as [n | s] eqn:H_ae.
+
+  - Check (H_n n nil (eq_refl (Expressible_nat n))).
+    rewrite -> (H_n n nil (eq_refl (Expressible_nat n))).
+    split.
+    + intros n' mh H_eval.
+      injection H_eval as H_n' H_mh.
+      rewrite -> H_n'.
+      rewrite <- H_mh.
+      unfold depth_left_sp.
+      split.
+      * reflexivity.
+      * rewrite -> (Nat.add_0_r (depth_left ae)).
+        reflexivity.
+    + intros s H_absurd.
+      discriminate H_absurd.
+
+  - Check (H_s s nil (eq_refl (Expressible_msg s))).
+    rewrite -> (H_s s nil (eq_refl (Expressible_msg s))).
+    split.
+    + intros n mh H_absurd.
+      discriminate H_absurd.
+    + intros s' H_s'.
+      injection H_s' as s_equals_s'.
+      rewrite -> s_equals_s'.
+      reflexivity.
 Qed.
