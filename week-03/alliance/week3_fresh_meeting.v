@@ -848,7 +848,9 @@ Compute (test_depth depth).
 (* depth right and its fold unfold lemmas *)
 
 Definition test_depth_right (candidate : arithmetic_expression -> nat) : bool :=
-  Nat.eqb (candidate (super_refactor_right test_case1)) 1
+  Nat.eqb (candidate (super_refactor_left test_case8))
+    (candidate (super_refactor_left test_case8))
+  && Nat.eqb (candidate (super_refactor_right test_case1)) 1
   && Nat.eqb (candidate (super_refactor_left test_case1)) 3
   && Nat.eqb (candidate (super_refactor_right test_case2)) 1
   && Nat.eqb (candidate (super_refactor_left test_case2)) 3
@@ -1145,7 +1147,6 @@ Definition decode_execute_rtl (bci : byte_code_instruction) (ds : data_stack) : 
 Compute (test_decode_execute_rtl decode_execute_rtl).
 
 
-
 (* fetch decode execute rtl and its fold unfold lemmas*)
 (* Tests for fetch_decode_execute_loop_rtl *)
 
@@ -1249,6 +1250,10 @@ Qed.
 (* run rtl *)
 
 Definition test_run_rtl (candidate : target_program -> expressible_value * nat) : bool :=
+  (let (ev0, h0) := (candidate (Target_program nil)) in
+   (eqb_expressible_value ev0 (Expressible_msg "no result on the data stack")) &&
+     (Nat.eqb h0 0))
+  &&
   (let (ev1, h1) := (candidate (Target_program (PUSH 42 :: nil))) in
    (eqb_expressible_value ev1 (Expressible_nat 42)) &&
      (Nat.eqb h1 1))
@@ -1433,8 +1438,8 @@ Lemma about_fde_rtl_errors :
   forall (bci1s bci2s : list byte_code_instruction)
          (ds : data_stack)
          (s : string),
-        fetch_decode_execute_loop_rtl bci1s ds = KO' s ->
-        fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = KO' s.
+    fetch_decode_execute_loop_rtl bci1s ds = KO' s ->
+    fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = KO' s.
 Proof.
   intro bci1s.
   induction bci1s as [ | bci1 bci1s' IHbci1s ].
