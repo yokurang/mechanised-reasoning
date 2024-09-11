@@ -715,7 +715,16 @@ Definition test_case4 : arithmetic_expression :=
         (Plus (test_case3)
            (test_case3)).
 
-Definition test_case5 : arithmetic_expression := (Plus (Plus (Plus (Plus (Literal 0) (Literal 1)) (Literal 2)) (Literal 3)) (Literal 4)).
+Definition test_case5 : arithmetic_expression :=
+  (Plus
+     (Plus
+        (Plus
+           (Plus
+              (Literal 0)
+              (Literal 1))
+           (Literal 2))
+        (Literal 3))
+     (Literal 4)).
 
 Definition test_case6 : arithmetic_expression := (Plus (Literal 0) (Plus (Literal 1) (Plus (Literal 2) (Plus (Literal 3) (Literal 4))))).
 
@@ -2164,10 +2173,9 @@ Theorem compiling_and_running_rtl_gives_S_depth_right:
         interpret_rtl sp = Expressible_msg s).
 Proof.
   intros [ae].
-  Check (about_fde_loop_rtl_and_evaluating ae).
-  destruct (about_fde_loop_rtl_and_evaluating ae) as [H_n H_s].
   unfold run_rtl; unfold compile_rtl.
   unfold interpret_rtl.
+  destruct (about_fde_loop_rtl_and_evaluating ae) as [H_n H_s].
   case (evaluate_rtl ae) as [n | s] eqn: H_ae.
 
   - Check (H_n n nil (eq_refl (Expressible_nat n))).
@@ -3185,7 +3193,6 @@ Compute(
 (* for rtl evaluation (compared to each other) :
    refactoring the sp on the left requires more memory allocation for the stack
    refactoring the sp on the right requires less memory allocation for the stack *)
-
 
 (* ***** *)
 (* Comparing applying depth ltr/rtl on the result of applying super refactor left/right *)
