@@ -440,29 +440,75 @@ Compute (test_decode_execute_ltr decode_execute_ltr).
 
 (* ********** *)
 
-(* fdel ltr and its fold unfold lemmas*)
+(* fetch decode execute rtl and its fold unfold lemmas*)
 
-Definition test_fetch_decode_execute_loop_height_ltr (candidate : (list byte_code_instruction) -> data_stack -> result_of_fetch_decode_execute_loop) :=
-  (eqb_result_of_decoding_and_execution_height
-     (candidate (PUSH 42 :: PUSH 21 :: nil) (1 :: 2 :: 3 :: nil))
-     (OK' (21 :: 42 :: 1 :: 2 :: 3 :: nil) 5))
-  &&
-    (eqb_result_of_decoding_and_execution_height
-       (candidate (SUB :: nil) (2 :: 3 :: nil))
-       (OK' (1 :: nil) 2))
-  &&
-    (eqb_result_of_decoding_and_execution_height
-       (candidate (SUB :: SUB :: nil) (4 :: 3 :: 2 :: nil))
-       (KO' "numerical underflow: -1"))
-  &&
-    (eqb_result_of_decoding_and_execution_height
-       (candidate
-          (PUSH 1 :: PUSH 2 :: ADD :: PUSH 3 :: ADD :: PUSH 4 :: ADD :: nil) nil)
-       (OK' (10 :: nil) 2))
-  &&
-    (eqb_result_of_decoding_and_execution_height
-       (candidate (SUB :: nil) (4 :: 3 :: nil))
-       (KO' "numerical underflow: -1")).
+(* Test for fetch_decode_execute_loop_ltr *)
+
+Definition fdel_test_case1 : list byte_code_instruction :=
+  PUSH 1 :: PUSH 2 :: ADD :: PUSH 3 :: PUSH 4 :: ADD :: ADD :: nil.
+
+Definition fdel_test_case2 : list byte_code_instruction :=
+  PUSH 1 :: PUSH 2 :: ADD :: PUSH 3 :: PUSH 4 :: ADD :: nil.
+
+Definition fdel_test_case3 : list byte_code_instruction :=
+  PUSH 20 :: PUSH 10 :: SUB :: PUSH 40 :: PUSH 30 :: ADD :: ADD :: nil.
+
+Definition fdel_test_case4 : list byte_code_instruction :=
+  PUSH 20 :: PUSH 10 :: SUB :: PUSH 20 :: PUSH 15 :: ADD :: PUSH 5 :: ADD :: PUSH 30 :: ADD :: ADD :: nil.
+
+Definition fdel_test_case5 : list byte_code_instruction :=
+  PUSH 10 :: PUSH 20 :: SUB :: PUSH 10 :: PUSH 30 :: SUB :: ADD :: nil.
+
+
+Definition test_ds_fetch_decode_execute_loop_ltr (candidate : list byte_code_instruction -> data_stack -> result_of_fetch_decode_execute_loop): bool :=
+  match candidate fdel_test_case1 nil with
+    OK' ds _ => eqb_list nat Nat.eqb ds (10 :: nil)
+                && match candidate fdel_test_case2 nil with
+                     OK' ds2 _ => eqb_list nat Nat.eqb ds2 (7 :: 3 :: nil)
+                                 && match candidate fdel_test_case3 nil with
+                                      OK' ds3 _ => eqb_list nat Nat.eqb ds3 (80 :: nil)
+                                                   && match candidate fdel_test_case4 nil with
+                                                        OK' ds4 _ => eqb_list nat Nat.eqb ds4 (80 :: nil)
+                                                      | KO' _ => false     
+                                                      end
+                                                   && match candidate fdel_test_case5 nil with
+                                                        OK' ds5 _ => false
+                                                      | KO' s5 => eqb_string s5 "numerical underflow: -10"
+                                                      end
+                                    | KO' _ => false
+                                    end
+                   | KO' _ => false
+                   end
+  | KO' _ => false
+  end.
+
+Definition test_mh_fetch_decode_execute_loop_ltr (candidate : list byte_code_instruction -> data_stack -> result_of_fetch_decode_execute_loop): bool :=
+  match candidate fdel_test_case1 nil with
+    OK' _ mh => Nat.eqb mh 3
+                && match candidate fdel_test_case2 nil with
+                     OK' _ mh2 => Nat.eqb mh2 3
+                                 && match candidate fdel_test_case3 nil with
+                                      OK' _ mh3 => Nat.eqb mh3 3
+                                                   && match candidate fdel_test_case4 nil with
+                                                        OK' _ mh4 => Nat.eqb mh4 3
+                                                                     && match candidate fdel_test_case5 nil with
+                                                                          OK' _ _ => false
+                                                                        | KO' s5 => eqb_string s5 "numerical underflow: -10"
+                                                                                    && match candidate (ADD :: nil) (3 :: 2 :: nil)  with
+                                                                                         OK' _ mh6 =>  Nat.eqb mh6 2
+                                                                                       | KO' _ => false
+                                                                                       end
+                                                                        end
+                                                      | KO' _ => false
+                                                      end
+                                    | KO' _ => false
+                                    end
+                   | KO' _ => false
+                   end
+  | KO' _ => false
+  end.
+
+
 
 Fixpoint fetch_decode_execute_loop_ltr (bcis : list byte_code_instruction) (ds : data_stack) : result_of_fetch_decode_execute_loop :=
   match bcis with
@@ -482,7 +528,9 @@ Fixpoint fetch_decode_execute_loop_ltr (bcis : list byte_code_instruction) (ds :
       end
   end.
 
-Compute (test_fetch_decode_execute_loop_height_ltr fetch_decode_execute_loop_ltr).
+Compute(test_ds_fetch_decode_execute_loop_ltr fetch_decode_execute_loop_ltr).
+
+Compute(test_mh_fetch_decode_execute_loop_ltr fetch_decode_execute_loop_ltr).
 
 Lemma fold_unfold_fetch_decode_execute_loop_ltr_nil :
   forall (ds : data_stack),
@@ -800,7 +848,9 @@ Compute (test_depth depth).
 (* depth right and its fold unfold lemmas *)
 
 Definition test_depth_right (candidate : arithmetic_expression -> nat) : bool :=
-  Nat.eqb (candidate (super_refactor_right test_case1)) 1
+  Nat.eqb (candidate (super_refactor_left test_case8))
+    (candidate (super_refactor_left test_case8))
+  && Nat.eqb (candidate (super_refactor_right test_case1)) 1
   && Nat.eqb (candidate (super_refactor_left test_case1)) 3
   && Nat.eqb (candidate (super_refactor_right test_case2)) 1
   && Nat.eqb (candidate (super_refactor_left test_case2)) 3
@@ -1096,29 +1146,57 @@ Definition decode_execute_rtl (bci : byte_code_instruction) (ds : data_stack) : 
 
 Compute (test_decode_execute_rtl decode_execute_rtl).
 
-(* fetch decode execute rtl and its fold unfold lemmas*)
 
-Definition test_fetch_decode_execute_loop_height_rtl (candidate : (list byte_code_instruction) -> data_stack  -> result_of_fetch_decode_execute_loop) :=
-  (eqb_result_of_decoding_and_execution_height
-     (candidate (PUSH 42 :: PUSH 21 :: nil) (1 :: 2 :: 3 :: nil))
-     (OK' (21 :: 42 :: 1 :: 2 :: 3 :: nil) 5))
-  &&
-    (eqb_result_of_decoding_and_execution_height
-       (candidate (ADD :: ADD :: nil) (1 :: 2 :: 3 :: nil))
-       (OK' (6 :: nil) 3))
-  &&
-    (eqb_result_of_decoding_and_execution_height
-       (candidate (SUB :: nil) (3 :: 2 :: nil))
-       (OK' (1 :: nil) 2 ))
-  &&
-    (eqb_result_of_decoding_and_execution_height
-       (candidate (SUB :: SUB :: nil) (4 :: 3 :: 2 :: nil))
-       (KO' "numerical underflow: -1"))
-  &&
-    (eqb_result_of_decoding_and_execution_height
-       (candidate
-          (PUSH 1 :: PUSH 2 :: ADD :: PUSH 3 :: ADD :: PUSH 4 :: ADD :: nil) nil)
-       (OK' (10 :: nil) 2)).
+(* fetch decode execute rtl and its fold unfold lemmas*)
+(* Tests for fetch_decode_execute_loop_rtl *)
+
+Definition test_ds_fetch_decode_execute_loop_rtl (candidate : list byte_code_instruction -> data_stack -> result_of_fetch_decode_execute_loop): bool :=
+  match candidate fdel_test_case1 nil with
+    OK' ds _ => eqb_list nat Nat.eqb ds (10 :: nil)
+                && match candidate fdel_test_case2 nil with
+                     OK' ds2 _ => eqb_list nat Nat.eqb ds2 (7 :: 3 :: nil)
+                                 && match candidate fdel_test_case3 nil with
+                                      OK' _ _ => false       
+                                    | KO' s3 => eqb_string s3 "numerical underflow: -10"
+                                               && match candidate fdel_test_case4 nil with
+                                                    OK' _  _ => false
+                                                  | KO' s4 => eqb_string s4  "numerical underflow: -10"
+                                                              && match candidate fdel_test_case5 nil with
+                                                                   OK' ds5 _ => eqb_list nat Nat.eqb ds5 (30 :: nil)
+                                                                 | KO' _ => false
+                                                                 end
+                                                  end
+                                               
+                                    end
+                   | KO' _ => false
+                   end
+  | KO' _ => false
+  end.
+
+Definition test_mh_fetch_decode_execute_loop_rtl (candidate : list byte_code_instruction -> data_stack -> result_of_fetch_decode_execute_loop): bool :=
+  match candidate fdel_test_case1 nil with
+    OK' _ mh => Nat.eqb mh 3
+                && match candidate fdel_test_case2 nil with
+                     OK' _ mh2 => Nat.eqb mh2 3
+                                 && match candidate fdel_test_case3 nil with
+                                      OK' _ _ => false
+                                    | KO' s3 => eqb_string s3 "numerical underflow: -10"
+                                                && match candidate fdel_test_case4 nil with                                                         OK' _ _ => false
+                                                  | KO' s4 => eqb_string s4 "numerical underflow: -10"
+                                                              && match candidate fdel_test_case5 nil with
+                                                                   OK' _ mh5 => Nat.eqb mh5 3
+                                                                                && match candidate (ADD :: nil) (3 :: 2 :: nil)  with
+                                                                                     OK' _ mh6 =>  Nat.eqb mh6 2
+                                                                                   | KO' _ => false
+                                                                                   end
+                                                                 | KO' _ => false
+                                                                 end
+                                                  end
+                                    end
+                   | KO' _ => false
+                   end
+  | KO' _ => false
+  end.
 
 Fixpoint fetch_decode_execute_loop_rtl (bcis : list byte_code_instruction) (ds : data_stack) : result_of_fetch_decode_execute_loop :=
   match bcis with
@@ -1138,7 +1216,9 @@ Fixpoint fetch_decode_execute_loop_rtl (bcis : list byte_code_instruction) (ds :
       end
   end.
 
-Compute (test_fetch_decode_execute_loop_height_rtl fetch_decode_execute_loop_rtl).
+Compute(test_ds_fetch_decode_execute_loop_rtl fetch_decode_execute_loop_rtl).
+
+Compute(test_mh_fetch_decode_execute_loop_rtl fetch_decode_execute_loop_rtl).
 
 Lemma fold_unfold_fetch_decode_execute_loop_rtl_nil :
   forall (ds : data_stack),
@@ -1170,6 +1250,10 @@ Qed.
 (* run rtl *)
 
 Definition test_run_rtl (candidate : target_program -> expressible_value * nat) : bool :=
+  (let (ev0, h0) := (candidate (Target_program nil)) in
+   (eqb_expressible_value ev0 (Expressible_msg "no result on the data stack")) &&
+     (Nat.eqb h0 0))
+  &&
   (let (ev1, h1) := (candidate (Target_program (PUSH 42 :: nil))) in
    (eqb_expressible_value ev1 (Expressible_nat 42)) &&
      (Nat.eqb h1 1))
@@ -1354,8 +1438,8 @@ Lemma about_fde_rtl_errors :
   forall (bci1s bci2s : list byte_code_instruction)
          (ds : data_stack)
          (s : string),
-        fetch_decode_execute_loop_rtl bci1s ds = KO' s ->
-        fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = KO' s.
+    fetch_decode_execute_loop_rtl bci1s ds = KO' s ->
+    fetch_decode_execute_loop_rtl (bci1s ++ bci2s) ds = KO' s.
 Proof.
   intro bci1s.
   induction bci1s as [ | bci1 bci1s' IHbci1s ].
