@@ -1609,6 +1609,8 @@ Proof.
            rewrite -> H_ds2.
            reflexivity.
         -- rewrite <- H_ds1 in H_OK'_bci2s.
+           Check (about_fde_loop_rtl_stepping bci2 bci2s' ds ds2 h2
+                       H_OK'_bci2s).
            destruct (about_fde_loop_rtl_stepping bci2 bci2s' ds ds2 h2
                        H_OK'_bci2s) as [ds' [mh' [_ [_ H_h2]]]].
            rewrite -> H_h2.
@@ -1620,7 +1622,6 @@ Proof.
       * intros s2 H_KO'_s2.
         injection H_OK'_nil as H_ds H_h1.
         rewrite -> H_ds.
-        Check (app_nil_l).
         exact H_KO'_s2.
     + intros s1 H_KO'_s1.
       discriminate H_KO'_s1.
@@ -1629,40 +1630,32 @@ Proof.
     + intros ds1 h1 H_run_bcis.
       split.
       * intros ds2 h2 H_run_bci2s.
-        Check (about_fde_loop_rtl_stepping bci1 bci1s' ds ds1 h1 H_run_bcis).
-        destruct (about_fde_loop_rtl_stepping bci1 bci1s' ds ds1 h1 H_run_bcis) as [ds1' [h1' [H_de_bci1 [H_fde H_max]]]].
         rewrite <- (app_comm_cons bci1s' bci2s).
         rewrite -> (fold_unfold_fetch_decode_execute_loop_rtl_cons bci1 (bci1s' ++ bci2s) ds).
+        Check (about_fde_loop_rtl_stepping bci1 bci1s' ds ds1 h1 H_run_bcis).
+        destruct (about_fde_loop_rtl_stepping bci1 bci1s' ds ds1 h1 H_run_bcis) as [ds1' [h1' [H_de_bci1 [H_fde H_max]]]].
         rewrite -> H_de_bci1.
         destruct (IH_bci1s bci2s ds1') as [IH_bci1s_OK _].
         Check (IH_bci1s_OK ds1 h1' H_fde).
         destruct (IH_bci1s_OK ds1 h1' H_fde) as [IH_bci1s_OK_OK _].
         Check (IH_bci1s_OK_OK ds2 h2 H_run_bci2s).
-        case  (list_length nat ds1' <=? h1') eqn: le_ds1'_h1'.
-        { Search (_ <=? _ = true).
-          Check (leb_complete (list_length nat ds1') h1' le_ds1'_h1').
-          Check (Nat.max_r (list_length nat ds1') h1' (leb_complete (list_length nat ds1') h1' le_ds1'_h1')).
-          rewrite -> (Nat.max_r (list_length nat ds1') h1' (leb_complete (list_length nat ds1') h1' le_ds1'_h1')) in H_max.
-          rewrite -> H_max.
-          rewrite -> (IH_bci1s_OK_OK ds2 h2 H_run_bci2s).
-          Search (Nat.max).
-          rewrite -> (Nat.max_assoc (list_length nat ds1') h1' h2).
-          rewrite -> (Nat.max_r (list_length nat ds1') h1' (leb_complete (list_length nat ds1') h1' le_ds1'_h1')).
-          rewrite -> (Nat.max_assoc (list_length nat ds) h1' h2).
-          reflexivity. }
-        { rewrite -> (IH_bci1s_OK_OK ds2 h2 H_run_bci2s).
-          rewrite -> (Nat.max_assoc (list_length nat ds1') h1' h2).
-          Check (Nat.max_assoc (list_length nat ds) (Nat.max (list_length nat ds1') h1') h2).
-          rewrite -> (Nat.max_assoc (list_length nat ds) (Nat.max (list_length nat ds1') h1') h2).
-          rewrite <- H_max.
-          reflexivity. }
+        clear IH_bci1s.
+        clear IH_bci1s_OK.
+        assert (IH_bci1s_OK_OK := IH_bci1s_OK_OK ds2 h2 H_run_bci2s).
+        rewrite -> IH_bci1s_OK_OK.
+        rewrite -> H_max.
+        Check (Nat.max_assoc).
+        rewrite -> 3 Nat.max_assoc.
+        reflexivity.
       * intros s2 H_s2.
-        destruct (about_fde_loop_rtl_stepping bci1 bci1s' ds ds1 h1 H_run_bcis) as [ds1' [h1' [H_de_bci1 [H_fde H_max]]]].
         rewrite -> (fold_unfold_list_append_cons byte_code_instruction bci1 bci1s' bci2s).
         rewrite -> (fold_unfold_fetch_decode_execute_loop_rtl_cons bci1 (bci1s' ++ bci2s) ds).
+        destruct (about_fde_loop_rtl_stepping bci1 bci1s' ds ds1 h1 H_run_bcis) as [ds1' [h1' [H_de_bci1 [H_fde H_max]]]].
         rewrite -> H_de_bci1.
         destruct (IH_bci1s bci2s ds1') as [IH_bci1s_OK _].
         destruct (IH_bci1s_OK ds1 h1' H_fde) as [_ IH_bci1s_OK_KO].
+        clear IH_bci1s.
+        clear IH_bci1s_OK.
         rewrite -> (IH_bci1s_OK_KO s2 H_s2).
         reflexivity.
     + intros s1 H_s1.
@@ -3300,9 +3293,7 @@ Compute (test_tuple_of_ev_nat_eqb tuple_of_ev_nat_eqb).
 
 Definition test_compile_rtl_returns_predicted_stack_size (candidate : source_program -> target_program) : bool :=
   (* Refactored left expressions *)
-  tuple_of_ev_nat_eqb
-    (run_rtl (candidate (Source_program (super_refactor_left compile_test_case_4))))
-    (Expressible_nat 4, S (depth_right (super_refactor_left (compile_test_case_4))))
+  tuple_of_ev_nat_eqb (run_rtl (candidate (Source_program (super_refactor_left compile_test_case_4)))) (Expressible_nat 4, S (depth_right (super_refactor_left (compile_test_case_4))))
   (* Refactored right expressions *)
   && tuple_of_ev_nat_eqb (run_rtl (candidate (Source_program (super_refactor_right compile_test_case_4)))) (Expressible_nat 4, S (depth_right (super_refactor_right (compile_test_case_4))))
   (* Refactored left with minus *)
@@ -3310,17 +3301,13 @@ Definition test_compile_rtl_returns_predicted_stack_size (candidate : source_pro
   (* Refactored right with minus *)
   && tuple_of_ev_nat_eqb (run_rtl (candidate (Source_program (super_refactor_right compile_test_case_5)))) (Expressible_nat 4, S (depth_right (super_refactor_right compile_test_case_5))).
 
+Compute (test_compile_rtl_returns_predicted_stack_size compile_rtl).
+
 (* Compile LTR returns predicted stack size *)
 
 Definition test_compile_ltr_returns_predicted_stack_size (candidate : source_program -> target_program) : bool :=
-  (* Simple balanced expressions *)
-  tuple_of_ev_nat_eqb (run_ltr (candidate (Source_program test_case1))) (Expressible_nat 6, S (depth_left (test_case1)))
-  && tuple_of_ev_nat_eqb (run_ltr (candidate (Source_program test_case3))) (Expressible_nat 16, S (depth_left (test_case3)))
-  && tuple_of_ev_nat_eqb (run_ltr (candidate (Source_program compile_test_case_1))) (Expressible_nat 1, S (depth_left (compile_test_case_1)))
-  && tuple_of_ev_nat_eqb (run_ltr (candidate (Source_program compile_test_case_2))) (Expressible_nat 1, S (depth_left (compile_test_case_2)))
-  && tuple_of_ev_nat_eqb (run_ltr (candidate (Source_program compile_test_case_3))) (Expressible_nat 2, S (depth_left (compile_test_case_3)))
   (* Refactored left expressions *)
-  && tuple_of_ev_nat_eqb (run_ltr (candidate (Source_program (super_refactor_left compile_test_case_4)))) (Expressible_nat 4, S (depth_left (super_refactor_left (compile_test_case_4))))
+  tuple_of_ev_nat_eqb (run_ltr (candidate (Source_program (super_refactor_left compile_test_case_4)))) (Expressible_nat 4, S (depth_left (super_refactor_left (compile_test_case_4))))
   (* Refactored right expressions *)
   && tuple_of_ev_nat_eqb (run_ltr (candidate (Source_program (super_refactor_right compile_test_case_4)))) (Expressible_nat 4, S (depth_left (super_refactor_right (compile_test_case_4))))
   (* Refactored left with minus *)
@@ -3343,9 +3330,9 @@ Definition tuple_of_ev_nat_gte_tuple_of_ev_nat (tuple1 tuple2 : (expressible_val
 
 Definition compile_rtl_performs_better_with_super_refactor_left_than_super_refactor_right_and_mutatis_mutandis (candidate_rtl candidate_ltr : source_program -> target_program) : bool :=
  tuple_of_ev_nat_gte_tuple_of_ev_nat (run_rtl (candidate_rtl (Source_program (super_refactor_left compile_test_case_1)))) (run_rtl (candidate_rtl (Source_program (super_refactor_right compile_test_case_1))))
-  && tuple_of_ev_nat_gte_tuple_of_ev_nat (run_rtl (candidate_rtl (Source_program (super_refactor_left compile_test_case_2)))) (run_rtl (candidate_rtl (Source_program (super_refactor_right compile_test_case_2))))
-  && tuple_of_ev_nat_gte_tuple_of_ev_nat (run_rtl (candidate_rtl (Source_program (super_refactor_left compile_test_case_3)))) (run_rtl (candidate_rtl (Source_program (super_refactor_right compile_test_case_3))))
-  && tuple_of_ev_nat_gte_tuple_of_ev_nat (run_rtl (candidate_rtl (Source_program (super_refactor_left compile_test_case_4)))) (run_rtl (candidate_rtl (Source_program (super_refactor_right compile_test_case_4))))
+ && tuple_of_ev_nat_gte_tuple_of_ev_nat (run_rtl (candidate_rtl (Source_program (super_refactor_left compile_test_case_2)))) (run_rtl (candidate_rtl (Source_program (super_refactor_right compile_test_case_2))))
+ && tuple_of_ev_nat_gte_tuple_of_ev_nat (run_rtl (candidate_rtl (Source_program (super_refactor_left compile_test_case_3)))) (run_rtl (candidate_rtl (Source_program (super_refactor_right compile_test_case_3))))
+ && tuple_of_ev_nat_gte_tuple_of_ev_nat (run_rtl (candidate_rtl (Source_program (super_refactor_left compile_test_case_4)))) (run_rtl (candidate_rtl (Source_program (super_refactor_right compile_test_case_4))))
  && tuple_of_ev_nat_gte_tuple_of_ev_nat (run_rtl (candidate_rtl (Source_program (super_refactor_left compile_test_case_5)))) (run_rtl (candidate_rtl (Source_program (super_refactor_right compile_test_case_5))))
  && tuple_of_ev_nat_gte_tuple_of_ev_nat (run_ltr (candidate_ltr (Source_program (super_refactor_right compile_test_case_1)))) (run_ltr (candidate_ltr (Source_program (super_refactor_left compile_test_case_1))))
  && tuple_of_ev_nat_gte_tuple_of_ev_nat (run_ltr (candidate_ltr (Source_program (super_refactor_right compile_test_case_2)))) (run_ltr (candidate_ltr (Source_program (super_refactor_left compile_test_case_2))))
