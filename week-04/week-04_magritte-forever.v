@@ -158,6 +158,7 @@ Proof.
   fold_unfold_tactic Magritte_evaluate.
 Qed.
 
+(* Look for the aha *)
 Theorem about_Magritte_evaluate :
   forall ae : Magritte_expressible_value,
     Magritte_evaluate ae = ae.
@@ -207,12 +208,12 @@ Proof.
   fold_unfold_tactic Magritte_fetch_decode_execute_loop.
 Qed.
 
-Definition Magritte_run (t : target_program) : option Magritte_expressible_value  :=
+Definition Magritte_run (t : target_program) : option source_program :=
   match t with
     Target_program bcis =>
       match Magritte_fetch_decode_execute_loop bcis nil with
         OK nil => None
-      | OK (ae :: nil) => Some ae
+      | OK (ae :: nil) => Some (Source_program ae)
       | OK (ae :: ae'' :: ds'') => None
       end
   end.
@@ -426,6 +427,7 @@ Proof.
     reflexivity.
 Qed.
 
+(* Look for the aha *)
 Lemma about_Magritte_run_aux :
   forall (ae : Magritte_expressible_value )
          (ds : Magritte_data_stack),
@@ -503,7 +505,8 @@ Corollary about_Magritte_run :
   forall (sp : source_program)
          (ae : Magritte_expressible_value ),
   exists ae' : Magritte_expressible_value ,
-    Magritte_run (compile (Source_program ae)) = Some ae'.
+    Magritte_run (compile (Source_program ae)) = Some (Source_program ae').
+Proof.
   intros [ae] sp.
   unfold Magritte_run, compile.
   Check (about_Magritte_run_aux sp nil).
@@ -519,8 +522,9 @@ Qed.
  *)
 
 Theorem the_Magritte_commuting_diagram :
-  forall ae ae' : Magritte_expressible_value,
-    Magritte_run (compile (Source_program ae)) = Some ae' <->
+  forall (ae : arithmetic_expression)
+         (ae' : Magritte_expressible_value),
+    Magritte_run (compile (Source_program ae)) = Some (Source_program ae') <->
     Magritte_interpret (Source_program ae) = Source_program ae'.
 Proof.
   intros ae ae'.
