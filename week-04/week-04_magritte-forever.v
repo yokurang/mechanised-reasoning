@@ -97,7 +97,7 @@ Definition Magritte_data_stack := list Magritte_expressible_value .
 Inductive Magritte_result_of_decoding_and_execution : Type :=
   OK : Magritte_data_stack -> Magritte_result_of_decoding_and_execution.
 
-Fixpoint Magritte_evaluate (ae : Magritte_expressible_value ) : Magritte_expressible_value :=
+Fixpoint Magritte_evaluate (ae : Magritte_expressible_value) : Magritte_expressible_value :=
   match ae with
   | Literal n =>
       Literal n
@@ -432,9 +432,20 @@ Proof.
     reflexivity.
 Qed.
 
+(*
+Lemma about_Magritte_run_aux' :
+  forall (ae : arithmetic_expression)
+         (ds : Magritte_data_stack)
+         (ae' : arithmetic_expression),
+    Magritte_evaluate ae = ae' ->
+    Magritte_fetch_decode_execute_loop (compile_aux ae) ds =
+      OK (ae' :: ds).
+(* but we have about_Magritte_evaluate, which states M-evaluate always returns the same Magritte_expressible_value, so we can state the below: *)
+ *)
+
 (* Look for the aha *)
 Lemma about_Magritte_run_aux :
-  forall (ae : Magritte_expressible_value )
+  forall (ae : arithmetic_expression)
          (ds : Magritte_data_stack),
     Magritte_fetch_decode_execute_loop (compile_aux ae) ds =
       OK (ae :: ds).
@@ -506,9 +517,10 @@ Proof.
     reflexivity.
 Qed.  
 
+(* It's always Some *)
 Corollary about_Magritte_run :
   forall (sp : source_program)
-         (ae : Magritte_expressible_value ),
+         (ae : Magritte_expressible_value),
   exists ae' : Magritte_expressible_value,
     Magritte_run (compile (Source_program ae)) = Some (Source_program ae').
 Proof.
@@ -524,6 +536,24 @@ Qed.
   3. A commuting diagram also holds about Magritte_interpret,
   compile, and Magritte_run. State and prove the Magritte
   analogue of the capstone theorem.
+ *)
+
+(* We always get Some sp -> proven in about_Magritte_run,
+   so Magritte running on compiled sp gives sp.
+   Magritte run is the left-inverse of compile (also known as decompiler *)
+
+(* because of about_Magritte_interpret: *)
+
+(*
+Theorem the_Magritte_commuting_diagram :
+  forall (sp : source_program),
+    Magritte_run (compile sp) = Some sp <->
+    Magritte_interpret sp = sp.
+
+Theorem the_Magritte_commuting_diagram :
+  forall (sp sp' : source_program),
+    Magritte_run (compile sp) = Some sp' <->
+    Magritte_interpret sp = sp'.
  *)
 
 Theorem the_Magritte_commuting_diagram :
