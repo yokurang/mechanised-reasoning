@@ -504,14 +504,14 @@ Qed.
 Corollary about_Magritte_run :
   forall (sp : source_program)
          (ae : Magritte_expressible_value ),
-  exists ae' : Magritte_expressible_value ,
+  exists ae' : Magritte_expressible_value,
     Magritte_run (compile (Source_program ae)) = Some (Source_program ae').
 Proof.
-  intros [ae] sp.
+  intros [ae] M_ae.
   unfold Magritte_run, compile.
-  Check (about_Magritte_run_aux sp nil).
-  rewrite -> (about_Magritte_run_aux sp nil).
-  exists sp.
+  Check (about_Magritte_run_aux M_ae nil).
+  rewrite -> (about_Magritte_run_aux M_ae nil).
+  exists M_ae.
   reflexivity.
 Qed.
 

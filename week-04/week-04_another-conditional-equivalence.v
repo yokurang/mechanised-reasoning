@@ -107,11 +107,37 @@ Qed.
 
 Proposition Minus_is_not_associative_sort_of :
   exists ae1 ae2 ae3 : arithmetic_expression,
-    evaluate (Minus (Minus ae1 ae2) ae3)
+    evaluate_ltr (Minus (Minus ae1 ae2) ae3)
     <>
-    evaluate (Minus ae1 (Plus ae2 ae3)).
+    evaluate_ltr (Minus ae1 (Plus ae2 ae3)).
 Proof.
-Abort.
+  exists (Literal 1).
+  exists (Literal 2).
+  exists (Literal 3).
+  rewrite ->2 fold_unfold_evaluate_ltr_Minus.
+  rewrite ->2 fold_unfold_evaluate_ltr_Literal.
+  Search ( _ < S _ ). (* Nat.lt_1_2: *)
+  Search ( _ <? _ = _).
+  destruct (Nat.ltb_lt 1 2) as [_ H_1_2].
+  rewrite -> (H_1_2 Nat.lt_1_2).
+  clear H_1_2.
+  rewrite -> fold_unfold_evaluate_ltr_Minus.
+  rewrite -> fold_unfold_evaluate_ltr_Literal.
+  rewrite -> fold_unfold_evaluate_ltr_Plus.
+  rewrite ->2 fold_unfold_evaluate_ltr_Literal.
+  Search (_ < _ -> _).
+  case (1 <? 2 +3) as [H_absurd | H_true].
+
+  - simpl.
+    unfold not.
+    intro H_absurd.
+    injection H_absurd as one_equals_four.
+    discriminate one_equals_four.
+
+  - unfold not.
+    intro H_absurd.
+    discriminate H_absurd.
+Qed.
 
 (* ********** *)
 
@@ -119,10 +145,15 @@ Abort.
 
 Proposition Minus_is_conditionally_associative_sort_of :
   forall ae1 ae2 ae3 : arithmetic_expression,
-    ...
+  exists n : nat,
+    evaluate_ltr (Minus ae1 ae2) = Expressible_nat n
     <->
-    evaluate (Minus (Minus ae1 ae2) ae3) =
-    evaluate (Minus ae1 (Plus ae2 ae3)).
+      evaluate_ltr (Minus (Minus ae1 ae2) ae3) =
+      evaluate_ltr (Minus ae1 (Plus ae2 ae3)).
+Proof.
+  intros ae1 ae2 ae3.
+  split.
+  intros [n [H_n_left H_n_right]].
 
 (* Reminder: The treatment of errors is simplified. *)
 
