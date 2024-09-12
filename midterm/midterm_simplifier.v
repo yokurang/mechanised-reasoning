@@ -5,6 +5,11 @@
 
 (* ********** *)
 
+(* student name: Adam Chan
+   e-mail address: adam.chan@u.yale-nus.edu.sg
+   student ID number: A0242453O)
+ *)
+
 (* student name: Alan Matthew Anggara
    e-mail address: alan.matthew@u.yale-nus.edu.sg
    student ID number: A0207754B
@@ -212,6 +217,24 @@ Fixpoint simplifier (ae : arithmetic_expression) : arithmetic_expression :=
   end.
 
 Compute (test_simplifier simplifier).
+
+(* ********** *)
+
+Definition 
+
+Fixpoint simplifiedp (ae : arithmetic_expression) : bool :=
+  match ae with
+  | Literal n =>
+  ...
+  | Plus ae1 ae2 =>
+  ...
+  | Times ae1 ae2 =>
+  ...
+  end.
+
+(* ********** *)
+
+
 
 (* ********** *)
 
