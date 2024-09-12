@@ -176,17 +176,61 @@ Compute (test_simplifier simplifier).
 
 (* ********** *)
 
-Definition 
+Definition test_simplifiedp (candidate : arithmetic_expression -> bool) :=
+  let ae1 := Literal 0 in
+  let ae2 := Plus (Literal 2) (Literal 3) in
+  let ae3 := Plus (Literal 0) (Literal 3) in
+  let ae4 := Plus (Literal 2) (Literal 0) in
+  let ae5 := Times (Literal 3) (Literal 4) in
+  let ae6 := Times (Literal 1) (Literal 4) in
+  let ae7 := Times (Literal 3) (Literal 1) in
+  let ae8 := Times (Literal 0) (Literal 4) in
+  let ae9 := Times (Literal 3) (Literal 0) in
+  (eqb (candidate ae1) true) &&
+    (eqb (candidate ae2) true) &&
+    (eqb (candidate ae3) false) &&
+    (eqb (candidate ae4) false) &&
+    (eqb (candidate ae5) true) &&
+    (eqb (candidate ae6) false) &&
+    (eqb (candidate ae7) false) &&
+    (eqb (candidate ae8) false) &&
+    (eqb (candidate ae9) false).
 
 Fixpoint simplifiedp (ae : arithmetic_expression) : bool :=
   match ae with
   | Literal n =>
-  ...
+      true
   | Plus ae1 ae2 =>
-  ...
+      match ae1 with
+      | Literal 0 =>
+          false
+      | _ =>
+          match ae2 with
+          | Literal 0 =>
+              false
+          | _ =>
+              (simplifiedp ae1) && (simplifiedp ae2)
+          end
+      end
   | Times ae1 ae2 =>
-  ...
+      match ae1 with
+      | Literal 0 =>
+          false
+      | Literal 1 =>
+          false
+      | _ =>
+          match ae2 with
+          | Literal 0 =>
+              false
+          | Literal 1 =>
+              false
+          | _ =>
+              (simplifiedp ae1) && (simplifiedp ae2)
+          end
+      end
   end.
+
+Compute (test_simplifiedp simplifiedp).
 
 (* ********** *)
 
