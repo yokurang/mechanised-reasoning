@@ -294,7 +294,6 @@ Qed.
    consider ae2 as Literal 0, Literal 1, or anything else in each of the cases of ae1.
  *)
 
-
 Inductive arithmetic_sum : Type :=
 | Z : arithmetic_sum
 | W : arithmetic_sum

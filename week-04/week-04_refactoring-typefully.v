@@ -183,7 +183,7 @@ Qed.
    Capture the effect of super_refactor_right into a predicate. *)
 
 Fixpoint super_refactored_rightp (ae : arithmetic_expression) : bool :=
-  match ae with
+t  match ae with
     Literal n =>
     true
   | Plus ae1 ae2 =>

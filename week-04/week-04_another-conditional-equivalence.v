@@ -55,6 +55,8 @@ Fixpoint evaluate_ltr (ae : arithmetic_expression) : expressible_value :=
     end
   end.
 
+Compute (evaluate_ltr (Minus (Literal 0) (Literal 2))).
+
 Lemma fold_unfold_evaluate_ltr_Literal :
   forall n : nat,
     evaluate_ltr (Literal n) =
@@ -126,14 +128,14 @@ Proof.
   rewrite ->2 fold_unfold_evaluate_ltr_Literal.
   Search (_ < _ -> _).
   case (1 <? 2 +3) as [H_absurd | H_true].
-
   - simpl.
     unfold not.
     intro H_absurd.
     injection H_absurd as one_equals_four.
     discriminate one_equals_four.
 
-  - unfold not.
+  - simpl.
+    unfold not.
     intro H_absurd.
     discriminate H_absurd.
 Qed.
@@ -172,7 +174,7 @@ but this enumeration doesn't look complete (the proof doesn't go through), and i
 time to call it a day.
 *)
 
-Proposition Minus_is_conditionally_associative_sort_of :
+Proposition Minus_is_conditionally_associative_sort_of' :
   forall ae1 ae2 ae3 : arithmetic_expression,
     (forall m1 : nat,
         evaluate_ltr ae1 = Expressible_msg (Numerical_underflow m1))
@@ -195,7 +197,98 @@ Proposition Minus_is_conditionally_associative_sort_of :
       evaluate_ltr (Minus (Minus ae1 ae2) ae3) =
         evaluate_ltr (Minus ae1 (Plus ae2 ae3)).
 Proof.
+Admitted.
+
+Lemma nat_lt_eureka :
+  forall (n1 n2 : nat),
+    n2 <= n1 ->
+    (n1 <? n2) = false
+  /\
+    forall (n3 : nat),
+      (n1 <? n2 + n3) = false
+      /\
+        n1 - n2 <? n3 = false.
+    
+Admitted.
+
+Proposition Minus_is_conditionally_associative_sort_of :
+  forall ae1 ae2 ae3 : arithmetic_expression,
+    (forall m1 : nat,
+        evaluate_ltr ae1 = Expressible_msg (Numerical_underflow m1))
+    \/
+      (forall m2 : nat,
+          evaluate_ltr ae2 = Expressible_msg (Numerical_underflow m2))
+    \/
+      (forall m3 : nat,
+          evaluate_ltr ae3 = Expressible_msg (Numerical_underflow m3))
+    \/
+      (forall n1 n2 : nat,
+          evaluate_ltr ae1 = Expressible_nat n1 ->
+          evaluate_ltr ae2 = Expressible_nat n2 ->
+          n2 <= n1)
+    ->
+      evaluate_ltr (Minus (Minus ae1 ae2) ae3) =
+        evaluate_ltr (Minus ae1 (Plus ae2 ae3)).
+Proof.
+  Compute (
+      let ae1 := Literal 15 in
+      let ae2 := Literal 10 in
+      let ae3 := Literal 2 in
+      evaluate_ltr (Minus (Minus ae1 ae2) ae3) =
+        evaluate_ltr (Minus ae1 (Plus ae2 ae3))
+    ).
+  intro ae1.
+  induction ae1 as [n1 | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2].
+  - intros ae2 ae3 [H_ae1 | [H_ae2 | [H_ae3 | H_ae1_ae2]]].
+    + rewrite -> fold_unfold_evaluate_ltr_Literal in H_ae1.
+      discriminate (H_ae1 n1).
+    + rewrite ->3 fold_unfold_evaluate_ltr_Minus.
+      rewrite -> fold_unfold_evaluate_ltr_Literal.
+      rewrite -> fold_unfold_evaluate_ltr_Plus.
+      rewrite -> (H_ae2 n1).
+      reflexivity.
+    + rewrite ->3 fold_unfold_evaluate_ltr_Minus.
+      rewrite -> fold_unfold_evaluate_ltr_Literal.
+      rewrite -> fold_unfold_evaluate_ltr_Plus.
+      case (evaluate_ltr ae2) as [n2 | s2] eqn:H_a2.
+      * case (n1 <? n2) as [ | ] eqn:H_lt_n1_n2.
+        -- rewrite -> (H_ae3 (n2 - n1)).
+           reflexivity.
+        -- rewrite -> (H_ae3 n1).
+           reflexivity.
+      * reflexivity.
+    + rewrite ->3 fold_unfold_evaluate_ltr_Minus.
+      rewrite -> fold_unfold_evaluate_ltr_Literal.
+      rewrite -> fold_unfold_evaluate_ltr_Plus.
+      case (evaluate_ltr ae2) as [n2 | s2] eqn:E_ae2.
+      rewrite -> fold_unfold_evaluate_ltr_Literal in H_ae1_ae2.
+      Check (H_ae1_ae2 n1 n2).
+      assert (H_ae1_ae2 := H_ae1_ae2 n1 n2).
+      assert (H_ae1_ae2 := H_ae1_ae2 eq_refl eq_refl).
+      destruct (nat_lt_eureka n1 n2) as [H_lt_n1_n2 H_lt_n3].
+      * exact H_ae1_ae2.
+      * rewrite -> H_lt_n1_n2.
+        case (evaluate_ltr ae3) as [n3 | s3] eqn:E_ae3.
+        -- destruct (H_lt_n3 n3) as [H_lt_n31 H_lt_n32].
+           rewrite -> H_lt_n31.
+           rewrite -> H_lt_n32.
+           rewrite -> (Nat.sub_add_distr n1 n2 n3).
+           reflexivity.
+        -- reflexivity.
+      * reflexivity.
+  - intros ae3 ae4.
+    rewrite ->3 fold_unfold_evaluate_ltr_Minus.
+    rewrite ->2 fold_unfold_evaluate_ltr_Plus.
+    case (evaluate_ltr ae1) as [n1 | s1] eqn:E_ae1.
+
+      
+     
+
+  
 Qed.
+
+
+
 
 (* Reminder: The treatment of errors is simplified. *)
 
