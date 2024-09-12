@@ -176,4 +176,22 @@ Compute (test_simplifier simplifier).
 
 (* ********** *)
 
+Definition 
+
+Fixpoint simplifiedp (ae : arithmetic_expression) : bool :=
+  match ae with
+  | Literal n =>
+  ...
+  | Plus ae1 ae2 =>
+  ...
+  | Times ae1 ae2 =>
+  ...
+  end.
+
+(* ********** *)
+
+
+
+(* ********** *)
+
 (* end of midterm_simplifier.v *)
