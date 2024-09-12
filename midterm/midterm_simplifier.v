@@ -64,79 +64,65 @@ Fixpoint eqb_arithmetic_expression (ae1 ae2 : arithmetic_expression) : bool :=
 Inductive expressible_value : Type :=
   Expressible_nat : nat -> expressible_value.
 
-Fixpoint evaluate_ltr (ae : arithmetic_expression) : expressible_value :=
+Fixpoint evaluate (ae : arithmetic_expression) : expressible_value :=
   match ae with
   | Literal n =>
     Expressible_nat n
   | Plus e1 e2 =>
-    match evaluate_ltr e1 with
+    match evaluate e1 with
     | Expressible_nat n1 =>
-      match evaluate_ltr e2 with
+      match evaluate e2 with
       | Expressible_nat n2 =>
         Expressible_nat (n1 + n2)
       end
     end
   | Times e1 e2 =>
-    match evaluate_ltr e1 with
+    match evaluate e1 with
     | Expressible_nat n1 =>
-      match evaluate_ltr e2 with
+      match evaluate e2 with
       | Expressible_nat n2 =>
         Expressible_nat (n1 * n2)
       end
     end
   end.
 
-Lemma fold_unfold_evaluate_ltr_Literal :
+Lemma fold_unfold_evaluate_Literal :
   forall n : nat,
-    evaluate_ltr (Literal n) =
+    evaluate (Literal n) =
       Expressible_nat n.
 Proof.
-  fold_unfold_tactic evaluate_ltr.
+  fold_unfold_tactic evaluate.
 Qed.
 
-Lemma fold_unfold_evaluate_ltr_Plus :
+Lemma fold_unfold_evaluate_Plus :
   forall e1 e2 : arithmetic_expression,
-    evaluate_ltr (Plus e1 e2) =
-    match evaluate_ltr e1 with
+    evaluate (Plus e1 e2) =
+    match evaluate e1 with
     | Expressible_nat n1 =>
-      match evaluate_ltr e2 with
+      match evaluate e2 with
       | Expressible_nat n2 =>
         Expressible_nat (n1 + n2)
       end
     end.
 Proof.
-  fold_unfold_tactic evaluate_ltr.
+  fold_unfold_tactic evaluate.
 Qed.
 
-Lemma fold_unfold_evaluate_ltr_Times :
+Lemma fold_unfold_evaluate_Times :
   forall e1 e2 : arithmetic_expression,
-    evaluate_ltr (Times e1 e2) =
-    match evaluate_ltr e1 with
+    evaluate (Times e1 e2) =
+    match evaluate e1 with
     | Expressible_nat n1 =>
-      match evaluate_ltr e2 with
+      match evaluate e2 with
       | Expressible_nat n2 =>
         Expressible_nat (n1 * n2)
       end
     end.
 Proof.
-  fold_unfold_tactic evaluate_ltr.
+  fold_unfold_tactic evaluate.
 Qed.
 
 (* ********** *)
-
-Definition test_simplifier_ltr (candidate : arithmetic_expression -> arithmetic_expression) :=
-  let ae1 := Plus (Literal 1) (Literal 0) in
-  let ae2 := Plus (Literal 0) (Literal 1) in
-  let ae3 := Times (Literal 1) (Literal 2) in
-  let ae4 := Times (Literal 2) (Literal 1) in
-  let ae5 := Times (Literal 2) (Literal 0) in
-  let ae6 := Times (Literal 0) (Literal 2) in
-  (eqb_arithmetic_expression (candidate ae1) (Literal 1)) &&
-    (eqb_arithmetic_expression (candidate ae2) (Literal 1)) &&
-    (eqb_arithmetic_expression (candidate ae3) (Literal 2)) &&
-    (eqb_arithmetic_expression (candidate ae4) (Literal 2)) &&
-    (eqb_arithmetic_expression (candidate ae5) (Literal 0)) &&
-    (eqb_arithmetic_expression (candidate ae6) (Literal 0)).
 
 Definition test_case1 : arithmetic_expression :=
   Plus (Plus (Literal 0)
@@ -177,7 +163,7 @@ Definition test_case10 := Times (Literal 2) (Literal 0).
 
 Definition test_case11 := Times (Literal 0) (Literal 2).
 
-Definition test_simplifier (candidate : arithmetic_expression -> arithmetic_expression) :=
+Definition test_simplify_naive (candidate : arithmetic_expression -> arithmetic_expression) :=
   (eqb_arithmetic_expression (candidate test_case1)
        (Plus (Literal 1) (Plus (Literal 2) (Literal 3)))) &&
     (eqb_arithmetic_expression (candidate test_case2) test_case2) &&
@@ -202,20 +188,20 @@ Definition test_simplifier (candidate : arithmetic_expression -> arithmetic_expr
     (eqb_arithmetic_expression (candidate test_case10) (Literal 0)) &&
     (eqb_arithmetic_expression (candidate test_case11) (Literal 0)).
 
-Fixpoint simplifier_ltr (ae : arithmetic_expression) : arithmetic_expression :=
+Fixpoint simplify_naive (ae : arithmetic_expression) : arithmetic_expression :=
   match ae with
   | Literal n =>
       Literal n
   | Plus ae1 ae2 =>
       match ae1 with
       | Literal 0 =>
-          simplifier_ltr ae2
+          simplify_naive ae2
       | _ =>
           match ae2 with
           | Literal 0 =>
-              simplifier_ltr ae1
+              simplify_naive ae1
           | _ =>
-              Plus (simplifier_ltr ae1) (simplifier_ltr ae2)
+              Plus (simplify_naive ae1) (simplify_naive ae2)
           end
       end
   | Times ae1 ae2 =>
@@ -223,69 +209,67 @@ Fixpoint simplifier_ltr (ae : arithmetic_expression) : arithmetic_expression :=
       | Literal 0 =>
           Literal 0
       | Literal 1 =>
-          simplifier_ltr ae2
+          simplify_naive ae2
       | _ =>
           match ae2 with
           | Literal 0 =>
               Literal 0
           | Literal 1 =>
-              simplifier_ltr ae1
+              simplify_naive ae1
           | _ =>
-              Times (simplifier_ltr ae1) (simplifier_ltr ae2)
+              Times (simplify_naive ae1) (simplify_naive ae2)
           end
       end
   end.
 
-Compute (test_simplifier_ltr simplifier_ltr).
+Compute (test_simplify_naive simplify_naive).
 
-Compute (test_simplifier simplifier_ltr).
-
-Lemma fold_unfold_simplifier_ltr_Literal :
+Lemma fold_unfold_simplify_naive_Literal :
   forall n : nat,
-    simplifier_ltr (Literal n) =
+    simplify_naive (Literal n) =
       Literal n.
 Proof.
-  fold_unfold_tactic evaluate_ltr.
+  fold_unfold_tactic evaluate.
 Qed.
 
-Lemma fold_unfold_simplifier_ltr_Plus :
+Lemma fold_unfold_simplify_naive_Plus :
   forall ae1 ae2 : arithmetic_expression,
-    simplifier_ltr (Plus ae1 ae2) =
+    simplify_naive (Plus ae1 ae2) =
       match ae1 with
       | Literal 0 =>
-          simplifier_ltr ae2
+          simplify_naive ae2
       | _ =>
           match ae2 with
           | Literal 0 =>
-              simplifier_ltr ae1
+              simplify_naive ae1
           | _ =>
-              Plus (simplifier_ltr ae1) (simplifier_ltr ae2)
+              Plus (simplify_naive ae1) (simplify_naive ae2)
           end
       end.
 Proof.
-  fold_unfold_tactic simplifier_ltr.
+  fold_unfold_tactic simplify_naive.
 Qed.
 
-Lemma fold_unfold_simplifier_ltr_Times :
+Lemma fold_unfold_simplify_naive_Times :
   forall ae1 ae2 : arithmetic_expression,
-    simplifier_ltr (Times ae1 ae2) =
+    simplify_naive (Times ae1 ae2) =
        match ae1 with
       | Literal 0 =>
           Literal 0
       | Literal 1 =>
-          simplifier_ltr ae2
+          simplify_naive ae2
       | _ =>
           match ae2 with
           | Literal 0 =>
               Literal 0
           | Literal 1 =>
-              simplifier_ltr ae1
+              simplify_naive ae1
           | _ =>
-              Times (simplifier_ltr ae1) (simplifier_ltr ae2)
+              Times (simplify_naive ae1) (simplify_naive ae2)
           end
       end.
 Proof.
-  fold_unfold_tactic simplifier_ltr.
+  fold_unfold_tactic simplify_naive.
 Qed.
 
 (* The naive implementation above does work.
@@ -294,14 +278,14 @@ Qed.
    consider ae2 as Literal 0, Literal 1, or anything else in each of the cases of ae1.
  *)
 
+Inductive simplified_ae : Type :=
+| Z : simplified_ae
+| W : simplified_ae
+| Literal_sum : nat -> simplified_ae
+| Plus_sum : simplified_ae -> simplified_ae -> simplified_ae
+| Times_sum : simplified_ae -> simplified_ae -> simplified_ae. 
 
-Inductive arithmetic_sum : Type :=
-| Z : arithmetic_sum
-| W : arithmetic_sum
-| Literal_sum : nat -> arithmetic_sum
-| Plus_sum : arithmetic_sum -> arithmetic_sum -> arithmetic_sum
-| Times_sum : arithmetic_sum -> arithmetic_sum -> arithmetic_sum. 
-Fixpoint sum_to_expression (ams : arithmetic_sum) : arithmetic_expression  :=
+Fixpoint sum_to_expression (ams : simplified_ae) : arithmetic_expression  :=
   match ams with
   | Z => Literal 0
   | W => Literal 1
@@ -312,8 +296,8 @@ Fixpoint sum_to_expression (ams : arithmetic_sum) : arithmetic_expression  :=
   | Times_sum as1 as2 =>
       Times (sum_to_expression as1) (sum_to_expression as2)
   end.
-                                                      
-Fixpoint simplify (ae : arithmetic_expression) : arithmetic_sum :=
+
+Fixpoint simplify (ae : arithmetic_expression) : simplified_ae :=
   match ae with
   | Literal n =>
       match n with
@@ -347,34 +331,11 @@ Fixpoint simplify (ae : arithmetic_expression) : arithmetic_sum :=
               simplify ae1
           | _ =>
               Times_sum (simplify ae1) (simplify ae2)
-
           end
       end
   end.
 
-
-Definition test_simplifiedp (candidate : arithmetic_expression -> bool) :=
-  let ae1 := Literal 0 in
-  let ae2 := Plus (Literal 2) (Literal 3) in
-  let ae3 := Plus (Literal 0) (Literal 3) in
-  let ae4 := Plus (Literal 2) (Literal 0) in
-  let ae5 := Times (Literal 3) (Literal 4) in
-  let ae6 := Times (Literal 1) (Literal 4) in
-  let ae7 := Times (Literal 3) (Literal 1) in
-  let ae8 := Times (Literal 0) (Literal 4) in
-  let ae9 := Times (Literal 3) (Literal 0) in
-  (eqb (candidate ae1) true) &&
-    (eqb (candidate ae2) true) &&
-    (eqb (candidate ae3) false) &&
-    (eqb (candidate ae4) false) &&
-    (eqb (candidate ae5) true) &&
-    (eqb (candidate ae6) false) &&
-    (eqb (candidate ae7) false) &&
-    (eqb (candidate ae8) false) &&
-    (eqb (candidate ae9) false).
-
-
-Fixpoint eqb_arithmetic_sum (as1 as2 : arithmetic_sum) :=
+Fixpoint eqb_simplified_ae (as1 as2 : simplified_ae) :=
   match as1 with
   | Z =>
       match as2 with
@@ -396,44 +357,41 @@ Fixpoint eqb_arithmetic_sum (as1 as2 : arithmetic_sum) :=
   | Plus_sum as11 as12 =>
       match as2 with
       | Plus_sum as21 as22 =>
-          (eqb_arithmetic_sum as11 as21) && (eqb_arithmetic_sum as12 as22)
+          (eqb_simplified_ae as11 as21) && (eqb_simplified_ae as12 as22)
       | _ =>
           false
       end
   | Times_sum as11 as12 =>
       match as2 with
       | Times_sum as21 as22 =>
-          (eqb_arithmetic_sum as11 as21) && (eqb_arithmetic_sum as12 as22)
+          (eqb_simplified_ae as11 as21) && (eqb_simplified_ae as12 as22)
       | _ =>
           false
       end
   end.
 
-Compute (eqb_arithmetic_sum Z Z).
-Compute (eqb_arithmetic_sum W W).
-Compute (negb (eqb_arithmetic_sum Z W)).
-Compute (negb (eqb_arithmetic_sum Z (Literal_sum 4))).
-Compute (negb (eqb_arithmetic_sum (Literal_sum 2) (Plus_sum W W))).
+Compute (eqb_simplified_ae Z Z).
+Compute (eqb_simplified_ae W W).
+Compute (negb (eqb_simplified_ae Z W)).
+Compute (negb (eqb_simplified_ae Z (Literal_sum 4))).
+Compute (negb (eqb_simplified_ae (Literal_sum 2) (Plus_sum W W))).
 (* explain why this is correct *)
 
-Definition test_simplify (candidate : arithmetic_expression -> arithmetic_sum) :=
+Definition test_simplify (candidate : arithmetic_expression -> simplified_ae) :=
   let ae1 := Plus (Literal 1) (Literal 0) in
   let ae2 := Plus (Literal 0) (Literal 1) in
   let ae3 := Times (Literal 1) (Literal 2) in
   let ae4 := Times (Literal 2) (Literal 1) in
   let ae5 := Times (Literal 2) (Literal 0) in
   let ae6 := Times (Literal 0) (Literal 2) in
-  (eqb_arithmetic_sum (candidate ae1) W) &&
-    (eqb_arithmetic_sum (candidate ae2) W) &&
-    (eqb_arithmetic_sum (candidate ae3) (Literal_sum 2)) &&
-    (eqb_arithmetic_sum (candidate ae4) (Literal_sum 2)) &&
-    (eqb_arithmetic_sum (candidate ae5) Z) &&
-    (eqb_arithmetic_sum (candidate ae6) Z).
+  (eqb_simplified_ae (candidate ae1) W) &&
+    (eqb_simplified_ae (candidate ae2) W) &&
+    (eqb_simplified_ae (candidate ae3) (Literal_sum 2)) &&
+    (eqb_simplified_ae (candidate ae4) (Literal_sum 2)) &&
+    (eqb_simplified_ae (candidate ae5) Z) &&
+    (eqb_simplified_ae (candidate ae6) Z).
 
 Compute (test_simplify simplify).
-
-(* ********** *)
-
 
 (* ********** *)
 
