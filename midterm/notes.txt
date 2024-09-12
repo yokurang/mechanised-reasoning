@@ -1,5 +1,7 @@
 MR5 Notes:
 
+First Half of Midterm
+
 Come up with statements to prove in the midterm in class.
 Make us take the first steps in class. 
 
@@ -34,7 +36,29 @@ It is important to notice the pattern of the exclusive disjunction and how it fo
 
 Furthermore, f(0) is even. 
 
-forall (n1 S n1 : fib_numbers):
-       ()
-       /\
-       ()
+
+Second Half of Midterm:
+
+A Simple Simplifier:
+
+Write one yourself first. A language with Literal, Add, Minus. The 
+simplifcation that the simplifier should do is that
+for all m + 0 = m, 0 + n = n, and m - 0 = m. If we have multiplication is that m * 0 = 0
+and m * 1 = m. 
+
+The simplifier should recursively descend your expression from AE -> AE such that it performs the above
+simplifcation. It should not have any occurance of subtration or addition of 0. 
+
+First, it should be sound: Preserve the evaluation. If you evaluate an expression and evaluate a
+simplified expression it should have the same result. The output of the evaluator should not 0.
+
+We need a predicate over the arithmetic expression that the term is simplified. 
+
+Another property is that simplifier is idempotent. 
+
+More complicated stuff:
+
+If the language has variables, then the simplifier can have constant folding. If the expression does not have variables,
+it should evaluate that expression and return the Literal. If we simplify subtration, there may be 
+errors. So it should return the simplified term or the error. 
+

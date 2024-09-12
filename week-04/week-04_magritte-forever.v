@@ -15,7 +15,12 @@
 
 (* student name: Alan Matthew Anggara
    e-mail address: alan.matthew@u.yale-nus.edu.sg
-   student ID number: A0242417L
+   student ID number: A0224197B
+ *)
+
+(* student name: Adam Chan
+   e-mail address: adam.chan@u.yale-nus.edu.sg
+   student ID number: A0242453O)
  *)
 
 (* Start of Paraphernalia *)
