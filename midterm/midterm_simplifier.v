@@ -278,103 +278,137 @@ Qed.
    consider ae2 as Literal 0, Literal 1, or anything else in each of the cases of ae1.
  *)
 
-Inductive simplified_ae : Type :=
-| Z : simplified_ae
-| W : simplified_ae
-| Literal_sum : nat -> simplified_ae
-| Plus_sum : simplified_ae -> simplified_ae -> simplified_ae
-| Times_sum : simplified_ae -> simplified_ae -> simplified_ae. 
+Inductive intermediate_arithmetic_expression : Type :=
+| Z : intermediate_arithmetic_expression
+| W : intermediate_arithmetic_expression
+| AE : arithmetic_expression -> intermediate_arithmetic_expression.
 
-Fixpoint sum_to_expression (ams : simplified_ae) : arithmetic_expression  :=
-  match ams with
-  | Z => Literal 0
-  | W => Literal 1
-  | Literal_sum n =>
-      Literal n
-  | Plus_sum as1 as2 =>
-      Plus (sum_to_expression as1) (sum_to_expression as2)
-  | Times_sum as1 as2 =>
-      Times (sum_to_expression as1) (sum_to_expression as2)
+                                  
+Fixpoint arithmetic_expression_of_intermediate_arithmetic_expression (iae : intermediate_arithmetic_expression) : arithmetic_expression :=
+  match iae with
+  | Z =>
+      Literal 0
+  | W =>
+      Literal 1
+  | AE ae =>
+      ae
   end.
+  
 
-Fixpoint simplify (ae : arithmetic_expression) : simplified_ae :=
+Fixpoint simplify (ae : arithmetic_expression) : intermediate_arithmetic_expression :=
   match ae with
   | Literal n =>
       match n with
-      | 0 => Z
-      | 1 => W
-      | _ => Literal_sum n
+      | 0 =>
+          Z
+      | 1 =>
+          W
+      | _ =>
+          AE (Literal n)
       end
   | Plus ae1 ae2 =>
-      match ae1 with
-      | Literal 0 =>
+      match simplify ae1 with
+      | Z =>
           simplify ae2
-      | _ =>
-          match ae2 with
-          | Literal 0 =>
-              simplify ae1
-          | _ =>
-              Plus_sum (simplify ae1) (simplify ae2)
+      | W =>
+          match simplify ae2 with
+          | Z =>
+              W
+          | W =>
+              AE (Plus (Literal 1) (Literal 1))
+          | AE ae2' =>
+              AE (Plus (Literal 1) ae2')
+          end
+      | AE ae1' =>
+          match simplify ae2 with
+          | Z =>
+              AE ae1'
+          | W =>
+              AE (Plus ae1' (Literal 1))
+          | AE ae2' =>
+              AE (Plus ae1' ae2')
           end
       end
   | Times ae1 ae2 =>
-      match ae1 with
-      | Literal 0 =>
+      match simplify ae1 with
+      | Z =>
           Z
-      | Literal 1 =>
+      | W =>
           simplify ae2
-      | _ =>
-          match ae2 with
-          | Literal 0 =>
+      | AE ae1' =>
+          match simplify ae2 with
+          | Z =>
               Z
-          | Literal 1 =>
-              simplify ae1
-          | _ =>
-              Times_sum (simplify ae1) (simplify ae2)
+          | W =>
+              AE ae1'
+          | AE ae2' =>
+              AE (Times ae1' ae2')
           end
       end
+  (*
+  | Minus ae1 ae2 =>
+      match simplify ae1 with
+      | Z =>
+          match simplify ae2 with
+          | Z =>
+              Z
+          | W =>
+              AE (Minus (Literal 0) (Literal 1))
+          | AE ae2' =>
+              AE (Minus (Literal 0) ae2')
+          end
+      | W =>
+          match simplify ae2 with
+          | Z =>
+              W
+          | W =>
+              AE (Minus (Literal 1) (Literal 1))
+          | AE ae2' =>
+              AE (Minus (Literal 1) ae2')
+          end
+      | AE ae1' =>
+          match simplify ae2 with
+          | Z =>
+              AE ae1'
+          | W =>
+              AE (Minus ae1' (Literal 1))
+          | AE ae2' =>
+              AE (Minus ae1' ae2')
+          end
+      end *)
   end.
 
-Fixpoint eqb_simplified_ae (as1 as2 : simplified_ae) :=
-  match as1 with
+Definition eqb_intermediate_arithmetic_expression (iae1 iae2 : intermediate_arithmetic_expression) :=
+  match iae1 with
   | Z =>
-      match as2 with
-      | Z => true
-      | _ => false
+      match iae2 with
+      | Z =>
+          true
+      | _ =>
+          false
       end
   | W =>
-      match as2 with
-      | W => true
-      | _ => false
-      end
-  | Literal_sum n1 =>
-      match as2 with
-      | Literal_sum n2 =>
-          n1 =? n2
+      match iae2 with
+      | W =>
+          true
       | _ =>
           false
       end
-  | Plus_sum as11 as12 =>
-      match as2 with
-      | Plus_sum as21 as22 =>
-          (eqb_simplified_ae as11 as21) && (eqb_simplified_ae as12 as22)
-      | _ =>
-          false
-      end
-  | Times_sum as11 as12 =>
-      match as2 with
-      | Times_sum as21 as22 =>
-          (eqb_simplified_ae as11 as21) && (eqb_simplified_ae as12 as22)
+  | AE ae1 =>
+      match iae2 with
+      | AE ae2 =>
+          eqb_arithmetic_expression ae1 ae2
       | _ =>
           false
       end
   end.
 
-Compute (eqb_simplified_ae Z Z).
-Compute (eqb_simplified_ae W W).
-Compute (negb (eqb_simplified_ae Z W)).
-Compute (negb (eqb_simplified_ae Z (Literal_sum 4))).
-Compute (negb (eqb_simplified_ae (Literal_sum 2) (Plus_sum W W))).
+Compute (eqb_intermediate_arithmetic_expression Z Z).
+Compute (eqb_intermediate_arithmetic_expression W W).
+Compute (negb (eqb_intermediate_arithmetic_expression Z W)).
+Compute (negb (eqb_intermediate_arithmetic_expression Z (AE (Literal 4)))).
+Compute (negb (eqb_intermediate_arithmetic_expression (AE (Literal 2)) (AE (Plus (Literal 0) (Literal 2))))).
+
 (* explain why this is correct *)
 
 Definition test_simplify (candidate : arithmetic_expression -> simplified_ae) :=
