@@ -40,20 +40,24 @@ Fixpoint eqb_arithmetic_expression (ae1 ae2 : arithmetic_expression) : bool :=
   match ae1 with
   | Literal n1 =>
       match ae2 with
-      | Literal n2 => Nat.eqb n1 n2
-      | _ => false
+      | Literal n2 =>
+          Nat.eqb n1 n2
+      | _ =>
+          false
       end
   | Plus ae11 ae12 =>
       match ae2 with
       | Plus ae21 ae22 =>
           eqb_arithmetic_expression ae11 ae21 && eqb_arithmetic_expression ae12 ae22
-      | _ => false
+      | _ =>
+          false
       end
   | Times ae11 ae12 =>
       match ae2 with
       | Times ae21 ae22 =>
           eqb_arithmetic_expression ae11 ae21 && eqb_arithmetic_expression ae12 ae22
-      | _ => false
+      | _ =>
+          false
       end
   end.
 
@@ -132,8 +136,43 @@ Definition test_simplifier (candidate : arithmetic_expression -> arithmetic_expr
     (eqb_arithmetic_expression (candidate ae3) (Literal 2)) &&
     (eqb_arithmetic_expression (candidate ae4) (Literal 2)) &&
     (eqb_arithmetic_expression (candidate ae5) (Literal 0)) &&
-    (eqb_arithmetic_expression (candidate ae6) (Literal 0))
-.
+    (eqb_arithmetic_expression (candidate ae6) (Literal 0)).
+
+Fixpoint simplifier (ae : arithmetic_expression) : arithmetic_expression :=
+  match ae with
+  | Literal n =>
+      Literal n
+  | Plus ae1 ae2 =>
+      match ae1 with
+      | Literal 0 =>
+          simplifier ae2
+      | _ =>
+          match ae2 with
+          | Literal 0 =>
+              simplifier ae1
+          | _ =>
+              Plus (simplifier ae1) (simplifier ae2)
+          end
+      end
+  | Times ae1 ae2 =>
+      match ae1 with
+      | Literal 0 =>
+          Literal 0
+      | Literal 1 =>
+          simplifier ae2
+      | _ =>
+          match ae2 with
+          | Literal 0 =>
+              Literal 0
+          | Literal 1 =>
+              simplifier ae1
+          | _ =>
+              Times (simplifier ae1) (simplifier ae2)
+          end
+      end
+  end.
+
+Compute (test_simplifier simplifier).
 
 (* ********** *)
 

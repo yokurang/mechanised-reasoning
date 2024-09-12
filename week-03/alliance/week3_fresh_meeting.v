@@ -170,30 +170,20 @@ Fixpoint eqb_ae (ae1 ae2: arithmetic_expression) : bool :=
   match ae1 with
   | Literal n1 =>
       match ae2 with
-        | Literal n2 =>
-          Nat.eqb n1 n2
-        | Plus _ _ =>
-            false
-        | Minus _ _ =>
-            false
+      | Literal n2 => Nat.eqb n1 n2
+      | _ => false
       end
-  | Plus ae1_1 ae1_2 =>
+  | Plus ae11 ae12 =>
       match ae2 with
-      | Literal _ =>
-          false
-      | Plus ae2_1 ae2_2 =>
-          (eqb_ae ae1_1 ae2_1) && (eqb_ae ae1_2 ae2_2)
-      | Minus ae2_1 ae2_2 =>
-          (eqb_ae ae1_1 ae2_1) && (eqb_ae ae1_2 ae2_2)
+      | Plus ae21 ae22 =>
+          eqb_ae ae11 ae21 && eqb_ae ae12 ae22
+      | _ => false
       end
-  | Minus ae1_1 ae1_2 =>
+  | Minus ae11 ae12 =>
       match ae2 with
-      | Literal _ =>
-          false
-      | Plus ae2_1 ae2_2 =>
-          (eqb_ae ae1_1 ae2_1) && (eqb_ae ae1_2 ae2_2)
-      | Minus ae2_1 ae2_2 =>
-          (eqb_ae ae1_1 ae2_1) && (eqb_ae ae1_2 ae2_2)
+      | Minus ae21 ae22 =>
+          eqb_ae ae11 ae21 && eqb_ae ae12 ae22
+      | _ => false
       end
   end.
 
