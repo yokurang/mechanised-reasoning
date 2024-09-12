@@ -143,6 +143,36 @@ Qed.
 
 (* Task 2: Complete and prove the following conditional observational equivalence. *)
 
+(* 
+My own attempt at finding a large and friendly disjunction hasn't succeeded yet.
+
+Learning from the other conditional properties,
+
+* the first conjunct must be
+    (forall s : string,
+        evaluate ae1 = Expressible_msg s)
+  since ae1 is evaluated first both on the LHS and on the RHS
+
+* then, for the same reason, we must also have
+    (forall s : string,
+        evaluate ae2 = Expressible_msg s)
+  as well as
+    (forall s : string,
+        evaluate ae3 = Expressible_msg s)
+  which you have listed
+
+* otherwise, the last possibility is that they are all nats,
+  and then I concur with you:
+    (forall n1 n2 n3 : nat,
+        evaluate ae1 = Expressible_nat n1 ->
+        evaluate ae2 = Expressible_nat n2 ->
+        evaluate ae3 = Expressible_nat n3 ->
+        n2 + n3 <= n1)
+
+but this enumeration doesn't look complete (the proof doesn't go through), and it is just past midnight,
+time to call it a day.
+*)
+
 Proposition Minus_is_conditionally_associative_sort_of :
   forall ae1 ae2 ae3 : arithmetic_expression,
   exists n : nat,
