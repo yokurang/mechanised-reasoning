@@ -119,6 +119,33 @@ Qed.
 
 (* ********** *)
 
+Definition test_case1 : arithmetic_expression :=
+  Plus (Plus (Literal 0)
+             (Literal 1))
+       (Plus (Literal 2)
+             (Literal 3)).
+
+Definition test_case2 : arithmetic_expression :=
+  Plus (Plus (Literal 4)
+             (Literal 5))
+       (Plus (Literal 6)
+             (Literal 7)).
+
+Definition test_case3 : arithmetic_expression :=
+  (Plus
+     (Plus
+        (Plus
+           (Plus
+              (Literal 0)
+              (Literal 1))
+           (Literal 2))
+        (Literal 3))
+     (Literal 4)).
+
+Definition test_case4 : arithmetic_expression := (Plus (Literal 0) (Plus (Literal 1) (Plus (Literal 2) (Plus (Literal 3) (Literal 4))))).
+
+Definition test_case5 : arithmetic_expression := (Plus (Plus (Literal 0) (Literal 1)) (Plus (Literal 2) (Literal 3))).
+
 Definition test_simplifier (candidate : arithmetic_expression -> arithmetic_expression) :=
   let ae1 := Plus (Literal 1) (Literal 0) in
   let ae2 := Plus (Literal 0) (Literal 1) in
@@ -131,7 +158,24 @@ Definition test_simplifier (candidate : arithmetic_expression -> arithmetic_expr
     (eqb_arithmetic_expression (candidate ae3) (Literal 2)) &&
     (eqb_arithmetic_expression (candidate ae4) (Literal 2)) &&
     (eqb_arithmetic_expression (candidate ae5) (Literal 0)) &&
-    (eqb_arithmetic_expression (candidate ae6) (Literal 0)).
+    (eqb_arithmetic_expression (candidate ae6) (Literal 0)) &&
+    (eqb_arithmetic_expression (candidate test_case1)
+       (Plus (Literal 1) (Plus (Literal 2) (Literal 3)))) &&
+    (eqb_arithmetic_expression (candidate test_case2) test_case2) &&
+    (eqb_arithmetic_expression (candidate test_case3)
+       (Plus
+          (Plus
+             (Plus
+                (Literal 1)
+                (Literal 2))
+             (Literal 3))
+          (Literal 4))) &&
+    (eqb_arithmetic_expression (candidate test_case4)
+       (Plus (Literal 1)
+          (Plus (Literal 2)
+             (Plus (Literal 3) (Literal 4))))) &&
+    (eqb_arithmetic_expression (candidate test_case5)
+       (Plus (Literal 1) (Plus (Literal 2) (Literal 3)))).
 
 Fixpoint simplifier (ae : arithmetic_expression) : arithmetic_expression :=
   match ae with
