@@ -1,0 +1,40 @@
+MR5 Notes:
+
+Come up with statements to prove in the midterm in class.
+Make us take the first steps in class. 
+
+On the number of concepts since the beginning of the semester:
+   1. Conditional equivalence <-> Observational equivalence of statments
+   2. Conditional equivalence
+   3. The effects of refactoring, super refactoring, and tree travelsal with an accumulator.
+   
+Main statement: Evenness or oddness of fibonacci numbers.
+
+0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, ...
+
+Theorem: forall 3n-th fib number is even
+
+==========================
+
+If even is even, f(n + 3) is even <-> Exists q s.t m = 3q
+
+If f(n) is odd <-> Exists q s.t m = 3q + 1 \/ 3q + 2
+
+
+They are living in a logical exclusive OR. Either one is true, but not at the same time.
+You need to define a logical exclusive OR.
+
+if (a or b) and (c or d or e) then (a <-> c) <-> (b <-> d or e)
+
+Do induction in one direction and do induction in the other direction.
+
+It is important to notice the pattern of the exclusive disjunction and how it forms a commuting diagram.
+
+==========================
+
+Furthermore, f(0) is even. 
+
+forall (n1 S n1 : fib_numbers):
+       ()
+       /\
+       ()
