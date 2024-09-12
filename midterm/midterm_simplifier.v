@@ -188,20 +188,20 @@ Definition test_simplifier (candidate : arithmetic_expression -> arithmetic_expr
     (eqb_arithmetic_expression (candidate test_case10) (Literal 0)) &&
     (eqb_arithmetic_expression (candidate test_case11) (Literal 0)).
 
-Fixpoint simplifier (ae : arithmetic_expression) : arithmetic_expression :=
+Fixpoint simplifier_ltr (ae : arithmetic_expression) : arithmetic_expression :=
   match ae with
   | Literal n =>
       Literal n
   | Plus ae1 ae2 =>
       match ae1 with
       | Literal 0 =>
-          simplifier ae2
+          simplifier_ltr ae2
       | _ =>
           match ae2 with
           | Literal 0 =>
-              simplifier ae1
+              simplifier_ltr ae1
           | _ =>
-              Plus (simplifier ae1) (simplifier ae2)
+              Plus (simplifier_ltr ae1) (simplifier_ltr ae2)
           end
       end
   | Times ae1 ae2 =>
@@ -209,20 +209,68 @@ Fixpoint simplifier (ae : arithmetic_expression) : arithmetic_expression :=
       | Literal 0 =>
           Literal 0
       | Literal 1 =>
-          simplifier ae2
+          simplifier_ltr ae2
       | _ =>
           match ae2 with
           | Literal 0 =>
               Literal 0
           | Literal 1 =>
-              simplifier ae1
+              simplifier_ltr ae1
           | _ =>
-              Times (simplifier ae1) (simplifier ae2)
+              Times (simplifier_ltr ae1) (simplifier_ltr ae2)
           end
       end
   end.
 
-Compute (test_simplifier simplifier).
+Compute (test_simplifier simplifier_ltr).
+
+Lemma fold_unfold_simplifier_ltr_Literal :
+  forall n : nat,
+    simplifier_ltr (Literal n) =
+      Literal n.
+Proof.
+  fold_unfold_tactic evaluate_ltr.
+Qed.
+
+Lemma fold_unfold_simplifier_ltr_Plus :
+  forall ae1 ae2 : arithmetic_expression,
+    simplifier_ltr (Plus ae1 ae2) =
+      match ae1 with
+      | Literal 0 =>
+          simplifier_ltr ae2
+      | _ =>
+          match ae2 with
+          | Literal 0 =>
+              simplifier_ltr ae1
+          | _ =>
+              Plus (simplifier_ltr ae1) (simplifier_ltr ae2)
+          end
+      end.
+Proof.
+  fold_unfold_tactic simplifier_ltr.
+Qed.
+
+Lemma fold_unfold_simplifier_ltr_Times :
+  forall ae1 ae2 : arithmetic_expression,
+    simplifier_ltr (Times ae1 ae2) =
+       match ae1 with
+      | Literal 0 =>
+          Literal 0
+      | Literal 1 =>
+          simplifier_ltr ae2
+      | _ =>
+          match ae2 with
+          | Literal 0 =>
+              Literal 0
+          | Literal 1 =>
+              simplifier_ltr ae1
+          | _ =>
+              Times (simplifier_ltr ae1) (simplifier_ltr ae2)
+          end
+      end.
+Proof.
+  fold_unfold_tactic simplifier_ltr.
+Qed.
 
 (* ********** *)
 
