@@ -27,6 +27,8 @@
 
 (* ********** *)
 
+(* Paraphrenalia *)
+
 Ltac fold_unfold_tactic name := intros; unfold name; fold name; reflexivity.
 
 Require Import Arith Bool List.
@@ -124,19 +126,19 @@ Qed.
 
 (* ********** *)
 
-Definition test_case1 : arithmetic_expression :=
+Definition testcase_P_balanced : arithmetic_expression :=
   Plus (Plus (Literal 0)
              (Literal 1))
        (Plus (Literal 2)
              (Literal 3)).
 
-Definition test_case2 : arithmetic_expression :=
+Definition testcase_P_balanced_2 : arithmetic_expression :=
   Plus (Plus (Literal 4)
              (Literal 5))
        (Plus (Literal 6)
              (Literal 7)).
 
-Definition test_case3 : arithmetic_expression :=
+Definition testcase_P_left : arithmetic_expression :=
   (Plus
      (Plus
         (Plus
@@ -147,27 +149,37 @@ Definition test_case3 : arithmetic_expression :=
         (Literal 3))
      (Literal 4)).
 
-Definition test_case4 : arithmetic_expression := (Plus (Literal 0) (Plus (Literal 1) (Plus (Literal 2) (Plus (Literal 3) (Literal 4))))).
+Definition testcase_P_right : arithmetic_expression :=
+  (Plus
+     (Literal 0)
+     (Plus
+        (Literal 1)
+        (Plus
+           (Literal 2)
+           (Plus
+              (Literal 3)
+              (Literal 4))))).
 
-Definition test_case5 : arithmetic_expression := (Plus (Plus (Literal 0) (Literal 1)) (Plus (Literal 2) (Literal 3))).
+Definition testcase_P_10 := Plus (Literal 1) (Literal 0).
 
-Definition test_case6 := Plus (Literal 1) (Literal 0).
+Definition testcase_P_01 := Plus (Literal 0) (Literal 1).
 
-Definition test_case7 := Plus (Literal 0) (Literal 1).
+Definition testcase_T_12 := Times (Literal 1) (Literal 2).
 
-Definition test_case8 := Times (Literal 1) (Literal 2).
+Definition testcase_T_21 := Times (Literal 2) (Literal 1).
 
-Definition test_case9 := Times (Literal 2) (Literal 1).
+Definition testcase_T_20 := Times (Literal 2) (Literal 0).
 
-Definition test_case10 := Times (Literal 2) (Literal 0).
-
-Definition test_case11 := Times (Literal 0) (Literal 2).
+Definition testcase_T_02 := Times (Literal 0) (Literal 2).
 
 Definition test_simplify_naive (candidate : arithmetic_expression -> arithmetic_expression) :=
-  (eqb_arithmetic_expression (candidate test_case1)
-       (Plus (Literal 1) (Plus (Literal 2) (Literal 3)))) &&
-    (eqb_arithmetic_expression (candidate test_case2) test_case2) &&
-    (eqb_arithmetic_expression (candidate test_case3)
+  (eqb_arithmetic_expression
+     (candidate testcase_P_balanced)
+     (Plus (Literal 1) (Plus (Literal 2) (Literal 3)))) &&
+    (eqb_arithmetic_expression
+       (candidate testcase_P_balanced_2)
+       testcase_P_balanced_2) &&
+    (eqb_arithmetic_expression (candidate testcase_P_left)
        (Plus
           (Plus
              (Plus
@@ -175,18 +187,20 @@ Definition test_simplify_naive (candidate : arithmetic_expression -> arithmetic_
                 (Literal 2))
              (Literal 3))
           (Literal 4))) &&
-    (eqb_arithmetic_expression (candidate test_case4)
-       (Plus (Literal 1)
-          (Plus (Literal 2)
-             (Plus (Literal 3) (Literal 4))))) &&
-    (eqb_arithmetic_expression (candidate test_case5)
-       (Plus (Literal 1) (Plus (Literal 2) (Literal 3)))) &&
-    (eqb_arithmetic_expression (candidate test_case6) (Literal 1)) &&
-    (eqb_arithmetic_expression (candidate test_case7) (Literal 1)) &&
-    (eqb_arithmetic_expression (candidate test_case8) (Literal 2)) &&
-    (eqb_arithmetic_expression (candidate test_case9) (Literal 2)) &&
-    (eqb_arithmetic_expression (candidate test_case10) (Literal 0)) &&
-    (eqb_arithmetic_expression (candidate test_case11) (Literal 0)).
+    (eqb_arithmetic_expression (candidate testcase_P_right)
+       (Plus
+          (Literal 1)
+          (Plus
+             (Literal 2)
+             (Plus
+                (Literal 3)
+                (Literal 4))))) &&
+    (eqb_arithmetic_expression (candidate testcase_P_10) (Literal 1)) &&
+    (eqb_arithmetic_expression (candidate testcase_P_01) (Literal 1)) &&
+    (eqb_arithmetic_expression (candidate testcase_T_12) (Literal 2)) &&
+    (eqb_arithmetic_expression (candidate testcase_T_21) (Literal 2)) &&
+    (eqb_arithmetic_expression (candidate testcase_T_02) (Literal 0)) &&
+    (eqb_arithmetic_expression (candidate testcase_T_20) (Literal 0)).
 
 Fixpoint simplify_naive (ae : arithmetic_expression) : arithmetic_expression :=
   match ae with
@@ -282,7 +296,6 @@ Inductive intermediate_arithmetic_expression : Type :=
 | Z : intermediate_arithmetic_expression
 | W : intermediate_arithmetic_expression
 | AE : arithmetic_expression -> intermediate_arithmetic_expression.
-
                                   
 Fixpoint arithmetic_expression_of_intermediate_arithmetic_expression (iae : intermediate_arithmetic_expression) : arithmetic_expression :=
   match iae with
@@ -294,7 +307,6 @@ Fixpoint arithmetic_expression_of_intermediate_arithmetic_expression (iae : inte
       ae
   end.
   
-
 Fixpoint simplify (ae : arithmetic_expression) : intermediate_arithmetic_expression :=
   match ae with
   | Literal n =>
@@ -378,6 +390,14 @@ Fixpoint simplify (ae : arithmetic_expression) : intermediate_arithmetic_express
       end *)
   end.
 
+Lemma fold_unfold_simplify_Literal :
+  forall n : nat,
+    simplify (Literal n) =
+      Literal n.
+Proof.
+  fold_unfold_tactic simplify.
+  
+
 Definition eqb_intermediate_arithmetic_expression (iae1 iae2 : intermediate_arithmetic_expression) :=
   match iae1 with
   | Z =>
@@ -403,29 +423,64 @@ Definition eqb_intermediate_arithmetic_expression (iae1 iae2 : intermediate_arit
       end
   end.
 
-Compute (eqb_intermediate_arithmetic_expression Z Z).
-Compute (eqb_intermediate_arithmetic_expression W W).
-Compute (negb (eqb_intermediate_arithmetic_expression Z W)).
-Compute (negb (eqb_intermediate_arithmetic_expression Z (AE (Literal 4)))).
-Compute (negb (eqb_intermediate_arithmetic_expression (AE (Literal 2)) (AE (Plus (Literal 0) (Literal 2))))).
-
-(* explain why this is correct *)
-
-Definition test_simplify (candidate : arithmetic_expression -> simplified_ae) :=
-  let ae1 := Plus (Literal 1) (Literal 0) in
-  let ae2 := Plus (Literal 0) (Literal 1) in
-  let ae3 := Times (Literal 1) (Literal 2) in
-  let ae4 := Times (Literal 2) (Literal 1) in
-  let ae5 := Times (Literal 2) (Literal 0) in
-  let ae6 := Times (Literal 0) (Literal 2) in
-  (eqb_simplified_ae (candidate ae1) W) &&
-    (eqb_simplified_ae (candidate ae2) W) &&
-    (eqb_simplified_ae (candidate ae3) (Literal_sum 2)) &&
-    (eqb_simplified_ae (candidate ae4) (Literal_sum 2)) &&
-    (eqb_simplified_ae (candidate ae5) Z) &&
-    (eqb_simplified_ae (candidate ae6) Z).
+Definition test_simplify (candidate : arithmetic_expression -> intermediate_arithmetic_expression) :=
+  (eqb_intermediate_arithmetic_expression (candidate testcase_P_10) W) &&
+    (eqb_intermediate_arithmetic_expression (candidate testcase_P_01) W) &&
+    (eqb_intermediate_arithmetic_expression (candidate testcase_T_12) (AE (Literal 2))) &&
+    (eqb_intermediate_arithmetic_expression (candidate testcase_T_21) (AE (Literal 2))) &&
+    (eqb_intermediate_arithmetic_expression (candidate testcase_T_20) Z) &&
+    (eqb_intermediate_arithmetic_expression (candidate testcase_T_02) Z).
 
 Compute (test_simplify simplify).
+
+Definition test_simplify_p (candidate : arithmetic_expression -> bool) :=
+  (candidate (arithmetic_expression_of_intermediate_arithmetic_expression
+                (simplify testcase_P_10))) &&
+    (candidate (arithmetic_expression_of_intermediate_arithmetic_expression
+                  (simplify testcase_P_01))) &&
+    (candidate (arithmetic_expression_of_intermediate_arithmetic_expression
+                  (simplify testcase_P_balanced))) &&
+    (candidate (arithmetic_expression_of_intermediate_arithmetic_expression
+                  (simplify testcase_P_balanced_2))) &&
+    (candidate (arithmetic_expression_of_intermediate_arithmetic_expression
+                  (simplify testcase_T_02))) &&
+    (candidate (arithmetic_expression_of_intermediate_arithmetic_expression
+                  (simplify testcase_T_20))) &&
+    (negb (candidate testcase_T_20)) &&
+    (negb (candidate testcase_T_02)).
+
+Fixpoint simplify_p (ae : arithmetic_expression) : bool :=
+  match ae with
+  | Literal n =>
+      true
+  | Plus ae1 ae2 =>
+      match ae1 with
+      | Literal 0 =>
+          false
+      | _ =>
+          match ae2 with
+          | Literal 0 =>
+              false
+          | _ =>
+              (simplify_p ae1) && (simplify_p ae2)
+          end
+      end
+  | Times ae1 ae2 =>
+      match ae1 with
+      | Literal 0 =>
+          false
+      | _ =>
+          match ae2 with
+          | Literal 0 =>
+              false
+          | _ =>
+              (simplify_p ae1) && (simplify_p ae2)
+          end
+      end
+  end.
+
+Compute (test_simplify_p simplify_p).
+
 
 (* ********** *)
 
