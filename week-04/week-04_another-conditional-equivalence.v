@@ -6,7 +6,7 @@
 (* ********** *)
 
 Ltac fold_unfold_tactic name := intros; unfold name; fold name; reflexivity.
-  
+
 Require Import Arith Bool List.
 
 Inductive arithmetic_expression : Type :=
@@ -46,7 +46,7 @@ Fixpoint evaluate_ltr (ae : arithmetic_expression) : expressible_value :=
       | Expressible_nat n2 =>
         if n1 <? n2
         then Expressible_msg (Numerical_underflow (n2 - n1))
-        else Expressible_nat (n1 - n2)               
+        else Expressible_nat (n1 - n2)
       | Expressible_msg s2 =>
         Expressible_msg s2
       end
@@ -90,7 +90,7 @@ Lemma fold_unfold_evaluate_ltr_Minus :
       | Expressible_nat n2 =>
         if n1 <? n2
         then Expressible_msg (Numerical_underflow (n2 - n1))
-        else Expressible_nat (n1 - n2)               
+        else Expressible_nat (n1 - n2)
       | Expressible_msg s2 =>
         Expressible_msg s2
       end
@@ -107,9 +107,8 @@ Qed.
 
 Proposition Minus_is_not_associative_sort_of :
   exists ae1 ae2 ae3 : arithmetic_expression,
-    evaluate_ltr (Minus (Minus ae1 ae2) ae3)
-    <>
-    evaluate_ltr (Minus ae1 (Plus ae2 ae3)).
+    evaluate_ltr (Minus (Minus ae1 ae2) ae3) <>
+      evaluate_ltr (Minus ae1 (Plus ae2 ae3)).
 Proof.
   exists (Literal 1).
   exists (Literal 2).
@@ -143,7 +142,7 @@ Qed.
 
 (* Task 2: Complete and prove the following conditional observational equivalence. *)
 
-(* 
+(*
 My own attempt at finding a large and friendly disjunction hasn't succeeded yet.
 
 Learning from the other conditional properties,
@@ -175,15 +174,28 @@ time to call it a day.
 
 Proposition Minus_is_conditionally_associative_sort_of :
   forall ae1 ae2 ae3 : arithmetic_expression,
-  exists n : nat,
-    evaluate_ltr (Minus ae1 ae2) = Expressible_nat n
-    <->
+    (forall m1 : nat,
+        evaluate_ltr ae1 = Expressible_msg (Numerical_underflow m1))
+    \/
+      (forall m2 : nat,
+        evaluate_ltr ae2 = Expressible_msg (Numerical_underflow m2))
+    \/
+      (forall m3 n1 n2 : nat,
+        evaluate_ltr ae3 = Expressible_msg (Numerical_underflow m3) ->
+        evaluate_ltr ae1 = Expressible_nat n1 ->
+        evaluate_ltr ae2 = Expressible_nat n2 ->
+        n2 <= n1 \/ n2 = n1 + m3)
+    \/
+      (forall n1 n2 n3 : nat,
+          evaluate_ltr ae1 = Expressible_nat n1 ->
+          evaluate_ltr ae2 = Expressible_nat n2 ->
+          evaluate_ltr ae3 = Expressible_nat n3 ->
+          n2 + n3 <= n1)
+    ->
       evaluate_ltr (Minus (Minus ae1 ae2) ae3) =
-      evaluate_ltr (Minus ae1 (Plus ae2 ae3)).
+        evaluate_ltr (Minus ae1 (Plus ae2 ae3)).
 Proof.
-  intros ae1 ae2 ae3.
-  split.
-  intros [n [H_n_left H_n_right]].
+Qed.
 
 (* Reminder: The treatment of errors is simplified. *)
 
