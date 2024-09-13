@@ -303,9 +303,14 @@ Theorem super_refactor_right_yields_super_refactored_right_results :
     super_refactored_rightp (super_refactor_right ae) = true.
 Proof.
  intro ae.
- induction (super_refactor_right ae) as [n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2].
-  - rewrite -> fold_unfold_super_refactored_rightp_Literal.
-    reflexivity.
+ induction ae as [n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2].
+ - rewrite -> fold_unfold_super_refactor_right_Literal.
+   rewrite -> fold_unfold_super_refactored_rightp_Literal.
+   reflexivity.
+ - rewrite -> fold_unfold_super_refactor_right_Plus.
+   case (super_refactor_right ae2) as []
+   
+(* reflexivity.
   - rewrite -> fold_unfold_super_refactored_rightp_Plus.
     case ae1 as [n1 | ae11 ae12 | ae11 ae12].
     + exact IHae2.
@@ -321,7 +326,7 @@ Proof.
     rewrite -> IHae2.
     rewrite -> andb_diag.
     reflexivity.
-
+*)
 (* ********** *)
 
 (* A typeful take: characterizing refactored expressions with a type. *)

@@ -219,11 +219,13 @@ Proposition Minus_is_conditionally_associative_sort_of :
       (forall m2 : nat,
           evaluate_ltr ae2 = Expressible_msg (Numerical_underflow m2))
     \/
-      (forall n1 n2 m3 : nat,
-          evaluate_ltr ae3 = Expressible_msg (Numerical_underflow m3) ->
-          evaluate_ltr ae1 = Expressible_nat n1 ->
-          evaluate_ltr ae2 = Expressible_nat n2 ->
-        n2 <= n1 \/ n2 = n1 + m3)
+      (forall m3 : nat,
+          evaluate_ltr ae3 = Expressible_msg (Numerical_underflow m3)
+          /\
+          forall (n1 n2: nat),
+            evaluate_ltr ae1 = Expressible_nat n1 ->
+            evaluate_ltr ae2 = Expressible_nat n2 ->
+            n2 <= n1 \/ n2 = n1 + m3)
     \/
       (forall n1 n2 : nat,
           evaluate_ltr ae1 = Expressible_nat n1 ->
@@ -256,42 +258,28 @@ Proof.
       case (evaluate_ltr ae2) as [n2 | s2] eqn:E_a2.
       * case (n1 <? n2) as [ | ] eqn:H_lt_n1_n2.
         -- case (evaluate_ltr ae3) as [n3 | s3] eqn:E_ae3.
-           ++ assert (H_ae3 := H_ae3 n1 n2 n3).
-                                              
-
-
-(*
-          rewrite -> (H_ae3 (n2 - n1)).
-           reflexivity.
-        -- rewrite -> (H_ae3 n1).
-           reflexivity.
+           ++ assert (H_ae3 := H_ae3 n3).
+              destruct H_ae3 as [H_absurd _].
+              discriminate H_absurd.
+           ++ assert (H_ae3 := H_ae3 (n2 - n1)).
+              destruct H_ae3 as [H_s _].
+              rewrite -> H_s.
+              reflexivity.
+        -- case (evaluate_ltr ae3) as [n3 | s3] eqn:E_ae3.
+           ++ assert (H_ae3 := H_ae3 n3).
+              destruct H_ae3 as [H_absurd _].
+              discriminate H_absurd.
+           ++ reflexivity.
       * reflexivity.
     + rewrite ->3 fold_unfold_evaluate_ltr_Minus.
       rewrite -> fold_unfold_evaluate_ltr_Literal.
       rewrite -> fold_unfold_evaluate_ltr_Plus.
-      case (evaluate_ltr ae2) as [n2 | s2] eqn:E_ae2.
-      rewrite -> fold_unfold_evaluate_ltr_Literal in H_ae1_ae2.
-      Check (H_ae1_ae2 n1 n2).
-      assert (H_ae1_ae2 := H_ae1_ae2 n1 n2).
-      assert (H_ae1_ae2 := H_ae1_ae2 eq_refl eq_refl).
-      destruct (nat_lt_eureka n1 n2) as [H_lt_n1_n2 H_lt_n3].
-      * exact H_ae1_ae2.
-      * rewrite -> H_lt_n1_n2.
-        case (evaluate_ltr ae3) as [n3 | s3] eqn:E_ae3.
-        -- destruct (H_lt_n3 n3) as [H_lt_n31 H_lt_n32].
-           rewrite -> H_lt_n31.
-           rewrite -> H_lt_n32.
-           rewrite -> (Nat.sub_add_distr n1 n2 n3).
-           reflexivity.
-        -- reflexivity.
-      * reflexivity.
-  - intros ae3 ae4.
-    rewrite ->3 fold_unfold_evaluate_ltr_Minus.
-    rewrite ->2 fold_unfold_evaluate_ltr_Plus.
-    case (evaluate_ltr ae1) as [n1 | s1] eqn:E_ae1.
-    + Check (IHae1 ae3 ae4).
-      assert (IHae1 := IHae1 ae3 ae4).
-*)
+      case (evaluate_ltr ae2) as [n2 | s2] eqn:E_a2.
+      * case (n1 <? n2) as [ | ] eqn:H_lt_n1_n2.
+        -- case (evaluate_ltr ae3) as [n3 | s3] eqn:E_ae3.
+           ++ rewrite -> fold_unfold_evaluate_ltr_Literal in H_ae1_ae2.
+             assert (H_ae1_ae2 := H_ae1_ae2 n1 n2 eq_refl eq_refl).
+      
 
 Qed.
 
