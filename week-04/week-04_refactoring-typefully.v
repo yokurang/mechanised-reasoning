@@ -236,32 +236,56 @@ Proof.
   fold_unfold_tactic arithmetic_expression_fold.
 Qed.
 
-(*
-Fixpoint super_refactored_rightp_aux (ae : arithmetic_expression) : arithmetic_expression_fold :=
-*)
+
+Inductive arithmetic_expressionp : Type :=
+  Literalp : nat -> arithmetic_expressionp
+| Plusp : arithmetic_expressionp -> arithmetic_expressionp -> arithmetic_expressionp
+| Plusp_right_Literal : arithmetic_expressionp -> arithmetic_expressionp -> arithmetic_expressionp
+| Plusp_right_Plusp : arithmetic_expressionp -> arithmetic_expressionp -> arithmetic_expressionp
+| Plusp_right_Minusp : arithmetic_expressionp -> arithmetic_expressionp -> arithmetic_expressionp
+| Minusp : arithmetic_expressionp -> arithmetic_expressionp -> arithmetic_expressionp.
+
+Definition super_refactored_rightp_aux (ae : arithmetic_expression) : arithmetic_expressionp :=
+  arithmetic_expression_fold arithmetic_expressionp Literalp Plusp Minusp ae.
+
+
+Compute (super_refactored_rightp_aux (Plus (Literal 2) (Literal 3))).
 
 
 Fixpoint super_refactored_rightp (ae : arithmetic_expression) : bool :=
+  match ae with
+  | Literal n =>
+      true
+  | Plus ae1 ae2 =>
+      match (super_refactored_rightp_aux ae1) with
+      | Literalp =>
+          true
+      | Plusp aep1 aep2
+            
+   
+  end.
+
+Fixpoint super_refactored_rightp' (ae : arithmetic_expression) : bool :=
   match ae with
     Literal n =>
       true
   | Plus ae1 ae2 =>
       match ae1 with
         Literal n1 =>
-          super_refactored_rightp ae2
+          super_refactored_rightp' ae2
       | Plus ae11 ae12 =>
           false
       | Minus ae11 ae12 =>
-          super_refactored_rightp ae11
+          super_refactored_rightp' ae11
           &&
-            super_refactored_rightp ae12
+            super_refactored_rightp' ae12
           &&
-            super_refactored_rightp ae2
+            super_refactored_rightp' ae2
       end
   | Minus ae1 ae2 =>
-      super_refactored_rightp ae1
+      super_refactored_rightp' ae1
       &&
-        super_refactored_rightp ae2
+        super_refactored_rightp' ae2
   end.
 
 
