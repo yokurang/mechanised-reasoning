@@ -183,7 +183,7 @@ Qed.
    Capture the effect of super_refactor_right into a predicate. *)
 
 Fixpoint super_refactored_rightp (ae : arithmetic_expression) : bool :=
-t  match ae with
+  match ae with
     Literal n =>
     true
   | Plus ae1 ae2 =>
@@ -205,12 +205,122 @@ t  match ae with
     super_refactored_rightp ae2
   end.
 
-(*
+
+Lemma fold_unfold_super_refactored_rightp_Literal :
+  forall n : nat,
+    super_refactored_rightp (Literal n) = true.
+Proof.
+  fold_unfold_tactic super_refactored_rightp.
+Qed.
+
+Lemma fold_unfold_super_refactored_rightp_Plus :
+  forall ae1 ae2 : arithmetic_expression,
+    super_refactored_rightp (Plus ae1 ae2) =
+      match ae1 with
+        Literal n1 =>
+          super_refactored_rightp ae2
+      | Plus ae11 ae12 =>
+          false
+      | Minus ae11 ae12 =>
+          super_refactored_rightp ae11
+          &&
+            super_refactored_rightp ae12
+          &&
+            super_refactored_rightp ae2
+      end.
+Proof.
+  fold_unfold_tactic super_refactored_rightp.
+Qed.
+
+Lemma fold_unfold_super_refactored_rightp_Minus :
+  forall ae1 ae2 : arithmetic_expression,
+    super_refactored_rightp (Minus ae1 ae2) =
+      super_refactored_rightp ae1
+      &&
+        super_refactored_rightp ae2.
+Proof.
+  fold_unfold_tactic super_refactored_rightp.
+Qed.
+
+Lemma super_refactor_right_is_idempotent_aux:
+    forall ae : arithmetic_expression,
+      super_refactor_right (super_refactor_right ae) = super_refactor_right ae
+      /\
+      forall a : arithmetic_expression,
+        super_refactor_right (super_refactor_right_aux ae a) =
+          super_refactor_right_aux ae (super_refactor_right a).
+Proof.
+  intro ae.
+  induction ae as [ n
+                  | ae1 [IHae1_sr IHae1_sr_aux] ae2 [IHae2_sr IHae2_sr_aux]
+                  | ae1 [IHae1_sr IHae1_sr_aux] ae2 [IHae2_sr IHae2_sr_aux] ].
+  - split.
+    + rewrite ->2 fold_unfold_super_refactor_right_Literal.
+      reflexivity.
+    + intro a.
+      rewrite ->2 fold_unfold_super_refactor_right_aux_Literal.
+      rewrite -> fold_unfold_super_refactor_right_Plus.
+      rewrite -> fold_unfold_super_refactor_right_aux_Literal.
+      reflexivity.
+  - split.
+    + rewrite -> fold_unfold_super_refactor_right_Plus.
+      rewrite -> (IHae1_sr_aux (super_refactor_right ae2)).
+      rewrite -> IHae2_sr.
+      reflexivity.
+    + intro a.
+      rewrite ->2 fold_unfold_super_refactor_right_aux_Plus.
+      rewrite -> (IHae1_sr_aux (super_refactor_right_aux ae2 a)).
+      rewrite -> (IHae2_sr_aux a).
+      reflexivity.
+  - split.
+    + rewrite ->2 fold_unfold_super_refactor_right_Minus.
+      rewrite -> IHae1_sr.
+      rewrite -> IHae2_sr.
+      reflexivity.
+    + intro a.
+      rewrite ->2 fold_unfold_super_refactor_right_aux_Minus.
+      rewrite -> fold_unfold_super_refactor_right_Plus.
+      rewrite -> fold_unfold_super_refactor_right_aux_Minus.
+      rewrite -> IHae1_sr.
+      rewrite -> IHae2_sr.
+      reflexivity.
+Qed.
+
+Proposition super_refactor_is_idempotent :
+  forall ae,
+    super_refactor_right ae = super_refactor_right (super_refactor_right ae).
+Proof.
+  intros ae.
+  Check super_refactor_right_is_idempotent_aux.
+  destruct (super_refactor_right_is_idempotent_aux ae) as [ H_sr H_sr_aux ].
+  rewrite -> H_sr.
+  reflexivity.
+Qed.
+
 (* soundness: *)
 Theorem super_refactor_right_yields_super_refactored_right_results :
   forall ae : arithmetic_expression,
     super_refactored_rightp (super_refactor_right ae) = true.
-*)
+Proof.
+ intro ae.
+ induction (super_refactor_right ae) as [n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2].
+  - rewrite -> fold_unfold_super_refactored_rightp_Literal.
+    reflexivity.
+  - rewrite -> fold_unfold_super_refactored_rightp_Plus.
+    case ae1 as [n1 | ae11 ae12 | ae11 ae12].
+    + exact IHae2.
+    + admit.
+    + rewrite -> fold_unfold_super_refactored_rightp_Minus in IHae1.
+      rewrite -> IHae1.
+      rewrite -> IHae2.
+      Search (_ && _ = _).
+      rewrite -> andb_diag.
+      reflexivity.
+  - rewrite -> fold_unfold_super_refactored_rightp_Minus.
+    rewrite -> IHae1.
+    rewrite -> IHae2.
+    rewrite -> andb_diag.
+    reflexivity.
 
 (* ********** *)
 
