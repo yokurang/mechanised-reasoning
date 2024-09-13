@@ -299,7 +299,7 @@ Qed.
 
 (* soundness: *)
 
-Lemma super_refactored_rightp_eureka :
+Lemma super_refactored_rightp_eureka' :
   forall ae1 : arithmetic_expression,
     super_refactored_rightp (super_refactor_right ae1) = true ->
     forall ae2 : arithmetic_expression,
@@ -314,24 +314,85 @@ Proof.
     exact H_ae2.
   - intros H_ae11_ae12 ae2 H_ae2.
     rewrite -> fold_unfold_super_refactor_right_aux_Plus.
-    rewrite -> fold_unfold_super_refactor_right_Plus in H_ae11_ae12.
-    assert (IHae11 := IHae11
-
-  
+    rewrite -> fold_unfold_super_refactor_right_Plus in H_ae11_ae12.                        
 Admitted.
+
+Lemma super_refactored_rightp_eureka :
+  forall ae a : arithmetic_expression,
+    super_refactored_rightp (super_refactor_right_aux ae (super_refactor_right a)) =
+      super_refactored_rightp (super_refactor_right ae) && super_refactored_rightp (super_refactor_right a).
+Proof.
+  intro ae.
+  induction ae as [n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2].
+  - intro a.
+    rewrite -> fold_unfold_super_refactor_right_aux_Literal.
+    rewrite -> fold_unfold_super_refactor_right_Literal.
+    rewrite -> fold_unfold_super_refactored_rightp_Literal.
+    rewrite -> fold_unfold_super_refactored_rightp_Plus.
+    Search (true && _ = _).
+    rewrite -> andb_true_l.
+    reflexivity.
+  - intro a.
+    rewrite -> fold_unfold_super_refactor_right_aux_Plus.
+    destruct (super_refactor_right_is_idempotent_aux ae2) as [_ H_sr_aux].
+    rewrite <- (H_sr_aux a).
+    assert (IHae2 := IHae2 a).
+    rewrite <- (H_sr_aux a) in IHae2.
+    
+    rewrite -> fold_unfold_super_refactor_right_Plus.
+
+Admitted.
+
+Lemma super_refactor_right_yields_super_refactored_right_results_aux :
+  forall ae : arithmetic_expression,
+    super_refactored_rightp (super_refactor_right ae) = true
+    /\
+      forall a : arithmetic_expression,
+        super_refactored_rightp (super_refactor_right a) = true ->
+        super_refactored_rightp (super_refactor_right_aux ae (super_refactor_right a)) = true.
+Proof.
+  intro ae.
+  induction ae as [ n
+                  | ae1 [IHae1_sr IHae1_sr_aux] ae2 [IHae2_sr IHae2_sr_aux]
+                  | ae1 [IHae1_sr IHae1_sr_aux] ae2 [IHae2_sr IHae2_sr_aux] ].
+  - split.
+    + rewrite -> fold_unfold_super_refactor_right_Literal.
+      rewrite -> fold_unfold_super_refactored_rightp_Literal.
+      reflexivity.
+    + intros a H_a.
+      rewrite -> fold_unfold_super_refactor_right_aux_Literal.
+      rewrite -> fold_unfold_super_refactored_rightp_Plus.
+      exact H_a.
+  - split.
+    + rewrite -> fold_unfold_super_refactor_right_Plus.
+      assert (IHae1_sr_aux :=IHae1_sr_aux ae2 IHae2_sr).
+      exact IHae1_sr_aux.
+    + intros a H_a.
+      rewrite -> fold_unfold_super_refactor_right_aux_Plus.
+Admitted.
+
+
 
 Theorem super_refactor_right_yields_super_refactored_right_results :
   forall ae : arithmetic_expression,
     super_refactored_rightp (super_refactor_right ae) = true.
 Proof.
- intro ae.
- induction ae as [n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2].
- - rewrite -> fold_unfold_super_refactor_right_Literal.
-   rewrite -> fold_unfold_super_refactored_rightp_Literal.
-   reflexivity.
- - rewrite -> fold_unfold_super_refactor_right_Plus.
-   Check (super_refactored_rightp_eureka ae1 IHae1 ae2 IHae2).
-   exact (super_refactored_rightp_eureka ae1 IHae1 ae2 IHae2).
+  intro ae.
+  destruct (super_refactor_right_yields_super_refactored_right_results_aux ae) as [H_sr _].
+  exact H_sr.
+  Restart.
+  induction ae as [n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2].
+  - rewrite -> fold_unfold_super_refactor_right_Literal.
+    rewrite -> fold_unfold_super_refactored_rightp_Literal.
+    reflexivity.
+  - rewrite -> fold_unfold_super_refactor_right_Plus.
+    Check (super_refactored_rightp_eureka).
+    Check (super_refactored_rightp_eureka ae1 ae2).
+    rewrite -> (super_refactored_rightp_eureka ae1 ae2).
+    rewrite -> IHae1.
+    rewrite -> IHae2.
+    rewrite -> andb_diag.
+    reflexivity.
  - rewrite -> fold_unfold_super_refactor_right_Minus.
    rewrite -> fold_unfold_super_refactored_rightp_Minus.
    rewrite -> IHae1.
@@ -339,53 +400,6 @@ Proof.
    rewrite -> andb_diag.
    reflexivity.
 Qed.
-   
-   (*
-1 goal (ID 55)
-  
-  ae1, ae2 : arithmetic_expression
-  IHae1 : super_refactored_rightp (super_refactor_right ae1) = true
-  IHae2 : super_refactored_rightp (super_refactor_right ae2) = true
-  ============================
-  super_refactored_rightp (super_refactor_right_aux ae1 (super_refactor_right ae2))
-    *)
-   
-   (*
-   destruct (super_refactor_right_is_idempotent_aux ae1) as [_ H_sr_aux].
-   rewrite <- (H_sr_aux ae2).
-   case ae1 as [ n | | ].
-   + rewrite -> fold_unfold_super_refactor_right_aux_Literal.
-     rewrite -> fold_unfold_super_refactor_right_Plus.
-     rewrite -> fold_unfold_super_refactor_right_aux_Literal.
-     rewrite -> fold_unfold_super_refactored_rightp_Plus.
-     exact IHae2.
-   + rename ae1_1 into ae11, ae1_2 into ae12.
-     
-     rewrite -> fold_unfold_super_refactor_right_aux_Plus.
-               
-   *)
-     
-   
-   case (super_refactor_right ae2) as []
-   
-(* reflexivity.
-  - rewrite -> fold_unfold_super_refactored_rightp_Plus.
-    case ae1 as [n1 | ae11 ae12 | ae11 ae12].
-    + exact IHae2.
-    + admit.
-    + rewrite -> fold_unfold_super_refactored_rightp_Minus in IHae1.
-      rewrite -> IHae1.
-      rewrite -> IHae2.
-      Search (_ && _ = _).
-      rewrite -> andb_diag.
-      reflexivity.
-  - rewrite -> fold_unfold_super_refactored_rightp_Minus.
-    rewrite -> IHae1.
-    rewrite -> IHae2.
-    rewrite -> andb_diag.
-    reflexivity.
-*)
-(* ********** *)
 
 (* A typeful take: characterizing refactored expressions with a type. *)
 
