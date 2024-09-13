@@ -182,40 +182,70 @@ Qed.
 (* Task 1: What does super_refactor_right do?
    Capture the effect of super_refactor_right into a predicate. *)
 
+Fixpoint arithmetic_expression_fold (T : Type) (Literal_case : nat -> T) (Plus_case : T -> T -> T) (Minus_case : T -> T -> T) (ae : arithmetic_expression) : T :=
+  match ae with
+    Literal n =>
+      Literal_case n
+  | Plus ae1 ae2 =>
+      Plus_case
+        (arithmetic_expression_fold T Literal_case Plus_case Minus_case ae1)
+        (arithmetic_expression_fold T Literal_case Plus_case Minus_case ae2)
+  | Minus ae1 ae2 =>
+      Minus_case
+        (arithmetic_expression_fold T Literal_case Plus_case Minus_case ae1)
+        (arithmetic_expression_fold T Literal_case Plus_case Minus_case ae2)
+  end.
+
+Lemma fold_unfold_arithmetic_expression_fold_Literal :
+  forall (T : Type)
+    (Literal_case : nat -> T)
+    (Plus_case : T -> T -> T)
+    (Minus_case : T -> T -> T)
+    (n : nat),
+    arithmetic_expression_fold T Literal_case Plus_case Minus_case (Literal n) =
+      Literal_case n.
+Proof.
+    fold_unfold_tactic arithmetic_expression_fold.
+Qed.
+
+Lemma fold_unfold_arithmetic_expression_fold_Plus :
+  forall (T : Type)
+    (Literal_case : nat -> T)
+    (Plus_case : T -> T -> T)
+    (Minus_case : T -> T -> T)
+    (ae1 ae2 : arithmetic_expression),
+    arithmetic_expression_fold T Literal_case Plus_case Minus_case (Plus ae1 ae2) =
+      Plus_case
+        (arithmetic_expression_fold T Literal_case Plus_case Minus_case ae1)
+        (arithmetic_expression_fold T Literal_case Plus_case Minus_case ae2).
+Proof.
+  fold_unfold_tactic arithmetic_expression_fold.
+Qed.
+
+Lemma fold_unfold_arithmetic_expression_fold_Minus :
+    forall (T : Type)
+      (Literal_case : nat -> T)
+      (Plus_case : T -> T -> T)
+      (Minus_case : T -> T -> T)
+      (ae1 ae2 : arithmetic_expression),
+      arithmetic_expression_fold T Literal_case Plus_case Minus_case (Minus ae1 ae2) =
+        Minus_case
+        (arithmetic_expression_fold T Literal_case Plus_case Minus_case ae1)
+        (arithmetic_expression_fold T Literal_case Plus_case Minus_case ae2).
+Proof.
+  fold_unfold_tactic arithmetic_expression_fold.
+Qed.
+
+(*
+Fixpoint super_refactored_rightp_aux (ae : arithmetic_expression) : arithmetic_expression_fold :=
+*)
+
+
 Fixpoint super_refactored_rightp (ae : arithmetic_expression) : bool :=
   match ae with
     Literal n =>
-    true
+      true
   | Plus ae1 ae2 =>
-    match ae1 with
-      Literal n1 =>
-      super_refactored_rightp ae2
-    | Plus ae11 ae12 =>
-      false
-    | Minus ae11 ae12 =>
-      super_refactored_rightp ae11
-      &&
-      super_refactored_rightp ae12
-      &&
-      super_refactored_rightp ae2
-    end
-  | Minus ae1 ae2 =>
-    super_refactored_rightp ae1
-    &&
-    super_refactored_rightp ae2
-  end.
-
-
-Lemma fold_unfold_super_refactored_rightp_Literal :
-  forall n : nat,
-    super_refactored_rightp (Literal n) = true.
-Proof.
-  fold_unfold_tactic super_refactored_rightp.
-Qed.
-
-Lemma fold_unfold_super_refactored_rightp_Plus :
-  forall ae1 ae2 : arithmetic_expression,
-    super_refactored_rightp (Plus ae1 ae2) =
       match ae1 with
         Literal n1 =>
           super_refactored_rightp ae2
@@ -227,151 +257,56 @@ Lemma fold_unfold_super_refactored_rightp_Plus :
             super_refactored_rightp ae12
           &&
             super_refactored_rightp ae2
-      end.
-Proof.
-  fold_unfold_tactic super_refactored_rightp.
-Qed.
-
-Lemma fold_unfold_super_refactored_rightp_Minus :
-  forall ae1 ae2 : arithmetic_expression,
-    super_refactored_rightp (Minus ae1 ae2) =
+      end
+  | Minus ae1 ae2 =>
       super_refactored_rightp ae1
       &&
-        super_refactored_rightp ae2.
-Proof.
-  fold_unfold_tactic super_refactored_rightp.
-Qed.
+        super_refactored_rightp ae2
+  end.
 
-Lemma super_refactor_right_is_idempotent_aux:
-    forall ae : arithmetic_expression,
-      super_refactor_right (super_refactor_right ae) = super_refactor_right ae
-      /\
-      forall a : arithmetic_expression,
-        super_refactor_right (super_refactor_right_aux ae a) =
-          super_refactor_right_aux ae (super_refactor_right a).
-Proof.
-  intro ae.
-  induction ae as [ n
-                  | ae1 [IHae1_sr IHae1_sr_aux] ae2 [IHae2_sr IHae2_sr_aux]
-                  | ae1 [IHae1_sr IHae1_sr_aux] ae2 [IHae2_sr IHae2_sr_aux] ].
-  - split.
-    + rewrite ->2 fold_unfold_super_refactor_right_Literal.
-      reflexivity.
-    + intro a.
-      rewrite ->2 fold_unfold_super_refactor_right_aux_Literal.
-      rewrite -> fold_unfold_super_refactor_right_Plus.
-      rewrite -> fold_unfold_super_refactor_right_aux_Literal.
-      reflexivity.
-  - split.
-    + rewrite -> fold_unfold_super_refactor_right_Plus.
-      rewrite -> (IHae1_sr_aux (super_refactor_right ae2)).
-      rewrite -> IHae2_sr.
-      reflexivity.
-    + intro a.
-      rewrite ->2 fold_unfold_super_refactor_right_aux_Plus.
-      rewrite -> (IHae1_sr_aux (super_refactor_right_aux ae2 a)).
-      rewrite -> (IHae2_sr_aux a).
-      reflexivity.
-  - split.
-    + rewrite ->2 fold_unfold_super_refactor_right_Minus.
-      rewrite -> IHae1_sr.
-      rewrite -> IHae2_sr.
-      reflexivity.
-    + intro a.
-      rewrite ->2 fold_unfold_super_refactor_right_aux_Minus.
-      rewrite -> fold_unfold_super_refactor_right_Plus.
-      rewrite -> fold_unfold_super_refactor_right_aux_Minus.
-      rewrite -> IHae1_sr.
-      rewrite -> IHae2_sr.
-      reflexivity.
-Qed.
-
-Proposition super_refactor_is_idempotent :
-  forall ae,
-    super_refactor_right ae = super_refactor_right (super_refactor_right ae).
-Proof.
-  intros ae.
-  Check super_refactor_right_is_idempotent_aux.
-  destruct (super_refactor_right_is_idempotent_aux ae) as [ H_sr H_sr_aux ].
-  rewrite -> H_sr.
-  reflexivity.
-Qed.
 
 (* soundness: *)
 
-Lemma super_refactored_rightp_eureka' :
-  forall ae1 : arithmetic_expression,
-    super_refactored_rightp (super_refactor_right ae1) = true ->
-    forall ae2 : arithmetic_expression,
-      super_refactored_rightp (super_refactor_right ae2) = true ->
-      super_refactored_rightp (super_refactor_right_aux ae1 (super_refactor_right ae2)) = true.
+Lemma super_refactoring_right_preserves_super_refactored_rightp_aux :
+  forall (ae a : arithmetic_expression),
+    super_refactored_rightp (super_refactor_right_aux ae a) = super_refactored_rightp (Plus ae a).
 Proof.
-  intros ae1.
-  induction ae1 as [n | ae11 IHae11 ae12 IHae12 | ae11 IHae11 ae12 IHae12].
-  - intros H_ae1 ae2 H_ae2.
-    rewrite -> fold_unfold_super_refactor_right_aux_Literal.
-    rewrite -> fold_unfold_super_refactored_rightp_Plus.
-    exact H_ae2.
-  - intros H_ae11_ae12 ae2 H_ae2.
-    rewrite -> fold_unfold_super_refactor_right_aux_Plus.
-    rewrite -> fold_unfold_super_refactor_right_Plus in H_ae11_ae12.                        
-Admitted.
-
-Lemma super_refactored_rightp_eureka :
-  forall ae a : arithmetic_expression,
-    super_refactored_rightp (super_refactor_right_aux ae (super_refactor_right a)) =
-      super_refactored_rightp (super_refactor_right ae) && super_refactored_rightp (super_refactor_right a).
-Proof.
-  intro ae.
-  induction ae as [n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2].
-  - intro a.
-    rewrite -> fold_unfold_super_refactor_right_aux_Literal.
-    rewrite -> fold_unfold_super_refactor_right_Literal.
-    rewrite -> fold_unfold_super_refactored_rightp_Literal.
-    rewrite -> fold_unfold_super_refactored_rightp_Plus.
-    Search (true && _ = _).
-    rewrite -> andb_true_l.
+   intro ae.
+  induction ae as [ n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ];
+    intro a.
+  - rewrite -> fold_unfold_super_refactor_right_aux_Literal.
     reflexivity.
-  - intro a.
-    rewrite -> fold_unfold_super_refactor_right_aux_Plus.
-    destruct (super_refactor_right_is_idempotent_aux ae2) as [_ H_sr_aux].
-    rewrite <- (H_sr_aux a).
-    assert (IHae2 := IHae2 a).
-    rewrite <- (H_sr_aux a) in IHae2.
-    
-    rewrite -> fold_unfold_super_refactor_right_Plus.
-
-Admitted.
-
-Lemma super_refactor_right_yields_super_refactored_right_results_aux :
-  forall ae : arithmetic_expression,
-    super_refactored_rightp (super_refactor_right ae) = true
-    /\
-      forall a : arithmetic_expression,
-        super_refactored_rightp (super_refactor_right a) = true ->
-        super_refactored_rightp (super_refactor_right_aux ae (super_refactor_right a)) = true.
-Proof.
-  intro ae.
-  induction ae as [ n
-                  | ae1 [IHae1_sr IHae1_sr_aux] ae2 [IHae2_sr IHae2_sr_aux]
-                  | ae1 [IHae1_sr IHae1_sr_aux] ae2 [IHae2_sr IHae2_sr_aux] ].
-  - split.
-    + rewrite -> fold_unfold_super_refactor_right_Literal.
-      rewrite -> fold_unfold_super_refactored_rightp_Literal.
+  - rewrite -> fold_unfold_super_refactor_right_aux_Plus.
+    rewrite -> (IHae1 (super_refactor_right_aux ae2 a)).
+    rewrite -> fold_unfold_super_refactored_rightp_Plus.
+    rewrite -> (IHae2 a).
+    case (super_refactored_rightp ae1) as [t1 | f1] eqn:Refp_ae1.
+    + rewrite ->2 fold_unfold_super_refactored_rightp_Plus.
+      rewrite -> Refp_ae1.
+      case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
+      * case (evaluate a) as [n | s] eqn:E_a.
+        -- rewrite -> Nat.add_assoc.
+           reflexivity.
+        -- reflexivity.
+      * reflexivity.
+    + rewrite ->2 fold_unfold_evaluate_Plus.
+      rewrite -> E_ae1.
       reflexivity.
-    + intros a H_a.
-      rewrite -> fold_unfold_super_refactor_right_aux_Literal.
-      rewrite -> fold_unfold_super_refactored_rightp_Plus.
-      exact H_a.
-  - split.
-    + rewrite -> fold_unfold_super_refactor_right_Plus.
-      assert (IHae1_sr_aux :=IHae1_sr_aux ae2 IHae2_sr).
-      exact IHae1_sr_aux.
-    + intros a H_a.
-      rewrite -> fold_unfold_super_refactor_right_aux_Plus.
-Admitted.
-
-
+  - rewrite -> fold_unfold_refactor_aux_Minus.
+    rewrite ->2 fold_unfold_evaluate_Plus.
+    rewrite ->2 fold_unfold_evaluate_Minus.
+    rewrite -> (IHae1 (Literal 0)).
+    rewrite -> (IHae2 (Literal 0)).
+    rewrite ->2 fold_unfold_evaluate_Plus.
+    case (evaluate ae1) as [n1 | s1] eqn:E_ae1.
+    + case (evaluate ae2) as [n2 | s2] eqn:E_ae2.
+      * rewrite -> fold_unfold_evaluate_Literal.
+        rewrite ->2 Nat.add_0_r.
+        reflexivity.
+      * rewrite -> fold_unfold_evaluate_Literal.
+        reflexivity.
+    + reflexivity.
+  Admitted.
 
 Theorem super_refactor_right_yields_super_refactored_right_results :
   forall ae : arithmetic_expression,
