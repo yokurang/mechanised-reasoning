@@ -298,6 +298,28 @@ Proof.
 Qed.
 
 (* soundness: *)
+
+Lemma super_refactored_rightp_eureka :
+  forall ae1 : arithmetic_expression,
+    super_refactored_rightp (super_refactor_right ae1) = true ->
+    forall ae2 : arithmetic_expression,
+      super_refactored_rightp (super_refactor_right ae2) = true ->
+      super_refactored_rightp (super_refactor_right_aux ae1 (super_refactor_right ae2)) = true.
+Proof.
+  intros ae1.
+  induction ae1 as [n | ae11 IHae11 ae12 IHae12 | ae11 IHae11 ae12 IHae12].
+  - intros H_ae1 ae2 H_ae2.
+    rewrite -> fold_unfold_super_refactor_right_aux_Literal.
+    rewrite -> fold_unfold_super_refactored_rightp_Plus.
+    exact H_ae2.
+  - intros H_ae11_ae12 ae2 H_ae2.
+    rewrite -> fold_unfold_super_refactor_right_aux_Plus.
+    rewrite -> fold_unfold_super_refactor_right_Plus in H_ae11_ae12.
+    assert (IHae11 := IHae11
+
+  
+Admitted.
+
 Theorem super_refactor_right_yields_super_refactored_right_results :
   forall ae : arithmetic_expression,
     super_refactored_rightp (super_refactor_right ae) = true.
@@ -308,6 +330,42 @@ Proof.
    rewrite -> fold_unfold_super_refactored_rightp_Literal.
    reflexivity.
  - rewrite -> fold_unfold_super_refactor_right_Plus.
+   Check (super_refactored_rightp_eureka ae1 IHae1 ae2 IHae2).
+   exact (super_refactored_rightp_eureka ae1 IHae1 ae2 IHae2).
+ - rewrite -> fold_unfold_super_refactor_right_Minus.
+   rewrite -> fold_unfold_super_refactored_rightp_Minus.
+   rewrite -> IHae1.
+   rewrite -> IHae2.
+   rewrite -> andb_diag.
+   reflexivity.
+Qed.
+   
+   (*
+1 goal (ID 55)
+  
+  ae1, ae2 : arithmetic_expression
+  IHae1 : super_refactored_rightp (super_refactor_right ae1) = true
+  IHae2 : super_refactored_rightp (super_refactor_right ae2) = true
+  ============================
+  super_refactored_rightp (super_refactor_right_aux ae1 (super_refactor_right ae2))
+    *)
+   
+   (*
+   destruct (super_refactor_right_is_idempotent_aux ae1) as [_ H_sr_aux].
+   rewrite <- (H_sr_aux ae2).
+   case ae1 as [ n | | ].
+   + rewrite -> fold_unfold_super_refactor_right_aux_Literal.
+     rewrite -> fold_unfold_super_refactor_right_Plus.
+     rewrite -> fold_unfold_super_refactor_right_aux_Literal.
+     rewrite -> fold_unfold_super_refactored_rightp_Plus.
+     exact IHae2.
+   + rename ae1_1 into ae11, ae1_2 into ae12.
+     
+     rewrite -> fold_unfold_super_refactor_right_aux_Plus.
+               
+   *)
+     
+   
    case (super_refactor_right ae2) as []
    
 (* reflexivity.
