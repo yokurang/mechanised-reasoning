@@ -240,9 +240,6 @@ Qed.
 Inductive arithmetic_expressionp : Type :=
   Literalp : nat -> arithmetic_expressionp
 | Plusp : arithmetic_expressionp -> arithmetic_expressionp -> arithmetic_expressionp
-| Plusp_right_Literal : arithmetic_expressionp -> arithmetic_expressionp -> arithmetic_expressionp
-| Plusp_right_Plusp : arithmetic_expressionp -> arithmetic_expressionp -> arithmetic_expressionp
-| Plusp_right_Minusp : arithmetic_expressionp -> arithmetic_expressionp -> arithmetic_expressionp
 | Minusp : arithmetic_expressionp -> arithmetic_expressionp -> arithmetic_expressionp.
 
 Definition super_refactored_rightp_aux (ae : arithmetic_expression) : arithmetic_expressionp :=
@@ -252,15 +249,17 @@ Definition super_refactored_rightp_aux (ae : arithmetic_expression) : arithmetic
 Compute (super_refactored_rightp_aux (Plus (Literal 2) (Literal 3))).
 
 
-Fixpoint super_refactored_rightp (ae : arithmetic_expression) : bool :=
+Fixpoint super_refactored_rightp (ae : arithmetic_expression) : arithmetic_expressionp :=
   match ae with
   | Literal n =>
-      true
+      Literalp n
   | Plus ae1 ae2 =>
       match (super_refactored_rightp_aux ae1) with
       | Literalp =>
-          true
-      | Plusp aep1 aep2
+          super_refactored_rightp ae2
+      | Plusp aep1 aep2 =>
+          false
+      |
             
    
   end.
