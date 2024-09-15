@@ -107,6 +107,27 @@ Proof.
   fold_unfold_tactic evaluate_ltr.
 Qed.
 
+Fixpoint eqb_arithmetic_expression (ae1 ae2 : arithmetic_expression) : bool :=
+  match ae1 with
+  | Literal n1 =>
+      match ae2 with
+      | Literal n2 => Nat.eqb n1 n2
+      | _ => false
+      end
+  | Plus ae11 ae12 =>
+      match ae2 with
+      | Plus ae21 ae22 =>
+          eqb_arithmetic_expression ae11 ae21 && eqb_arithmetic_expression ae12 ae22
+      | _ => false
+      end
+  | Minus ae11 ae12 =>
+      match ae2 with
+      | Minus ae21 ae22 =>
+          eqb_arithmetic_expression ae11 ae21 && eqb_arithmetic_expression ae12 ae22
+      | _ => false
+      end
+  end.
+
 (* ********** *)
 
 Fixpoint super_refactor_right (ae : arithmetic_expression) : arithmetic_expression :=
@@ -236,80 +257,14 @@ Proof.
   fold_unfold_tactic arithmetic_expression_fold.
 Qed.
 
+Inductive arithmetic_expression_wrapped : Type :=
+| Literal_case : nat -> arithmetic_expression_wrapped
+| Plus_case : arithmetic_expression_wrapped -> arithmetic_expression_wrapped -> arithmetic_expression_wrapped
+| Minus_case : arithmetic_expression_wrapped -> arithmetic_expression_wrapped -> arithmetic_expression_wrapped.
 
-(*
-Inductive arithmetic_expression_peeped : Type :=
-| Literal_peeped : nat -> arithmetic_expression_peeped
-| Plus_peeped : arithmetic_expression_peeped -> arithmetic_expression_peeped -> arithmetic_expression_peeped
-| Minus_peeped : arithmetic_expression_peeped -> arithmetic_expression_peeped -> arithmetic_expression_peeped.
-
-
-Fixpoint super_refactored_rightp_aux (ae : arithmetic_expression) : arithmetic_expression_peeped :=
-  match ae with
-  | Literal n =>
-      Literal_peeped n
-  | Plus ae1 ae2 =>
-      match (super_refactored_rightp_aux ae1) with
-      | Literal_peeped n1 =>
-          match (super_refactored_rightp_aux ae2) with
-          | Literal_peeped n2 =>
-              Plus_peeped (Literal_peeped n1) (Literal_peeped n2)
-          | Plus_peeped aep21 aep22 =>
-              Plus_peeped (Literal_peeped n1) (Plus_peeped aep21 aep22)
-          | Minus_peeped aep21 aep22 =>
-              Plus_peeped (Literal_peeped n1) (Minus_peeped aep21 aep22)
-          end
-      | Plus_peeped aep11 aep12 =>
-          match (super_refactored_rightp_aux ae2) with
-          | Literal_peeped n2 =>
-              Plus_peeped (Plus_peeped aep11 aep12) (Literal_peeped n2)
-          | Plus_peeped aep21 aep22 =>
-              Plus_peeped (Plus_peeped aep11 aep12) (Plus_peeped aep21 aep22)
-          | Minus_peeped aep21 aep22 =>
-              Plus_peeped (Plus_peeped aep11 aep12) (Minus_peeped aep21 aep22)
-          end
-      | Minus_peeped aep11 aep12 =>
-          match (super_refactored_rightp_aux ae2) with
-          | Literal_peeped n2 =>
-              Plus_peeped (Minus_peeped aep11 aep12) (Literal_peeped n2)
-          | Plus_peeped aep21 aep22 =>
-              Plus_peeped (Minus_peeped aep11 aep12) (Plus_peeped aep21 aep22)
-          | Minus_peeped aep21 aep22 =>
-              Plus_peeped (Minus_peeped aep11 aep12) (Minus_peeped aep21 aep22)
-          end
-      end
-  | Minus ae1 ae2 =>
-      match (super_refactored_rightp_aux ae1) with
-      | Literal_peeped n1 =>
-          match (super_refactored_rightp_aux ae2) with
-          | Literal_peeped n2 =>
-              Minus_peeped (Literal_peeped n1) (Literal_peeped n2)
-          | Plus_peeped aep21 aep22 =>
-              Minus_peeped (Literal_peeped n1) (Plus_peeped aep21 aep22)
-          | Minus_peeped aep21 aep22 =>
-              Minus_peeped (Literal_peeped n1) (Minus_peeped aep21 aep22)
-          end
-      | Plus_peeped aep11 aep12 =>
-          match (super_refactored_rightp_aux ae2) with
-          | Literal_peeped n2 =>
-              Minus_peeped (Plus_peeped aep11 aep12) (Literal_peeped n2)
-          | Plus_peeped aep21 aep22 =>
-              Minus_peeped (Plus_peeped aep11 aep12) (Plus_peeped aep21 aep22)
-          | Minus_peeped aep21 aep22 =>
-              Minus_peeped (Plus_peeped aep11 aep12) (Minus_peeped aep21 aep22)
-          end
-      | Minus_peeped aep11 aep12 =>
-          match (super_refactored_rightp_aux ae2) with
-          | Literal_peeped n2 =>
-              Minus_peeped (Minus_peeped aep11 aep12) (Literal_peeped n2)
-          | Plus_peeped aep21 aep22 =>
-              Minus_peeped (Minus_peeped aep11 aep12) (Plus_peeped aep21 aep22)
-          | Minus_peeped aep21 aep22 =>
-              Minus_peeped (Minus_peeped aep11 aep12) (Minus_peeped aep21 aep22)
-          end
-      end
-  end.
- *)
+Definition super_refactored_rightp_aux (ae : arithmetic_expression) :
+  arithmetic_expression_wrapped :=
+  arithmetic_expression_fold arithmetic_expression_wrapped Literal_case Plus_case Minus_case ae.
 
 Fixpoint super_refactored_rightp_aux' (ae : arithmetic_expression) : arithmetic_expression :=
   match ae with
@@ -377,28 +332,6 @@ Fixpoint super_refactored_rightp_aux' (ae : arithmetic_expression) : arithmetic_
       end
   end.
 
-Definition super_refactored_rightp_aux'' (ae : arithmetic_expression) : arithmetic_expression :=
-  arithmetic_expression_fold
-    arithmetic_expression
-    Literal
-    (fun ae1 ae2 : arithmetic_expression =>
-       Literal 0)
-    (fun ae1 ae2 : arithmetic_expression =>
-       Literal 0)
-    ae.
-
-
-(*
-Fixpoint arithmetic_expression_of_arithmetic_expression_peeped (aep : arithmetic_expression_peeped) :=
-  match aep with
-  | Literal_peeped n =>
-      Literal n
-  | Plus_peeped aep1 aep2 =>
-      Plus (arithmetic_expression_of_arithmetic_expression_peeped aep1) (arithmetic_expression_of_arithmetic_expression_peeped aep2)
-  | Minus_peeped aep1 aep2 =>
-      Minus (arithmetic_expression_of_arithmetic_expression_peeped aep1) (arithmetic_expression_of_arithmetic_expression_peeped aep2)
-  end.
-*)
 Definition test_case1 : arithmetic_expression :=
   Plus (Literal 1) (Literal 0).
 
@@ -408,37 +341,140 @@ Definition test_case2 : arithmetic_expression :=
 Definition test_case3 : arithmetic_expression :=
   Plus test_case2 test_case2.
 
-Compute super_refactored_rightp_aux' test_case1.
 
-Compute super_refactored_rightp_aux' test_case2.
-
-Compute super_refactored_rightp_aux' test_case3.
-
-
-(*
-Fixpoint super_refactored_rightp (ae : arithmetic_expression) : bool :=
+Fixpoint super_refactored_rightp_original (ae : arithmetic_expression) : bool :=
   match ae with
   | Literal n =>
       true
   | Plus ae1 ae2 =>
       match ae1 with
       | Literal n1 =>
-          super_refactored_rightp ae2
+          super_refactored_rightp_original ae2
       | Plus ae11 ae12 =>
           false
       | Minus ae11 ae12 =>
-          super_refactored_rightp ae11
+          super_refactored_rightp_original ae11
           &&
-            super_refactored_rightp ae12
+            super_refactored_rightp_original ae12
           &&
-            super_refactored_rightp ae2
+            super_refactored_rightp_original ae2
       end
   | Minus ae1 ae2 =>
-      super_refactored_rightp ae1
+      super_refactored_rightp_original ae1
       &&
-        super_refactored_rightp ae2
+        super_refactored_rightp_original ae2
   end.
+
+
+Fixpoint arithmetic_expression_from_arithmetic_expression_wrapped (aew : arithmetic_expression_wrapped) : arithmetic_expression :=
+  match aew with
+  | Literal_case n =>
+      Literal n
+  | Plus_case aew1 aew2 =>
+      Plus
+        (arithmetic_expression_from_arithmetic_expression_wrapped aew1)
+        (arithmetic_expression_from_arithmetic_expression_wrapped aew2)
+  | Minus_case aew1 aew2 =>
+      Minus
+        (arithmetic_expression_from_arithmetic_expression_wrapped aew1)
+        (arithmetic_expression_from_arithmetic_expression_wrapped aew2)
+  end.
+
+Compute test_case2.
+
+(*
+     = Plus (Plus (Literal 1) (Literal 0)) (Plus (Literal 1) (Literal 0))
+     : arithmetic_expression
  *)
+
+Compute (
+    let aew := super_refactored_rightp_aux test_case2 in
+    arithmetic_expression_from_arithmetic_expression_wrapped aew).
+
+Compute test_case3.
+
+(*
+  = Plus (Plus (Plus (Literal 1) (Literal 0)) (Plus (Literal 1) (Literal 0)))
+         (Plus (Plus (Literal 1) (Literal 0)) (Plus (Literal 1) (Literal 0)))
+     : arithmetic_expression
+ *)
+
+Compute (
+    let aew := super_refactored_rightp_aux test_case3 in
+    arithmetic_expression_from_arithmetic_expression_wrapped aew).
+
+(* Tests for super_refactored_rightp *)
+
+Definition test_super_refactor_right (candidate : arithmetic_expression -> arithmetic_expression) :=
+  (* Test Literal *)
+  (eqb_arithmetic_expression (candidate (Literal 1)) (Literal 1)) &&
+
+  (* Test Plus *)
+  (eqb_arithmetic_expression
+    (candidate (Plus (Literal 1) (Literal 2)))
+    (Plus (Literal 1) (Literal 2))) &&
+
+  (* Test nested Plus *)
+  (eqb_arithmetic_expression
+    (candidate
+    (Plus (Plus (Literal 1) (Literal 2))
+    (Plus (Literal 3) (Literal 4))))
+    (Plus (Literal 1) (Plus (Literal 2)
+    (Plus (Literal 3) (Literal 4))))) &&
+
+  (* Test Minus *)
+  (eqb_arithmetic_expression
+    (candidate (Minus (Literal 2) (Literal 1)))
+    (Minus (Literal 2) (Literal 1))) &&
+
+  (* Test nested Minus *)
+  (eqb_arithmetic_expression
+    (candidate (Minus (Minus (Literal 2) (Literal 1))
+    (Minus (Literal 4) (Literal 3))))
+    (Minus (Minus (Literal 2) (Literal 1))
+    (Minus (Literal 4) (Literal 3)))) &&
+
+  (* Test Mixed Plus and Minus *)
+  (eqb_arithmetic_expression
+    (candidate
+    (Minus (Plus (Literal 1) (Literal 2)) (Literal 3)))
+    (Minus (Plus (Literal 1) (Literal 2)) (Literal 3))).
+
+Compute (test_super_refactor_right super_refactor_right).
+
+Definition test_super_refactored_rightp (candidate : arithmetic_expression -> bool) :=
+  let false_ae1 := (Plus (Plus (Literal 1) (Literal 2))
+                      (Plus (Literal 3) (Literal 4))) in
+  let true_ae1 := Literal 1 in
+  let true_ae2 := Plus (Literal 1) (Literal 2) in
+  let true_ae3 :=  Minus (Literal 2) (Literal 1) in
+  (candidate true_ae1) &&
+    (candidate true_ae2) &&
+    (candidate true_ae3) &&
+    (negb (candidate false_ae1)).
+
+Fixpoint super_refactord_rightp (ae : arithmetic_expression) : bool :=
+  match ae with
+  | Literal n =>
+      true
+  | Plus ae1 ae2 =>
+      match (super_refactored_rightp_aux ae1) with
+      | Literal_case n1 =>
+          super_refactord_rightp ae2
+      | Plus_case aew1 aew2 =>
+          false
+      | Minus_case aew1 aew2 =>
+          super_refactord_rightp ae1
+          &&
+            super_refactord_rightp ae2
+      end
+  | Minus ae1 ae2 =>
+      super_refactord_rightp ae1
+      &&
+        super_refactord_rightp ae2
+  end.
+
+Compute (test_super_refactored_rightp super_refactord_rightp).
 
 Fixpoint super_refactored_rightp' (ae : arithmetic_expression) : bool :=
   match ae with
@@ -461,6 +497,7 @@ Fixpoint super_refactored_rightp' (ae : arithmetic_expression) : bool :=
         super_refactored_rightp' ae2
   end.
 
+Compute (test_super_refactored_rightp super_refactored_rightp').  
 
 (* soundness: *)
 
