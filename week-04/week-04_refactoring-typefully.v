@@ -527,8 +527,7 @@ Proof.
                   intermediate_expression_from_arithmetic_expression
                     (super_refactor_right_aux ae1 (super_refactor_right ae2)) = ExpOK)
                (sr_aux_ae1 (super_refactor_right ae2))
-               sr_ae2_Plus).
-    }    
+               sr_ae2_Plus). }    
     { intros a [H_a_Plus | H_a_OK].
       rewrite -> fold_unfold_super_refactor_right_aux_Plus.
       Check (applying_disjunction_left).
@@ -578,7 +577,7 @@ Proof.
                          (super_refactor_right_aux ae2 a)) = ExpOK)
                  (sr_aux_ae1 (super_refactor_right_aux ae2 a))
                  H_ae2_a_Plus). }
-      {  exact (applying_disjunction_right
+      { exact (applying_disjunction_right
                   (intermediate_expression_from_arithmetic_expression
                      (super_refactor_right_aux ae2 a) = ExpPlus)
                   (intermediate_expression_from_arithmetic_expression
@@ -1311,8 +1310,44 @@ Fixpoint arithmetic_expression_from_arithmetic_expression_right (aer : arithmeti
       (arithmetic_expression_from_arithmetic_expression_right aer2)
   end.
 
-Lemma fold_unfold_arithmetic_expression_right_Literal_right :
-  
+Lemma fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Literal_right :
+  forall n : nat,
+    arithmetic_expression_from_arithmetic_expression_right (Literal_right n) = Literal n.
+Proof.
+  fold_unfold_tactic  arithmetic_expression_from_arithmetic_expression_right.
+Qed.
+
+
+Lemma fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Plus_right_Literal :
+  forall (n : nat)
+    (aer : arithmetic_expression_right),
+    arithmetic_expression_from_arithmetic_expression_right (Plus_right_Literal n aer) =
+      Plus (Literal n) (arithmetic_expression_from_arithmetic_expression_right aer).
+Proof.
+  fold_unfold_tactic arithmetic_expression_from_arithmetic_expression_right.
+Qed.
+
+Lemma fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Plus_right_Minus :
+  forall (aer11 aer12 aer2 : arithmetic_expression_right),
+    arithmetic_expression_from_arithmetic_expression_right (Plus_right_Minus (aer11, aer12) aer2) =
+    Plus
+      (Minus
+         (arithmetic_expression_from_arithmetic_expression_right aer11)
+         (arithmetic_expression_from_arithmetic_expression_right aer12))
+      (arithmetic_expression_from_arithmetic_expression_right aer2).
+Proof.
+  fold_unfold_tactic arithmetic_expression_from_arithmetic_expression_right.
+Qed.
+
+Lemma fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Minus_right :
+  forall (aer1 aer2 : arithmetic_expression_right),
+    arithmetic_expression_from_arithmetic_expression_right (Minus_right aer1 aer2) =
+      Minus
+      (arithmetic_expression_from_arithmetic_expression_right aer1)
+      (arithmetic_expression_from_arithmetic_expression_right aer2).
+Proof.
+  fold_unfold_tactic arithmetic_expression_from_arithmetic_expression_right.
+Qed.
 
 Fixpoint super_refactor_right' (ae : arithmetic_expression) : arithmetic_expression_right :=
   match ae with
@@ -1333,10 +1368,473 @@ Fixpoint super_refactor_right' (ae : arithmetic_expression) : arithmetic_express
       Plus_right_Minus (super_refactor_right' ae1, super_refactor_right' ae2) a
     end.
 
+Lemma fold_unfold_super_refactor_right'_Literal :
+  forall n : nat,
+    super_refactor_right' (Literal n) = (Literal_right n).
+Proof.
+  fold_unfold_tactic super_refactor_right'.
+Qed.
+
+Lemma fold_unfold_super_refactor_right'_Plus :
+  forall ae1 ae2 : arithmetic_expression,
+    super_refactor_right' (Plus ae1 ae2) =
+      super_refactor_right'_aux ae1 (super_refactor_right' ae2).
+Proof.
+  fold_unfold_tactic super_refactor_right'.
+Qed.      
+
+Lemma fold_unfold_super_refactor_right'_Minus :
+  forall ae1 ae2 : arithmetic_expression,
+    super_refactor_right' (Minus ae1 ae2) =
+      Minus_right (super_refactor_right' ae1) (super_refactor_right' ae2).
+Proof.
+  fold_unfold_tactic super_refactor_right'.
+Qed.
+
+Lemma fold_unfold_super_refactor_right'_aux_Literal :
+  forall (n : nat)
+    (a : arithmetic_expression_right),
+    super_refactor_right'_aux (Literal n) a = Plus_right_Literal n a.
+Proof.
+  fold_unfold_tactic super_refactor_right'_aux.
+Qed.
+
+Lemma fold_unfold_super_refactor_right'_aux_Plus :
+  forall (ae1 ae2 : arithmetic_expression)
+    (a : arithmetic_expression_right),
+    super_refactor_right'_aux (Plus ae1 ae2) a =
+      super_refactor_right'_aux ae1 (super_refactor_right'_aux ae2 a).
+Proof.
+  fold_unfold_tactic super_refactor_right'_aux.
+Qed.
+
+Lemma fold_unfold_super_refactor_right'_aux_Minus :
+  forall (ae1 ae2 : arithmetic_expression)
+    (a : arithmetic_expression_right),
+    super_refactor_right'_aux (Minus ae1 ae2) a =
+      Plus_right_Minus (super_refactor_right' ae1, super_refactor_right' ae2) a.
+Proof.
+  fold_unfold_tactic super_refactor_right'_aux.
+Qed.
+
+Lemma super_refactor_right_yields_super_refactored_rightp_results_aux_revisited :
+  forall ae : arithmetic_expression,
+    (intermediate_expression_from_arithmetic_expression
+       (arithmetic_expression_from_arithmetic_expression_right
+          (super_refactor_right' ae)) = ExpPlus
+     \/
+       intermediate_expression_from_arithmetic_expression
+         (arithmetic_expression_from_arithmetic_expression_right
+            (super_refactor_right' ae)) = ExpOK)
+    /\
+      (forall a : arithmetic_expression_right,
+          (intermediate_expression_from_arithmetic_expression
+             (arithmetic_expression_from_arithmetic_expression_right a) = ExpPlus
+           \/
+             intermediate_expression_from_arithmetic_expression
+               (arithmetic_expression_from_arithmetic_expression_right a) = ExpOK) ->
+          intermediate_expression_from_arithmetic_expression
+            (arithmetic_expression_from_arithmetic_expression_right
+               (super_refactor_right'_aux ae a)) = ExpPlus
+          \/
+            intermediate_expression_from_arithmetic_expression
+              (arithmetic_expression_from_arithmetic_expression_right
+                 (super_refactor_right'_aux ae a)) = ExpOK).
+Proof.
+  intro ae.
+  induction ae as [ n
+                  | ae1 [[sr_ae1_Plus | sr_ae1_OK ] sr_aux_ae1]
+                      ae2 [[sr_ae2_Plus | sr_ae2_OK] sr_aux_ae2]
+                  | ae1 [[sr_ae1_Plus | sr_ae1_OK] sr_aux_ae1]
+                      ae2 [[sr_ae2_Plus | sr_ae2_OK] sr_aux_ae2]].
+  - split.
+    { rewrite -> fold_unfold_super_refactor_right'_Literal.
+      rewrite -> fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Literal_right.
+      rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Literal.
+      right.
+      reflexivity. }
+    { intro a.
+      rewrite -> fold_unfold_super_refactor_right'_aux_Literal.
+      rewrite -> fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Plus_right_Literal.
+      rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Plus.
+      rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Literal.
+      intros [H_Plus | H_OK].
+      + rewrite -> H_Plus.
+        left. reflexivity.
+      + rewrite -> H_OK.
+        left. reflexivity. }
+  - split.
+    { rewrite -> fold_unfold_super_refactor_right'_Plus.
+      Check (applying_disjunction_left
+               (intermediate_expression_from_arithmetic_expression
+                  (arithmetic_expression_from_arithmetic_expression_right
+                  (super_refactor_right' ae2)) = ExpPlus)
+               (intermediate_expression_from_arithmetic_expression
+                  (arithmetic_expression_from_arithmetic_expression_right
+                  (super_refactor_right' ae2)) = ExpOK)
+               (intermediate_expression_from_arithmetic_expression
+                  (arithmetic_expression_from_arithmetic_expression_right
+                     (super_refactor_right'_aux ae1 (super_refactor_right' ae2))) = ExpPlus \/
+                  intermediate_expression_from_arithmetic_expression
+                    (arithmetic_expression_from_arithmetic_expression_right
+                       (super_refactor_right'_aux ae1 (super_refactor_right' ae2))) = ExpOK)
+               (sr_aux_ae1 (super_refactor_right' ae2))
+               sr_ae2_Plus).
+      exact (applying_disjunction_left
+               (intermediate_expression_from_arithmetic_expression
+                  (arithmetic_expression_from_arithmetic_expression_right
+                     (super_refactor_right' ae2)) = ExpPlus)
+               (intermediate_expression_from_arithmetic_expression
+                  (arithmetic_expression_from_arithmetic_expression_right
+                     (super_refactor_right' ae2)) = ExpOK)
+               (intermediate_expression_from_arithmetic_expression
+                  (arithmetic_expression_from_arithmetic_expression_right
+                     (super_refactor_right'_aux ae1 (super_refactor_right' ae2))) = ExpPlus \/
+                  intermediate_expression_from_arithmetic_expression
+                    (arithmetic_expression_from_arithmetic_expression_right
+                       (super_refactor_right'_aux ae1 (super_refactor_right' ae2))) = ExpOK)
+               (sr_aux_ae1 (super_refactor_right' ae2))
+               sr_ae2_Plus). }
+    { intros a [H_a_Plus | H_a_OK].
+      rewrite -> fold_unfold_super_refactor_right'_aux_Plus.
+      assert (H_ae2_a : intermediate_expression_from_arithmetic_expression
+                          (arithmetic_expression_from_arithmetic_expression_right
+                             (super_refactor_right'_aux ae2 a)) = ExpPlus \/
+                          intermediate_expression_from_arithmetic_expression
+                            (arithmetic_expression_from_arithmetic_expression_right
+                               (super_refactor_right'_aux ae2 a)) = ExpOK).
+      { apply sr_aux_ae2. left. exact H_a_Plus. }
+      destruct H_ae2_a as [H_ae2_a_Plus | H_ae2_a_OK].
+      { assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
+        apply sr_aux_ae1.
+        apply sr_aux_ae2.
+        left. exact H_a_Plus. }
+      { assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
+        apply sr_aux_ae1.
+        apply sr_aux_ae2.
+        left. exact H_a_Plus. }
+      { assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
+        apply sr_aux_ae1.
+        apply sr_aux_ae2.
+        right. exact H_a_OK. } }
+  - split.
+    { rewrite -> fold_unfold_super_refactor_right'_Plus.
+      assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right' ae2)).
+      apply sr_aux_ae1.
+      right. exact sr_ae2_OK. }
+    { intros a [H_a_Plus | H_a_OK].
+      rewrite -> fold_unfold_super_refactor_right'_aux_Plus.
+      assert (H_ae2_a : intermediate_expression_from_arithmetic_expression
+                          (arithmetic_expression_from_arithmetic_expression_right
+                             (super_refactor_right'_aux ae2 a)) = ExpPlus \/
+                          intermediate_expression_from_arithmetic_expression
+                            (arithmetic_expression_from_arithmetic_expression_right
+                               (super_refactor_right'_aux ae2 a)) = ExpOK).
+      { apply sr_aux_ae2. left. exact H_a_Plus. }
+      destruct H_ae2_a as [H_ae2_a_Plus | H_ae2_a_OK].
+      { assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
+        apply sr_aux_ae1.
+        apply sr_aux_ae2.
+        left. exact H_a_Plus. }
+      { assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
+        apply sr_aux_ae1.
+        apply sr_aux_ae2.
+        left. exact H_a_Plus. }
+      { assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
+        apply sr_aux_ae1.
+        apply sr_aux_ae2.
+        right. exact H_a_OK. } }
+  - split.
+    { rewrite -> fold_unfold_super_refactor_right'_Plus.
+      assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right' ae2)).
+      apply sr_aux_ae1.
+      left. exact sr_ae2_Plus. }
+    { intros a [H_a_Plus | H_a_OK].
+      rewrite -> fold_unfold_super_refactor_right'_aux_Plus.
+      assert (H_ae2_a : intermediate_expression_from_arithmetic_expression
+                          (arithmetic_expression_from_arithmetic_expression_right
+                             (super_refactor_right'_aux ae2 a)) = ExpPlus \/
+                          intermediate_expression_from_arithmetic_expression
+                            (arithmetic_expression_from_arithmetic_expression_right
+                               (super_refactor_right'_aux ae2 a)) = ExpOK).
+      { apply sr_aux_ae2. left. exact H_a_Plus. }
+      destruct H_ae2_a as [H_ae2_a_Plus | H_ae2_a_OK].
+      { assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
+        apply sr_aux_ae1.
+        apply sr_aux_ae2.
+        left. exact H_a_Plus. }
+      { assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
+        apply sr_aux_ae1.
+        apply sr_aux_ae2.
+        left. exact H_a_Plus. }
+      { assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
+        apply sr_aux_ae1.
+        apply sr_aux_ae2.
+        right. exact H_a_OK. } }
+  - split.
+    { rewrite -> fold_unfold_super_refactor_right'_Plus.
+      assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right' ae2)).
+      apply sr_aux_ae1.
+      right. exact sr_ae2_OK. }
+    { intros a [H_a_Plus | H_a_OK].
+      rewrite -> fold_unfold_super_refactor_right'_aux_Plus.
+      assert (H_ae2_a : intermediate_expression_from_arithmetic_expression
+                          (arithmetic_expression_from_arithmetic_expression_right
+                             (super_refactor_right'_aux ae2 a)) = ExpPlus \/
+                          intermediate_expression_from_arithmetic_expression
+                            (arithmetic_expression_from_arithmetic_expression_right
+                               (super_refactor_right'_aux ae2 a)) = ExpOK).
+      { apply sr_aux_ae2. left. exact H_a_Plus. }
+      destruct H_ae2_a as [H_ae2_a_Plus | H_ae2_a_OK].
+      { assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
+        apply sr_aux_ae1.
+        apply sr_aux_ae2.
+        left. exact H_a_Plus. }
+      { assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
+        apply sr_aux_ae1.
+        apply sr_aux_ae2.
+        left. exact H_a_Plus. }
+      { assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
+        apply sr_aux_ae1.
+        apply sr_aux_ae2.
+        right. exact H_a_OK. } }
+  - rewrite -> fold_unfold_super_refactor_right'_Minus.
+    rewrite -> fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Minus_right.
+    rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Minus.
+    rewrite -> sr_ae1_Plus.
+    rewrite -> sr_ae2_Plus.
+    split.
+    { right. reflexivity. }
+    { intros a [H_a_Plus | H_a_OK].
+      - rewrite -> fold_unfold_super_refactor_right'_aux_Minus.
+        rewrite -> fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Plus_right_Minus.
+        rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Plus.
+        rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Minus.
+        rewrite -> sr_ae1_Plus.
+        rewrite -> sr_ae2_Plus.
+        rewrite -> H_a_Plus.
+        left. reflexivity.
+      - rewrite -> fold_unfold_super_refactor_right'_aux_Minus.
+        rewrite -> fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Plus_right_Minus.
+        rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Plus.
+        rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Minus.
+        rewrite -> sr_ae1_Plus.
+        rewrite -> sr_ae2_Plus.
+        rewrite -> H_a_OK.
+        left. reflexivity. }
+  - rewrite -> fold_unfold_super_refactor_right'_Minus.
+    rewrite -> fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Minus_right.
+    rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Minus.
+    rewrite -> sr_ae1_Plus.
+    rewrite -> sr_ae2_OK.
+    split.
+    { right. reflexivity. }
+    { intros a [H_a_Plus | H_a_OK].
+      - rewrite -> fold_unfold_super_refactor_right'_aux_Minus.
+        rewrite -> fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Plus_right_Minus.
+        rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Plus.
+        rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Minus.
+        rewrite -> sr_ae1_Plus.
+        rewrite -> sr_ae2_OK.
+        rewrite -> H_a_Plus.
+        left. reflexivity.
+      - rewrite -> fold_unfold_super_refactor_right'_aux_Minus.
+        rewrite -> fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Plus_right_Minus.
+        rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Plus.
+        rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Minus.
+        rewrite -> sr_ae1_Plus.
+        rewrite -> sr_ae2_OK.
+        rewrite -> H_a_OK.
+        left. reflexivity. }
+  - rewrite -> fold_unfold_super_refactor_right'_Minus.
+    rewrite -> fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Minus_right.
+    rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Minus.
+    rewrite -> sr_ae1_OK.
+    rewrite -> sr_ae2_Plus.
+    split.
+    { right. reflexivity. }
+    { intros a [H_a_Plus | H_a_OK].
+      - rewrite -> fold_unfold_super_refactor_right'_aux_Minus.
+        rewrite -> fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Plus_right_Minus.
+        rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Plus.
+        rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Minus.
+        rewrite -> sr_ae1_OK.
+        rewrite -> sr_ae2_Plus.
+        rewrite -> H_a_Plus.
+        left. reflexivity.
+      - rewrite -> fold_unfold_super_refactor_right'_aux_Minus.
+        rewrite -> fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Plus_right_Minus.
+        rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Plus.
+        rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Minus.
+        rewrite -> sr_ae1_OK.
+        rewrite -> sr_ae2_Plus.
+        rewrite -> H_a_OK.
+        left. reflexivity. }
+  - rewrite -> fold_unfold_super_refactor_right'_Minus.
+    rewrite -> fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Minus_right.
+    rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Minus.
+    rewrite -> sr_ae1_OK.
+    rewrite -> sr_ae2_OK.
+    split.
+    { right. reflexivity. }
+    { intros a [H_a_Plus | H_a_OK].
+      - rewrite -> fold_unfold_super_refactor_right'_aux_Minus.
+        rewrite -> fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Plus_right_Minus.
+        rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Plus.
+        rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Minus.
+        rewrite -> sr_ae1_OK.
+        rewrite -> sr_ae2_OK.
+        rewrite -> H_a_Plus.
+        left. reflexivity.
+      - rewrite -> fold_unfold_super_refactor_right'_aux_Minus.
+        rewrite -> fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Plus_right_Minus.
+        rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Plus.
+        rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Minus.
+        rewrite -> sr_ae1_OK.
+        rewrite -> sr_ae2_OK.
+        rewrite -> H_a_OK.
+        left. reflexivity. }
+Qed.
+    
 Theorem super_refactor_right_yields_super_refactored_right_results_revisited :
   forall ae : arithmetic_expression,
     super_refactored_rightp (arithmetic_expression_from_arithmetic_expression_right (super_refactor_right' ae)) = true.
-Admitted.
+Proof.
+  intro ae.
+  unfold super_refactored_rightp.
+  case ae as [ n | ae1 ae2 | ae1 ae2 ] eqn:C_ae.
+  - rewrite -> fold_unfold_super_refactor_right'_Literal.
+    rewrite -> fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Literal_right.
+    rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Literal.
+    reflexivity.
+  - rewrite -> fold_unfold_super_refactor_right'_Plus.
+    destruct (super_refactor_right_yields_super_refactored_rightp_results_aux_revisited ae1)
+      as [[H_sr_ae1_Plus | H_sr_ae1_OK] H_a1].
+    assert (H_a1 := H_a1 (super_refactor_right' ae2)).
+    { destruct (super_refactor_right_yields_super_refactored_rightp_results_aux_revisited ae2)
+        as [[H_sr_ae2_Plus | H_sr_ae2_OK] H_a2].
+      - assert (H_ie2_Plus_OK := applying_disjunction_left
+                 (intermediate_expression_from_arithmetic_expression
+                    (arithmetic_expression_from_arithmetic_expression_right
+                       (super_refactor_right' ae2)) = ExpPlus)
+                 (intermediate_expression_from_arithmetic_expression
+                    (arithmetic_expression_from_arithmetic_expression_right
+                       (super_refactor_right' ae2)) = ExpOK)
+                 (intermediate_expression_from_arithmetic_expression
+                    (arithmetic_expression_from_arithmetic_expression_right  
+                       ((super_refactor_right'_aux ae1
+                           (super_refactor_right' ae2)))) = ExpPlus
+                  \/
+                    intermediate_expression_from_arithmetic_expression
+                      (arithmetic_expression_from_arithmetic_expression_right
+                         (super_refactor_right'_aux ae1
+                            (super_refactor_right' ae2))) = ExpOK)
+                 H_a1
+                 H_sr_ae2_Plus).
+        destruct H_ie2_Plus_OK as [H_ie2_Plus | H_ie2_OK].
+        * rewrite -> H_ie2_Plus.
+          reflexivity.
+        * rewrite -> H_ie2_OK.
+          reflexivity.
+      - assert (H_ie2_Plus_OK :=
+                  applying_disjunction_right
+                (intermediate_expression_from_arithmetic_expression
+                    (arithmetic_expression_from_arithmetic_expression_right
+                       (super_refactor_right' ae2)) = ExpPlus)
+                 (intermediate_expression_from_arithmetic_expression
+                    (arithmetic_expression_from_arithmetic_expression_right
+                       (super_refactor_right' ae2)) = ExpOK)
+                 (intermediate_expression_from_arithmetic_expression
+                    (arithmetic_expression_from_arithmetic_expression_right  
+                       ((super_refactor_right'_aux ae1
+                           (super_refactor_right' ae2)))) = ExpPlus
+                  \/
+                    intermediate_expression_from_arithmetic_expression
+                      (arithmetic_expression_from_arithmetic_expression_right
+                         (super_refactor_right'_aux ae1
+                            (super_refactor_right' ae2))) = ExpOK)
+                 H_a1
+                 H_sr_ae2_OK).
+         destruct H_ie2_Plus_OK as [H_ie2_Plus | H_ie2_OK].
+        * rewrite -> H_ie2_Plus.
+          reflexivity.
+        * rewrite -> H_ie2_OK.
+          reflexivity. }
+    { destruct (super_refactor_right_yields_super_refactored_rightp_results_aux_revisited ae2)
+        as [[H_sr_ae2_Plus | H_sr_ae2_OK] H_a2].
+      - assert (H_a1 := H_a1 (super_refactor_right' ae2)).
+        assert (H_ie2_Plus_OK := applying_disjunction_left
+                 (intermediate_expression_from_arithmetic_expression
+                    (arithmetic_expression_from_arithmetic_expression_right
+                       (super_refactor_right' ae2)) = ExpPlus)
+                 (intermediate_expression_from_arithmetic_expression
+                    (arithmetic_expression_from_arithmetic_expression_right
+                       (super_refactor_right' ae2)) = ExpOK)
+                 (intermediate_expression_from_arithmetic_expression
+                    (arithmetic_expression_from_arithmetic_expression_right  
+                       ((super_refactor_right'_aux ae1
+                           (super_refactor_right' ae2)))) = ExpPlus
+                  \/
+                    intermediate_expression_from_arithmetic_expression
+                      (arithmetic_expression_from_arithmetic_expression_right
+                         (super_refactor_right'_aux ae1
+                            (super_refactor_right' ae2))) = ExpOK)
+                 H_a1
+                 H_sr_ae2_Plus).
+        destruct H_ie2_Plus_OK as [H_ie2_Plus | H_ie2_OK].
+        * rewrite -> H_ie2_Plus.
+          reflexivity.
+        * rewrite -> H_ie2_OK.
+          reflexivity.
+      - assert (H_a1 := H_a1 (super_refactor_right' ae2)).
+        assert (H_ie2_Plus_OK :=
+                  applying_disjunction_right
+                (intermediate_expression_from_arithmetic_expression
+                    (arithmetic_expression_from_arithmetic_expression_right
+                       (super_refactor_right' ae2)) = ExpPlus)
+                 (intermediate_expression_from_arithmetic_expression
+                    (arithmetic_expression_from_arithmetic_expression_right
+                       (super_refactor_right' ae2)) = ExpOK)
+                 (intermediate_expression_from_arithmetic_expression
+                    (arithmetic_expression_from_arithmetic_expression_right  
+                       ((super_refactor_right'_aux ae1
+                           (super_refactor_right' ae2)))) = ExpPlus
+                  \/
+                    intermediate_expression_from_arithmetic_expression
+                      (arithmetic_expression_from_arithmetic_expression_right
+                         (super_refactor_right'_aux ae1
+                            (super_refactor_right' ae2))) = ExpOK)
+                 H_a1
+                 H_sr_ae2_OK).
+         destruct H_ie2_Plus_OK as [H_ie2_Plus | H_ie2_OK].
+        * rewrite -> H_ie2_Plus.
+          reflexivity.
+        * rewrite -> H_ie2_OK.
+          reflexivity. }
+  - rewrite -> fold_unfold_super_refactor_right'_Minus.
+    rewrite -> fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Minus_right.
+    rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Minus.
+    Check (super_refactor_right_yields_super_refactored_rightp_results_aux ae1).
+    destruct (super_refactor_right_yields_super_refactored_rightp_results_aux_revisited
+                ae1) as [[H_sr_ae1_Plus | H_sr_ae1_OK] H_a1].
+    { destruct (super_refactor_right_yields_super_refactored_rightp_results_aux_revisited
+                  ae2) as [[H_sr_ae2_Plus | H_sr_ae2_OK] H_a2].
+      + rewrite -> H_sr_ae1_Plus.
+        rewrite -> H_sr_ae2_Plus.
+        reflexivity.
+      + rewrite -> H_sr_ae1_Plus.
+        rewrite -> H_sr_ae2_OK.
+        reflexivity. }
+    { destruct (super_refactor_right_yields_super_refactored_rightp_results_aux_revisited
+                  ae2) as [[H_sr_ae2_Plus | H_sr_ae2_OK] H_a2].
+      + rewrite -> H_sr_ae1_OK.
+        rewrite -> H_sr_ae2_Plus.
+        reflexivity.
+      + rewrite -> H_sr_ae1_OK.
+        rewrite -> H_sr_ae2_OK.
+        reflexivity. }
+Qed.
+
 (* ********** *)
 
 (* \end{NEW} *)
