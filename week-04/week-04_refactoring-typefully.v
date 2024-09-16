@@ -262,37 +262,175 @@ Inductive arithmetic_expression_wrapped : Type :=
 | Plus_case : arithmetic_expression_wrapped -> arithmetic_expression_wrapped -> arithmetic_expression_wrapped
 | Minus_case : arithmetic_expression_wrapped -> arithmetic_expression_wrapped -> arithmetic_expression_wrapped.
 
-Definition super_refactored_rightp_aux (ae : arithmetic_expression) :
-  arithmetic_expression_wrapped :=
-  arithmetic_expression_fold arithmetic_expression_wrapped Literal_case Plus_case Minus_case ae.
+Inductive intermediate_expression : Type :=
+| ExpPlus : intermediate_expression
+| ExpOK : intermediate_expression
+| ExpKO : intermediate_expression.
 
-Lemma fold_unfold_super_refactored_rightp_aux_Literal :
+Fixpoint intermediate_expression_from_arithmetic_expression (ae : arithmetic_expression) :
+  intermediate_expression :=
+  match ae with
+  | Literal n =>
+      ExpOK
+  | Plus ae1 ae2 =>
+      match intermediate_expression_from_arithmetic_expression ae1 with
+      | ExpPlus =>
+          ExpKO
+      | ExpOK =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpPlus =>
+              ExpPlus
+          | ExpOK =>
+              ExpOK
+          | ExpKO =>
+              ExpKO
+          end
+      | ExpKO =>
+          ExpKO
+      end
+  | Minus ae1 ae2 =>
+      match intermediate_expression_from_arithmetic_expression ae1 with
+      | ExpPlus =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpPlus =>
+              ExpPlus
+          | ExpOK =>
+              ExpOK
+          | ExpKO =>
+              ExpKO
+          end
+      | ExpOK =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpPlus =>
+              ExpPlus
+          | ExpOK =>
+              ExpOK
+          | ExpKO =>
+              ExpKO
+          end
+      | ExpKO =>
+          ExpKO
+      end
+  end.    
+
+Definition test_ae1 := Literal 0.
+Definition test_ae2 := Plus (Plus (Literal 0) (Literal 0)) (Literal 0). (* should KO *)
+Definition test_ae3 := Plus (Literal 0) (Plus (Literal 0) (Literal 0)).                        
+Definition test_ae4 := Plus (Literal 0) (Literal 0).
+Definition test_ae5 := Plus (Literal 0) test_ae2. (* should KO *)
+Definition test_ae6 := Minus (Plus (Literal 5) (Literal 0)) (Plus (Literal 2) (Literal 0)).
+Definition test_ae7 := Minus (Plus (Literal 5) (Literal 0)) (Literal 0).
+Definition test_ae8 := Minus (Plus (Literal 5) (Literal 0)) test_ae2. (* should KO *)
+Definition test_ae9 := Minus (Literal 10) (Plus (Literal 2) (Literal 0)).
+Definition test_ae10 := Minus (Literal 10) (Literal 0).
+Definition test_ae11 := Minus (Literal 10) test_ae2. (* should KO *)
+Definition test_ae12 := Minus test_ae2 test_ae1. (* should KO *)             
+
+Definition eqb_intermediate_expression (ie : intermediate_expression) : bool :=
+  match ie with
+  | ExpPlus =>
+      true
+  | ExpOK =>
+      true
+  | ExpKO =>
+      false
+  end.
+
+Definition test_intermediate_expression_from_arithmetic_expression
+  (candidate : arithmetic_expression -> intermediate_expression) : bool :=
+  eqb_intermediate_expression (candidate test_ae1)
+  &&
+    eqb_intermediate_expression (candidate test_ae3)
+  &&
+    eqb_intermediate_expression (candidate test_ae4)
+  &&
+    eqb_intermediate_expression (candidate test_ae6)
+  &&
+    eqb_intermediate_expression (candidate test_ae7)
+  &&
+    eqb_intermediate_expression (candidate test_ae9)
+  &&
+    eqb_intermediate_expression (candidate test_ae10)
+  &&
+    (negb (eqb_intermediate_expression (candidate test_ae2))
+     ||
+       (eqb_intermediate_expression (candidate test_ae5))
+     ||
+       (eqb_intermediate_expression (candidate test_ae8))
+     ||
+       (eqb_intermediate_expression (candidate test_ae11))).
+                                     
+Compute (test_intermediate_expression_from_arithmetic_expression
+           intermediate_expression_from_arithmetic_expression).
+
+Lemma fold_unfold_intermediate_expression_from_arithmetic_expression_Literal :
   forall n : nat,
-    super_refactored_rightp_aux (Literal n) = Literal_case n.
+    intermediate_expression_from_arithmetic_expression (Literal n) = ExpOK.
 Proof.
-  fold_unfold_tactic super_refactored_rightp_aux.
+  fold_unfold_tactic intermediate_expression_from_arithmetic_expression.
 Qed.
 
-Lemma fold_unfold_super_refactored_rightp_aux_Plus :
-  forall (ae1 ae2 : arithmetic_expression),
-    super_refactored_rightp_aux (Plus ae1 ae2) =
-      Plus_case
-        (super_refactored_rightp_aux ae1)
-        (super_refactored_rightp_aux ae2).
+Lemma fold_unfold_intermediate_expression_from_arithmetic_expression_Plus :
+  forall ae1 ae2 : arithmetic_expression,
+    intermediate_expression_from_arithmetic_expression (Plus ae1 ae2) =
+      match intermediate_expression_from_arithmetic_expression ae1 with
+      | ExpPlus =>
+          ExpKO
+      | ExpOK =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpPlus =>
+              ExpPlus
+          | ExpOK =>
+              ExpOK
+          | ExpKO =>
+              ExpKO
+          end
+      | ExpKO =>
+          ExpKO
+      end.      
 Proof.
-  fold_unfold_tactic super_refactored_rightp_aux.
+  fold_unfold_tactic intermediate_expression_from_arithmetic_expression.
 Qed.
 
-Lemma fold_unfold_super_refactored_rightp_aux_Minus :
-  forall (ae1 ae2 : arithmetic_expression),
-    super_refactored_rightp_aux (Minus ae1 ae2) =
-      Minus_case
-        (super_refactored_rightp_aux ae1)
-        (super_refactored_rightp_aux ae2).
+Lemma fold_unfold_intermediate_expression_from_arithmetic_expression_Minus :
+  forall ae1 ae2 : arithmetic_expression,
+    intermediate_expression_from_arithmetic_expression (Minus ae1 ae2) =
+      match intermediate_expression_from_arithmetic_expression ae1 with
+      | ExpPlus =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpPlus =>
+              ExpPlus
+          | ExpOK =>
+              ExpOK
+          | ExpKO =>
+              ExpKO
+          end
+      | ExpOK =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpPlus =>
+              ExpPlus
+          | ExpOK =>
+              ExpOK
+          | ExpKO =>
+              ExpKO
+          end
+      | ExpKO =>
+          ExpKO
+      end.
 Proof.
-  fold_unfold_tactic super_refactored_rightp_aux.
+  fold_unfold_tactic intermediate_expression_from_arithmetic_expression.
 Qed.
 
+Definition test_case1 : arithmetic_expression :=
+  Plus (Literal 1) (Literal 0).
+
+Definition test_case2 : arithmetic_expression :=
+  Plus test_case1 test_case1.
+
+Definition test_case3 : arithmetic_expression :=
+  Plus test_case2 test_case2.
+
+(* adam yamyams's *)
 Fixpoint super_refactored_rightp_aux' (ae : arithmetic_expression) : arithmetic_expression :=
   match ae with
   | Literal n =>
@@ -359,15 +497,6 @@ Fixpoint super_refactored_rightp_aux' (ae : arithmetic_expression) : arithmetic_
       end
   end.
 
-Definition test_case1 : arithmetic_expression :=
-  Plus (Literal 1) (Literal 0).
-
-Definition test_case2 : arithmetic_expression :=
-  Plus test_case1 test_case1.
-
-Definition test_case3 : arithmetic_expression :=
-  Plus test_case2 test_case2.
-
 Fixpoint super_refactored_rightp_original (ae : arithmetic_expression) : bool :=
   match ae with
   | Literal n =>
@@ -390,44 +519,6 @@ Fixpoint super_refactored_rightp_original (ae : arithmetic_expression) : bool :=
       &&
         super_refactored_rightp_original ae2
   end.
-
-
-Fixpoint arithmetic_expression_from_arithmetic_expression_wrapped (aew : arithmetic_expression_wrapped) : arithmetic_expression :=
-  match aew with
-  | Literal_case n =>
-      Literal n
-  | Plus_case aew1 aew2 =>
-      Plus
-        (arithmetic_expression_from_arithmetic_expression_wrapped aew1)
-        (arithmetic_expression_from_arithmetic_expression_wrapped aew2)
-  | Minus_case aew1 aew2 =>
-      Minus
-        (arithmetic_expression_from_arithmetic_expression_wrapped aew1)
-        (arithmetic_expression_from_arithmetic_expression_wrapped aew2)
-  end.
-
-Compute test_case2.
-
-(*
-     = Plus (Plus (Literal 1) (Literal 0)) (Plus (Literal 1) (Literal 0))
-     : arithmetic_expression
- *)
-
-Compute (
-    let aew := super_refactored_rightp_aux test_case2 in
-    arithmetic_expression_from_arithmetic_expression_wrapped aew).
-
-Compute test_case3.
-
-(*
-  = Plus (Plus (Plus (Literal 1) (Literal 0)) (Plus (Literal 1) (Literal 0)))
-         (Plus (Plus (Literal 1) (Literal 0)) (Plus (Literal 1) (Literal 0)))
-     : arithmetic_expression
- *)
-
-Compute (
-    let aew := super_refactored_rightp_aux test_case3 in
-    arithmetic_expression_from_arithmetic_expression_wrapped aew).
 
 (* Tests for super_refactored_rightp *)
 
@@ -583,30 +674,45 @@ Proof.
   - rewrite -> fold_unfold_super_refactor_right_Plus.
     rewrite -> (IHae1_aux (super_refactor_right ae2)).
     rewrite -> fold_unfold_super_refactored_rightp_Plus.
-    case (super_refactored_rightp_aux ae1) as [n1 | |] eqn:H_ref_aux_ae1.
-    + exact IHae2.
-    + (* false = true *)
-Admitted.  
+    case ae1 as [n1 | |] eqn:C_ae1.
+    + rewrite -> fold_unfold_super_refactored_rightp_aux_Literal.
+      exact IHae2.
+    + rewrite -> fold_unfold_super_refactored_rightp_aux_Plus.
+      (* false = true *)
+Admitted.
+
+Theorem super_refactor_right_yields_super_refactored_right_results_eureka :
+  forall ae a : arithmetic_expression,
+    super_refactored_rightp (super_refactor_right ae) = true ->
+    super_refactored_rightp (super_refactor_right a) = true ->
+    super_refactored_rightp (super_refactor_right_aux ae (super_refactor_right a)) = true.
+Proof.
+  intro ae.
+  induction ae as [ n
+                  | ae1 IHae1 ae2 IHae2
+                  | ae1 IHae1 ae2 IHae2 ];
+    intros a H_ae H_a.
+  - rewrite -> fold_unfold_super_refactor_right_aux_Literal.
+    rewrite -> fold_unfold_super_refactored_rightp_Plus.
+    rewrite -> fold_unfold_super_refactored_rightp_aux_Literal.
+    exact H_a.
+  - rewrite -> fold_unfold_super_refactor_right_aux_Plus.
+      
+      
+  -
+Admitted.
+
 Theorem super_refactor_right_yields_super_refactored_right_results :
   forall ae : arithmetic_expression,
     super_refactored_rightp (super_refactor_right ae) = true.
 Proof.
   intro ae.
-  destruct (super_refactor_right_yields_super_refactored_right_results_aux ae) as [H_ref _].
-  exact H_ref.
-Qed.
-(*
   induction ae as [n | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2].
   - rewrite -> fold_unfold_super_refactor_right_Literal.
     rewrite -> fold_unfold_super_refactored_rightp_Literal.
     reflexivity.
   - rewrite -> fold_unfold_super_refactor_right_Plus.
-    
-    rewrite -> (super_refactored_rightp_eureka ae1 ae2).
-    rewrite -> IHae1.
-    rewrite -> IHae2.
-    rewrite -> andb_diag.
-    reflexivity.
+    exact (super_refactor_right_yields_super_refactored_right_results_eureka ae1 ae2 IHae1 IHae2).
  - rewrite -> fold_unfold_super_refactor_right_Minus.
    rewrite -> fold_unfold_super_refactored_rightp_Minus.
    rewrite -> IHae1.
@@ -614,7 +720,6 @@ Qed.
    rewrite -> andb_diag.
    reflexivity.
 Qed.
- *)
 
 Lemma super_refactoring_right_preserves_super_refactored_rightp_aux :
   forall (ae a : arithmetic_expression),
