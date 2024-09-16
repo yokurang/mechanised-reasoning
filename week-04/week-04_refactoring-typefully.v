@@ -421,6 +421,29 @@ Proof.
   fold_unfold_tactic intermediate_expression_from_arithmetic_expression.
 Qed.
 
+Definition test_super_refactored_rightp (candidate : arithmetic_expression -> bool) :=
+  let false_ae1 := (Plus (Plus (Literal 1) (Literal 2))
+                      (Plus (Literal 3) (Literal 4))) in
+  let true_ae1 := Literal 1 in
+  let true_ae2 := Plus (Literal 1) (Literal 2) in
+  let true_ae3 :=  Minus (Literal 2) (Literal 1) in
+  (candidate true_ae1) &&
+    (candidate true_ae2) &&
+    (candidate true_ae3) &&
+    (negb (candidate false_ae1)).
+
+Definition super_refactored_rightp (ae : arithmetic_expression) : bool :=
+  match intermediate_expression_from_arithmetic_expression ae with
+    ExpPlus =>
+      true
+    | ExpOK =>
+      true
+    | ExpKO =>
+      false
+    end.
+
+
+
 Definition test_case1 : arithmetic_expression :=
   Plus (Literal 1) (Literal 0).
 
