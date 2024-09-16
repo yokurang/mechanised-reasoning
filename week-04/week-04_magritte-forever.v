@@ -3,6 +3,16 @@
 (* Inspired by Olivier Danvy <danvy@yale-nus.edu.sg> *)
 (* Version of Thu 05 Sep 2024 *)
 
+(* student name: Adam Chan
+   e-mail address: adam.chan@u.yale-nus.edu.sg
+   student ID number: A0242453O)
+ *)
+
+(* student name: Alan Matthew Anggara
+   e-mail address: alan.matthew@u.yale-nus.edu.sg
+   student ID number: A0224197B
+ *)
+
 (* student name: Kim Young Il
    e-mail address: youngil.kim@u.yale-nus.edu.sg
    student ID number: A0207809Y
@@ -11,16 +21,6 @@
 (* student name: Vibilan Jayanth
    e-mail address: vibilan@u.yale-nus.edu.sg
    student ID number: A0242417L
- *)
-
-(* student name: Alan Matthew Anggara
-   e-mail address: alan.matthew@u.yale-nus.edu.sg
-   student ID number: A0224197B
- *)
-
-(* student name: Adam Chan
-   e-mail address: adam.chan@u.yale-nus.edu.sg
-   student ID number: A0242453O)
  *)
 
 (* Start of Paraphernalia *)
@@ -34,6 +34,10 @@ Inductive arithmetic_expression : Type :=
 | Plus : arithmetic_expression -> arithmetic_expression -> arithmetic_expression
 | Minus : arithmetic_expression -> arithmetic_expression -> arithmetic_expression.
 
+Definition Magritte_expressible_value := arithmetic_expression.
+
+Definition Magritte_data_stack := list Magritte_expressible_value.
+
 Inductive byte_code_instruction : Type :=
   PUSH : nat -> byte_code_instruction
 | ADD : byte_code_instruction
@@ -45,7 +49,7 @@ Inductive target_program : Type :=
 Inductive source_program : Type :=
   Source_program : arithmetic_expression -> source_program.
 
-Fixpoint compile_aux (ae : arithmetic_expression) : list byte_code_instruction :=
+Fixpoint compile_aux (ae : Magritte_expressible_value) : list byte_code_instruction :=
   match ae with
   | Literal n =>
       PUSH n :: nil
@@ -86,26 +90,10 @@ Definition compile (sp : source_program) : target_program :=
 
 (* End of Paraphernalia *)
 
-(* Start of Magritte Paraphernalia *)
-
-Definition Magritte_expressible_value := arithmetic_expression.
-
-Definition Magritte_data_stack := list Magritte_expressible_value .
-
 (* 1. Implement this Magritte target interpreter. *)
 
 Inductive Magritte_result_of_decoding_and_execution : Type :=
   OK : Magritte_data_stack -> Magritte_result_of_decoding_and_execution.
-
-Fixpoint Magritte_evaluate (ae : Magritte_expressible_value) : Magritte_expressible_value :=
-  match ae with
-  | Literal n =>
-      Literal n
-  | Plus ae1 ae2 =>
-      Plus (Magritte_evaluate ae1) (Magritte_evaluate ae2)
-  | Minus ae1 ae2 =>
-      Minus (Magritte_evaluate ae1) (Magritte_evaluate ae2)
-  end.
 
 Definition Magritte_decode_execute
   (bci : byte_code_instruction)
@@ -139,45 +127,6 @@ Definition Magritte_decode_execute
           end
       end
   end.
-
-Lemma fold_unfold_Magritte_evaluate_Literal :
-  forall n : nat,
-    Magritte_evaluate (Literal n) = Literal n.
-Proof.
-  fold_unfold_tactic Magritte_evaluate.
-Qed.
-
-Lemma fold_unfold_Magritte_evaluate_Plus :
-  forall ae1 ae2 : Magritte_expressible_value ,
-    Magritte_evaluate (Plus ae1 ae2) =
-      Plus (Magritte_evaluate ae1) (Magritte_evaluate ae2).
-Proof.
-  fold_unfold_tactic Magritte_evaluate.
-Qed.
-
-Lemma fold_unfold_Magritte_evaluate_Minus :
-  forall ae1 ae2 : Magritte_expressible_value ,
-    Magritte_evaluate (Minus ae1 ae2) =
-      Minus (Magritte_evaluate ae1) (Magritte_evaluate ae2).
-Proof.
-  fold_unfold_tactic Magritte_evaluate.
-Qed.
-
-(* Look for the aha *)
-Theorem about_Magritte_evaluate :
-  forall ae : Magritte_expressible_value,
-    Magritte_evaluate ae = ae.
-Proof.
-  intro ae.
-  induction ae as [ n | ae1 IHae1 | ae2 IHae2 ].
-  - exact (fold_unfold_Magritte_evaluate_Literal n).
-  - rewrite -> fold_unfold_Magritte_evaluate_Plus.
-    rewrite -> IHae1, IHae2.
-    reflexivity.
-  - rewrite -> fold_unfold_Magritte_evaluate_Minus.
-    rewrite -> IHae1, IHae2.
-    reflexivity.
-Qed.
 
 Fixpoint Magritte_fetch_decode_execute_loop
   (bcis : list byte_code_instruction)
@@ -213,8 +162,8 @@ Proof.
   fold_unfold_tactic Magritte_fetch_decode_execute_loop.
 Qed.
 
-Definition Magritte_run (t : target_program) : option source_program :=
-  match t with
+Definition Magritte_run (tp : target_program) : option source_program :=
+  match tp with
     Target_program bcis =>
       match Magritte_fetch_decode_execute_loop bcis nil with
         OK nil => None
@@ -228,6 +177,54 @@ Definition Magritte_run (t : target_program) : option source_program :=
   so that its result is not a natural number or an error message,
   it is the syntactic representation of a natural number.
  *)
+
+Fixpoint Magritte_evaluate (ae : Magritte_expressible_value) : Magritte_expressible_value :=
+  match ae with
+  | Literal n =>
+      Literal n
+  | Plus ae1 ae2 =>
+      Plus (Magritte_evaluate ae1) (Magritte_evaluate ae2)
+  | Minus ae1 ae2 =>
+      Minus (Magritte_evaluate ae1) (Magritte_evaluate ae2)
+  end.
+
+Lemma fold_unfold_Magritte_evaluate_Literal :
+  forall n : nat,
+    Magritte_evaluate (Literal n) = Literal n.
+Proof.
+  fold_unfold_tactic Magritte_evaluate.
+Qed.
+
+Lemma fold_unfold_Magritte_evaluate_Plus :
+  forall ae1 ae2 : Magritte_expressible_value ,
+    Magritte_evaluate (Plus ae1 ae2) =
+      Plus (Magritte_evaluate ae1) (Magritte_evaluate ae2).
+Proof.
+  fold_unfold_tactic Magritte_evaluate.
+Qed.
+
+Lemma fold_unfold_Magritte_evaluate_Minus :
+  forall ae1 ae2 : Magritte_expressible_value ,
+    Magritte_evaluate (Minus ae1 ae2) =
+      Minus (Magritte_evaluate ae1) (Magritte_evaluate ae2).
+Proof.
+  fold_unfold_tactic Magritte_evaluate.
+Qed.
+
+Theorem about_Magritte_evaluate :
+  forall ae : Magritte_expressible_value,
+    Magritte_evaluate ae = ae.
+Proof.
+  intro ae.
+  induction ae as [ n | ae1 IHae1 | ae2 IHae2 ].
+  - exact (fold_unfold_Magritte_evaluate_Literal n).
+  - rewrite -> fold_unfold_Magritte_evaluate_Plus.
+    rewrite -> IHae1, IHae2.
+    reflexivity.
+  - rewrite -> fold_unfold_Magritte_evaluate_Minus.
+    rewrite -> IHae1, IHae2.
+    reflexivity.
+Qed.
 
 Definition Magritte_interpret (sp : source_program) : source_program :=
   match sp with
@@ -245,63 +242,12 @@ Proof.
   reflexivity.
 Qed.
 
-(* Start proving *)
-
-(* Tests *)
-
-Definition test_ae_Literal := (Literal 0).
-
-Definition test_ae_Plus_left := (Plus
-                                   (Plus
-                                      (Plus
-                                         (Literal 0)
-                                         (Literal 1))
-                                      (Literal 2))
-                                   (Literal 3)).
-Definition test_ae_Plus_right := (Plus
-                                   (Literal 0)
-                                   (Plus
-                                      (Literal 1)
-                                      (Plus
-                                         (Literal 2)
-                                         (Literal 3)))).
-Definition test_ae_Plus_balanced := (Plus
-                                       (Plus
-                                          (Literal 0)
-                                          (Literal 1))
-                                       (Plus
-                                          (Literal 2)
-                                          (Literal 3))).
-Definition test_ae_Minus_left := (Minus
-                                   (Minus
-                                      (Minus
-                                         (Literal 20)
-                                         (Literal 10))
-                                      (Literal 5))
-                                   (Literal 1)).
-Definition test_ae_Minus_right := (Minus
-                                   (Literal 20)
-                                   (Minus
-                                      (Literal 10)
-                                      (Minus
-                                         (Literal 5)
-                                         (Literal 1)))).
-Definition test_ae_Minus_balanced := (Minus
-                                       (Minus
-                                          (Literal 20)
-                                          (Literal 10))
-                                       (Minus
-                                          (Literal 5)
-                                          (Literal 1))).
-Definition test_ae_Minus_error := (Minus (Literal 0) (Literal 1)).
-
-Theorem about_Magritte_fetch_decode_execute_loop_concat :
+Lemma about_Magritte_fetch_decode_execute_loop_concat :
   forall (bci1s bci2s : list byte_code_instruction)
-         (ds : Magritte_data_stack)
-         (ds' : Magritte_data_stack),
-             Magritte_fetch_decode_execute_loop bci1s ds = OK ds' ->
-             Magritte_fetch_decode_execute_loop (bci1s ++ bci2s) ds =
-               Magritte_fetch_decode_execute_loop bci2s ds'.
+         (ds ds': Magritte_data_stack),
+    Magritte_fetch_decode_execute_loop bci1s ds = OK ds' ->
+    Magritte_fetch_decode_execute_loop (bci1s ++ bci2s) ds =
+      Magritte_fetch_decode_execute_loop bci2s ds'.
 Proof.
   intro bci1s.
   induction bci1s as [ | [n | | ] bci1s' IHbci1s']; intros bci2s ds.
@@ -357,7 +303,7 @@ Qed.
 Lemma about_Magritte_fetch_decode_execute_loop :
   forall (ae : Magritte_expressible_value )
          (ds : Magritte_data_stack),
-  exists ae' :Magritte_expressible_value ,
+  exists ae' : Magritte_expressible_value ,
     Magritte_fetch_decode_execute_loop (compile_aux ae) ds = OK (ae' :: ds).
 Proof.
   intro ae.
