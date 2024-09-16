@@ -257,11 +257,6 @@ Qed.
 (* Task 1: What does super_refactor_right do?
    Capture the effect of super_refactor_right into a predicate. *)
 
-Inductive arithmetic_expression_wrapped : Type :=
-| Literal_case : nat -> arithmetic_expression_wrapped
-| Plus_case : arithmetic_expression_wrapped -> arithmetic_expression_wrapped -> arithmetic_expression_wrapped
-| Minus_case : arithmetic_expression_wrapped -> arithmetic_expression_wrapped -> arithmetic_expression_wrapped.
-
 Inductive intermediate_expression : Type :=
 | ExpPlus : intermediate_expression
 | ExpOK : intermediate_expression
@@ -1156,6 +1151,9 @@ Fixpoint arithmetic_expression_from_arithmetic_expression_right (aer : arithmeti
       (arithmetic_expression_from_arithmetic_expression_right aer2)
   end.
 
+Lemma fold_unfold_arithmetic_expression_right_Literal_right :
+  
+
 Fixpoint super_refactor_right' (ae : arithmetic_expression) : arithmetic_expression_right :=
   match ae with
     Literal n =>
@@ -1175,12 +1173,10 @@ Fixpoint super_refactor_right' (ae : arithmetic_expression) : arithmetic_express
       Plus_right_Minus (super_refactor_right' ae1, super_refactor_right' ae2) a
     end.
 
-(*
 Theorem super_refactor_right_yields_super_refactored_right_results_revisited :
   forall ae : arithmetic_expression,
     super_refactored_rightp (arithmetic_expression_from_arithmetic_expression_right (super_refactor_right' ae)) = true.
-*)
-
+Admitted.
 (* ********** *)
 
 (* \end{NEW} *)
