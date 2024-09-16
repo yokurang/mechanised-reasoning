@@ -449,7 +449,21 @@ Theorem applying_disjunction_left :
   forall A B C : Prop,
     (A \/ B -> C) -> A -> C.
 Proof.
-Admitted.
+  intros A B C H_AB_C H_A.
+  apply H_AB_C.
+  left.
+  exact H_A.
+Qed.
+
+Theorem applying_disjunction_right :
+  forall A B C : Prop,
+    (A \/ B -> C) -> B -> C.
+Proof.
+  intros A B C H_AB_C H_B.
+  apply H_AB_C.
+  right.
+  exact H_B.
+Qed.
 
 Lemma super_refactor_right_yields_super_refactored_rightp_results_aux :
   forall ae : arithmetic_expression,
@@ -471,7 +485,7 @@ Lemma super_refactor_right_yields_super_refactored_rightp_results_aux :
 Proof.
   intro ae.
   induction ae as [ n
-                  | ae1 [[sr_ae1_Plus | sr_ae1_OK] sr_aux_ae1]
+                  | ae1 [[sr_ae1_Plus | sr_ae1_OK ] sr_aux_ae1]
                       ae2 [[sr_ae2_Plus | sr_ae2_OK] sr_aux_ae2]
                   | ae1 [[sr_ae1_Plus | sr_ae1_OK] sr_aux_ae1]
                       ae2 [[sr_ae2_Plus | sr_ae2_OK] sr_aux_ae2]].
@@ -519,9 +533,54 @@ Proof.
                (sr_aux_ae1 (super_refactor_right ae2))
                sr_ae2_Plus).
     }
-      Search (_ \/ _ ->  _).
-    Check (or_ind).
-    Admitted.
+    { intros a [H_a_Plus | H_a_OK].
+      + rewrite -> fold_unfold_super_refactor_right_aux_Plus.
+        Check (applying_disjunction_left).
+        Check (applying_disjunction_left
+                 (intermediate_expression_from_arithmetic_expression (super_refactor_right_aux ae2 a) = ExpPlus)
+                 (intermediate_expression_from_arithmetic_expression (super_refactor_right_aux ae2 a) = ExpOK)
+                 (intermediate_expression_from_arithmetic_expression (super_refactor_right_aux ae1
+                                                                        (super_refactor_right_aux ae2 a)) = ExpPlus
+                  \/
+                    intermediate_expression_from_arithmetic_expression (super_refactor_right_aux ae1
+                                                                          (super_refactor_right_aux ae2 a)) = ExpOK)
+                 (sr_aux_ae1 (super_refactor_right_aux ae2 a))).
+       Check (applying_disjunction_left
+                 (intermediate_expression_from_arithmetic_expression (super_refactor_right_aux ae2 a) = ExpPlus)
+                 (intermediate_expression_from_arithmetic_expression (super_refactor_right_aux ae2 a) = ExpOK)
+                 (intermediate_expression_from_arithmetic_expression (super_refactor_right_aux ae1
+                                                                        (super_refactor_right_aux ae2 a)) = ExpPlus
+                  \/
+                    intermediate_expression_from_arithmetic_expression (super_refactor_right_aux ae1
+                                                                          (super_refactor_right_aux ae2 a)) = ExpOK)
+                 (sr_aux_ae1 (super_refactor_right_aux ae2 a))).
+        assert (H_ae2_a : intermediate_expression_from_arithmetic_expression (super_refactor_right_aux ae2 a) = ExpPlus \/
+                            intermediate_expression_from_arithmetic_expression (super_refactor_right_aux ae2 a) = ExpOK).
+        { apply sr_aux_ae2. left. exact H_a_Plus. }
+        destruct H_ae2_a as [H_ae2_a_Plus | H_ae2_a_OK].
+        { exact (applying_disjunction_left
+                 (intermediate_expression_from_arithmetic_expression (super_refactor_right_aux ae2 a) = ExpPlus)
+                 (intermediate_expression_from_arithmetic_expression (super_refactor_right_aux ae2 a) = ExpOK)
+                 (intermediate_expression_from_arithmetic_expression (super_refactor_right_aux ae1
+                                                                        (super_refactor_right_aux ae2 a)) = ExpPlus
+                  \/
+                    intermediate_expression_from_arithmetic_expression (super_refactor_right_aux ae1
+                                                                          (super_refactor_right_aux ae2 a)) = ExpOK)
+                 (sr_aux_ae1 (super_refactor_right_aux ae2 a))
+                 H_ae2_a_Plus). }
+        {  exact (applying_disjunction_right
+                    (intermediate_expression_from_arithmetic_expression (super_refactor_right_aux ae2 a) = ExpPlus)
+                    (intermediate_expression_from_arithmetic_expression (super_refactor_right_aux ae2 a) = ExpOK)
+                    (intermediate_expression_from_arithmetic_expression (super_refactor_right_aux ae1
+                                                                           (super_refactor_right_aux ae2 a)) = ExpPlus
+                     \/
+                       intermediate_expression_from_arithmetic_expression (super_refactor_right_aux ae1
+                                                                             (super_refactor_right_aux ae2 a)) = ExpOK)
+                    (sr_aux_ae1 (super_refactor_right_aux ae2 a))
+                    H_ae2_a_OK). }
+      +
+                    
+
 
 Theorem super_refactor_right_yields_super_refactored_rightp_results :
     forall ae : arithmetic_expression,
