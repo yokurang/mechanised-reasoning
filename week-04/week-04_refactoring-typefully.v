@@ -440,26 +440,6 @@ Definition super_refactored_rightp (ae : arithmetic_expression) : bool :=
 
 Compute (test_super_refactored_rightp super_refactored_rightp).
 
-Theorem applying_disjunction_left :
-  forall A B C : Prop,
-    (A \/ B -> C) -> A -> C.
-Proof.
-  intros A B C H_AB_C H_A.
-  apply H_AB_C.
-  left.
-  exact H_A.
-Qed.
-
-Theorem applying_disjunction_right :
-  forall A B C : Prop,
-    (A \/ B -> C) -> B -> C.
-Proof.
-  intros A B C H_AB_C H_B.
-  apply H_AB_C.
-  right.
-  exact H_B.
-Qed.
-
 Lemma super_refactor_right_yields_super_refactored_rightp_results_aux :
   forall ae : arithmetic_expression,
     (intermediate_expression_from_arithmetic_expression
