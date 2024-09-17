@@ -487,32 +487,32 @@ Proof.
       left. exact sr_ae2_Plus. }    
     { intros a [H_a_Plus | H_a_OK].
       rewrite -> fold_unfold_super_refactor_right_aux_Plus.
-      + assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right_aux ae2 a)).
+      + Check (sr_aux_ae1 (super_refactor_right_aux ae2 a)).
         apply sr_aux_ae1.
         apply sr_aux_ae2.
         left. exact H_a_Plus.
       + rewrite -> fold_unfold_super_refactor_right_aux_Plus.
-        assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right_aux ae2 a)).
+        Check (sr_aux_ae1 (super_refactor_right_aux ae2 a)).
         apply sr_aux_ae1.
         apply sr_aux_ae2.
         right. exact H_a_OK. }
     
   - split.
     { rewrite -> fold_unfold_super_refactor_right_Plus.
-      assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right ae2)).
+      Check (sr_aux_ae1 (super_refactor_right ae2)).
       apply sr_aux_ae1.
       right. exact sr_ae2_OK. }
     { intros a [H_a_Plus | H_a_OK].
       rewrite -> fold_unfold_super_refactor_right_aux_Plus.
-      + assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right_aux ae2 a)).
+      + Check (sr_aux_ae1 (super_refactor_right_aux ae2 a)).
         apply sr_aux_ae1.
-        assert (sr_aux_ae2 := sr_aux_ae2 a).
+        Check (sr_aux_ae2 a).
         apply sr_aux_ae2.
         left. exact H_a_Plus.
       + rewrite -> fold_unfold_super_refactor_right_aux_Plus.
-        assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right_aux ae2 a)).
+        Check (sr_aux_ae1 (super_refactor_right_aux ae2 a)).
         apply sr_aux_ae1.
-        assert (sr_aux_ae2 := sr_aux_ae2 a).
+        Check (sr_aux_ae2 a).
         apply sr_aux_ae2.
         right. exact H_a_OK. }
     
@@ -522,34 +522,34 @@ Proof.
       left. exact sr_ae2_Plus. }
     { intros a [H_a_Plus | H_a_OK].
       + rewrite -> fold_unfold_super_refactor_right_aux_Plus.
-        assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right_aux ae2 a)).
+        Check (sr_aux_ae1 (super_refactor_right_aux ae2 a)).
         apply sr_aux_ae1.
-        assert (sr_aux_ae2 := sr_aux_ae2 a).
+        Check (sr_aux_ae2 a).
         apply sr_aux_ae2.
         left. exact H_a_Plus.
       + rewrite -> fold_unfold_super_refactor_right_aux_Plus.
-        assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right_aux ae2 a)).
+        Check (sr_aux_ae1 (super_refactor_right_aux ae2 a)).
         apply sr_aux_ae1.
-        assert (sr_aux_ae2 := sr_aux_ae2 a).
+        Check (sr_aux_ae2 a).
         apply sr_aux_ae2.
         right. exact H_a_OK. }
     
   - split.
     { rewrite -> fold_unfold_super_refactor_right_Plus.
-      assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right ae2)).
+      Check (sr_aux_ae1 (super_refactor_right ae2)).
       apply sr_aux_ae1.
       right. exact sr_ae2_OK. }
     { intros a [H_a_Plus | H_a_OK].
       + rewrite -> fold_unfold_super_refactor_right_aux_Plus.
-        assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right_aux ae2 a)).
+        Check (sr_aux_ae1 (super_refactor_right_aux ae2 a)).
         apply sr_aux_ae1.
-        assert (sr_aux_ae2 := sr_aux_ae2 a).
+        Check (sr_aux_ae2 a).
         apply sr_aux_ae2.
         left. exact H_a_Plus.
       + rewrite -> fold_unfold_super_refactor_right_aux_Plus.
-        assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right_aux ae2 a)).
+        Check (sr_aux_ae1 (super_refactor_right_aux ae2 a)).
         apply sr_aux_ae1.
-        assert (sr_aux_ae2 := sr_aux_ae2 a).
+        Check (sr_aux_ae2 a).
         apply sr_aux_ae2.
         right. exact H_a_OK. }
     
@@ -660,67 +660,12 @@ Theorem super_refactor_right_yields_super_refactored_rightp_results :
 Proof.
   intro ae.
   unfold super_refactored_rightp.
-  case ae as [ n | ae1 ae2 | ae1 ae2 ] eqn:C_ae.
-  - rewrite -> fold_unfold_super_refactor_right_Literal.
-    rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Literal.
+  case (super_refactor_right_yields_super_refactored_rightp_results_aux ae)
+    as [[H_ae_Plus | H_ae_OK] _].
+  - rewrite  -> H_ae_Plus.
     reflexivity.
-    
-  - rewrite -> fold_unfold_super_refactor_right_Plus.
-    Check (super_refactor_right_yields_super_refactored_rightp_results_aux ae1).
-    destruct (super_refactor_right_yields_super_refactored_rightp_results_aux ae1)
-      as [[H_sr_ae1_Plus | H_sr_ae1_OK] H_a1].
-    Check (H_a1 (super_refactor_right ae2)).
-    assert (H_a1 := H_a1 (super_refactor_right ae2)).
-    { Check (super_refactor_right_yields_super_refactored_rightp_results_aux ae2).
-      destruct (super_refactor_right_yields_super_refactored_rightp_results_aux ae2)
-        as [[H_sr_ae2_Plus | H_sr_ae2_OK] H_a2].
-      + destruct H_a1 as [H_a1_Plus | H_a1_OK].
-        * left. exact H_sr_ae2_Plus.
-        * rewrite -> H_a1_Plus.
-          reflexivity.
-        * rewrite -> H_a1_OK.
-          reflexivity.
-      + destruct H_a1 as [H_a1_Plus | H_a1_OK].
-        * right. exact H_sr_ae2_OK.
-        * rewrite -> H_a1_Plus.
-          reflexivity.
-        * rewrite -> H_a1_OK.
-          reflexivity. }
-    assert (H_a1 := H_a1 (super_refactor_right ae2)).
-    { Check (super_refactor_right_yields_super_refactored_rightp_results_aux ae2).
-      destruct (super_refactor_right_yields_super_refactored_rightp_results_aux ae2)
-        as [[H_sr_ae2_Plus | H_sr_ae2_OK] H_a2].
-      + destruct H_a1 as [H_a1_Plus | H_a1_OK].
-        * left. exact H_sr_ae2_Plus.
-        * rewrite -> H_a1_Plus.
-          reflexivity.
-        * rewrite -> H_a1_OK.
-          reflexivity.
-      + destruct H_a1 as [H_a1_Plus | H_a1_OK].
-        * right. exact H_sr_ae2_OK.
-        * rewrite -> H_a1_Plus.
-          reflexivity.
-        * rewrite -> H_a1_OK.
-          reflexivity. }
-    
-  - rewrite -> fold_unfold_super_refactor_right_Minus.
-    rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Minus.
-    Check (super_refactor_right_yields_super_refactored_rightp_results_aux ae1).
-    destruct (super_refactor_right_yields_super_refactored_rightp_results_aux ae1) as [[H_sr_ae1_Plus | H_sr_ae1_OK] H_a1].
-    { destruct (super_refactor_right_yields_super_refactored_rightp_results_aux ae2) as [[H_sr_ae2_Plus | H_sr_ae2_OK] H_a2].
-      + rewrite -> H_sr_ae1_Plus.
-        rewrite -> H_sr_ae2_Plus.
-        reflexivity.
-      + rewrite -> H_sr_ae1_Plus.
-        rewrite -> H_sr_ae2_OK.
-        reflexivity. }
-    { destruct (super_refactor_right_yields_super_refactored_rightp_results_aux ae2) as [[H_sr_ae2_Plus | H_sr_ae2_OK] H_a2].
-      + rewrite -> H_sr_ae1_OK.
-        rewrite -> H_sr_ae2_Plus.
-        reflexivity.
-      + rewrite -> H_sr_ae1_OK.
-        rewrite -> H_sr_ae2_OK.
-        reflexivity. }
+  - rewrite -> H_ae_OK.
+    reflexivity.
 Qed.
 
 (* A typeful take: characterizing refactored expressions with a type. *)
@@ -903,73 +848,73 @@ Proof.
     
   - split.
     { rewrite -> fold_unfold_super_refactor_right'_Plus.
-      assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right' ae2)).
+      Check (sr_aux_ae1 (super_refactor_right' ae2)).
       apply sr_aux_ae1.
       left. exact sr_ae2_Plus. }
     { intros a [H_a_Plus | H_a_OK].
       rewrite -> fold_unfold_super_refactor_right'_aux_Plus.
-      + assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
+      + Check (sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
         apply sr_aux_ae1.
-        assert (sr_aux_ae2 := sr_aux_ae2 a).
+        Check (sr_aux_ae2 a).
         apply sr_aux_ae2.
         left. exact H_a_Plus.
-      + assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
+      + Check (sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
         apply sr_aux_ae1.
-        assert (sr_aux_ae2 := sr_aux_ae2 a).
+        Check (sr_aux_ae2 a).
         apply sr_aux_ae2.
         right. exact H_a_OK. }
     
   - split.
     { rewrite -> fold_unfold_super_refactor_right'_Plus.
-      assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right' ae2)).
+      Check (sr_aux_ae1 (super_refactor_right' ae2)).
       apply sr_aux_ae1.
       right. exact sr_ae2_OK. }
     { intros a [H_a_Plus | H_a_OK].
       rewrite -> fold_unfold_super_refactor_right'_aux_Plus.
-      + assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
+      + Check (sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
         apply sr_aux_ae1.
-        assert (sr_aux_ae2 := sr_aux_ae2 a).
+        Check (sr_aux_ae2 a).
         apply sr_aux_ae2.
         left. exact H_a_Plus.
-      + assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
+      + Check (sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
         apply sr_aux_ae1.
-        assert (sr_aux_ae2 := sr_aux_ae2 a).
+        Check (sr_aux_ae2 a).
         apply sr_aux_ae2.
         right. exact H_a_OK. }
     
   - split.
     { rewrite -> fold_unfold_super_refactor_right'_Plus.
-      assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right' ae2)).
+      Check (sr_aux_ae1 (super_refactor_right' ae2)).
       apply sr_aux_ae1.
       left. exact sr_ae2_Plus. }
     { intros a [H_a_Plus | H_a_OK].
       rewrite -> fold_unfold_super_refactor_right'_aux_Plus.
-      + assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
+      + Check (sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
         apply sr_aux_ae1.
-        assert (sr_aux_ae2 := sr_aux_ae2 a).
+        Check (sr_aux_ae2 a).
         apply sr_aux_ae2.
         left. exact H_a_Plus.
-      + assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
+      + Check (sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
         apply sr_aux_ae1.
-        assert (sr_aux_ae2 := sr_aux_ae2 a).
+        Check (sr_aux_ae2 a).
         apply sr_aux_ae2.
         right. exact H_a_OK. }
     
   - split.
     { rewrite -> fold_unfold_super_refactor_right'_Plus.
-      assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right' ae2)).
+      Check (sr_aux_ae1 (super_refactor_right' ae2)).
       apply sr_aux_ae1.
       right. exact sr_ae2_OK. }
     { intros a [H_a_Plus | H_a_OK].
       rewrite -> fold_unfold_super_refactor_right'_aux_Plus.
-      + assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
+      + Check (sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
         apply sr_aux_ae1.
-        assert (sr_aux_ae2 := sr_aux_ae2 a).
+        Check (sr_aux_ae2 a).
         apply sr_aux_ae2.
         left. exact H_a_Plus.
-      + assert (sr_aux_ae1 := sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
+      + Check (sr_aux_ae1 (super_refactor_right'_aux ae2 a)).
         apply sr_aux_ae1.
-        assert (sr_aux_ae2 := sr_aux_ae2 a).
+        Check ( sr_aux_ae2 a).
         apply sr_aux_ae2.
         right. exact H_a_OK. }
 
@@ -1080,67 +1025,12 @@ Theorem super_refactor_right_yields_super_refactored_right_results_revisited :
 Proof.
   intro ae.
   unfold super_refactored_rightp.
-  case ae as [ n | ae1 ae2 | ae1 ae2 ] eqn:C_ae.
-  - rewrite -> fold_unfold_super_refactor_right'_Literal.
-    rewrite -> fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Literal_right.
-    rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Literal.
+  case (super_refactor_right_yields_super_refactored_rightp_results_aux_revisited ae)
+    as [[H_ae_Plus | H_ae_OK] _].
+  - rewrite -> H_ae_Plus.
     reflexivity.
-  - rewrite -> fold_unfold_super_refactor_right'_Plus.
-    destruct (super_refactor_right_yields_super_refactored_rightp_results_aux_revisited ae1)
-      as [[H_sr_ae1_Plus | H_sr_ae1_OK] H_a1].
-    assert (H_a1 := H_a1 (super_refactor_right' ae2)).
-    { destruct (super_refactor_right_yields_super_refactored_rightp_results_aux_revisited ae2)
-        as [[H_sr_ae2_Plus | H_sr_ae2_OK] H_a2].
-      + destruct H_a1 as [H_a1_Plus | H_a1_OK].
-        * left. exact H_sr_ae2_Plus.
-        * rewrite -> H_a1_Plus.
-          reflexivity.
-        * rewrite -> H_a1_OK.
-          reflexivity.
-      + destruct H_a1 as [H_a1_Plus | H_a1_OK].
-        * right. exact H_sr_ae2_OK.
-        * rewrite -> H_a1_Plus.
-          reflexivity.
-        * rewrite -> H_a1_OK.
-          reflexivity. }
-    assert (H_a1 := H_a1 (super_refactor_right' ae2)).
-    { Check (super_refactor_right_yields_super_refactored_rightp_results_aux_revisited ae2).
-      destruct (super_refactor_right_yields_super_refactored_rightp_results_aux_revisited ae2)
-        as [[H_sr_ae2_Plus | H_sr_ae2_OK] H_a2].
-      + destruct H_a1 as [H_a1_Plus | H_a1_OK].
-        * left. exact H_sr_ae2_Plus.
-        * rewrite -> H_a1_Plus.
-          reflexivity.
-        * rewrite -> H_a1_OK.
-          reflexivity.
-      + destruct H_a1 as [H_a1_Plus | H_a1_OK].
-        * right. exact H_sr_ae2_OK.
-        * rewrite -> H_a1_Plus.
-          reflexivity.
-        * rewrite -> H_a1_OK.
-          reflexivity. }
-  - rewrite -> fold_unfold_super_refactor_right'_Minus.
-    rewrite -> fold_unfold_arithmetic_expression_from_arithmetic_expression_right_Minus_right.
-    rewrite -> fold_unfold_intermediate_expression_from_arithmetic_expression_Minus.
-    Check (super_refactor_right_yields_super_refactored_rightp_results_aux_revisited ae1).
-    destruct (super_refactor_right_yields_super_refactored_rightp_results_aux_revisited ae1)
-      as [[H_sr_ae1_Plus | H_sr_ae1_OK] H_a1].
-    { destruct (super_refactor_right_yields_super_refactored_rightp_results_aux_revisited ae2)
-        as [[H_sr_ae2_Plus | H_sr_ae2_OK] H_a2].
-      + rewrite -> H_sr_ae1_Plus.
-        rewrite -> H_sr_ae2_Plus.
-        reflexivity.
-      + rewrite -> H_sr_ae1_Plus.
-        rewrite -> H_sr_ae2_OK.
-        reflexivity. }
-    { destruct (super_refactor_right_yields_super_refactored_rightp_results_aux_revisited ae2)
-        as [[H_sr_ae2_Plus | H_sr_ae2_OK] H_a2].
-      + rewrite -> H_sr_ae1_OK.
-        rewrite -> H_sr_ae2_Plus.
-        reflexivity.
-      + rewrite -> H_sr_ae1_OK.
-        rewrite -> H_sr_ae2_OK.
-        reflexivity. }
+  - rewrite -> H_ae_OK.
+    reflexivity.
 Qed.
 
 (* ********** *)
