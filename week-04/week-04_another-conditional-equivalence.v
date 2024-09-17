@@ -257,7 +257,7 @@ Proof.
            rewrite -> (H_lt_n3_n1n2 H_lte_n3_n1n2).
            rewrite -> Nat.sub_add_distr.
            reflexivity.
-        -- destruct (E_ae_n n1 n2 eq_refl eq_refl) as [H_lte_n2_n1 H_n3].
+        -- destruct (E_ae_n n1 n2 eq_refl eq_refl) as [H_lte_n2_n1 _].
            destruct (Nat.ltb_ge n1 n2) as [_ H_lt_n1_n2].
            rewrite -> (H_lt_n1_n2 H_lte_n2_n1).
            reflexivity.
