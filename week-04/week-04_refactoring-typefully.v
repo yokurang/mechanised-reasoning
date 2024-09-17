@@ -499,8 +499,7 @@ Proof.
         reflexivity.
       + rewrite -> H_OK.
         left.
-        reflexivity.
-    }
+        reflexivity. }
     
   - split.
     { rewrite -> fold_unfold_super_refactor_right_Plus.
