@@ -90,7 +90,7 @@ Definition compile (sp : source_program) : target_program :=
 
 (* End of Paraphernalia *)
 
-(* 1. Implement this Magritte target interpreter. *)
+(* 1. Magritte target interpreter. *)
 
 Inductive Magritte_result_of_decoding_and_execution : Type :=
   OK : Magritte_data_stack -> Magritte_result_of_decoding_and_execution.
@@ -168,15 +168,11 @@ Definition Magritte_run (tp : target_program) : option source_program :=
       match Magritte_fetch_decode_execute_loop bcis nil with
         OK nil => None
       | OK (ae :: nil) => Some (Source_program ae)
-      | OK (ae :: ae'' :: ds'') => None
+      | OK (ae :: ae' :: ds') => None
       end
   end.
 
-(*
-  2. Likewise, implement a Magritte source interpreter
-  so that its result is not a natural number or an error message,
-  it is the syntactic representation of a natural number.
- *)
+(* 2. Magritte source evaluator + interpreter *)
 
 Fixpoint Magritte_evaluate (ae : Magritte_expressible_value) : Magritte_expressible_value :=
   match ae with
@@ -242,6 +238,8 @@ Proof.
   reflexivity.
 Qed.
 
+(* Theorems about fdel-loop and run *)
+
 Lemma about_Magritte_fetch_decode_execute_loop_concat :
   forall (bci1s bci2s : list byte_code_instruction)
          (ds ds': Magritte_data_stack),
@@ -301,7 +299,7 @@ Proof.
 Qed.
 
 Lemma about_Magritte_fetch_decode_execute_loop :
-  forall (ae : Magritte_expressible_value )
+  forall (ae : Magritte_expressible_value)
          (ds : Magritte_data_stack),
   exists ae' : Magritte_expressible_value ,
     Magritte_fetch_decode_execute_loop (compile_aux ae) ds = OK (ae' :: ds).
@@ -379,19 +377,18 @@ Proof.
 Qed.
 
 (*
-Lemma about_Magritte_run_aux' :
-  forall (ae : arithmetic_expression)
-         (ds : Magritte_data_stack)
-         (ae' : arithmetic_expression),
+Lemma about_Magritte_OK :
+  forall (ae ae': Magritte_expressible_value)
+         (ds : Magritte_data_stack),
     Magritte_evaluate ae = ae' ->
     Magritte_fetch_decode_execute_loop (compile_aux ae) ds =
       OK (ae' :: ds).
-(* but we have about_Magritte_evaluate, which states M-evaluate always returns the same Magritte_expressible_value, so we can state the below: *)
+
+ but we have about_Magritte_evaluate, which states M-evaluate always returns the an ae. Even better, it always returns the original ae, so we can state the below (Look at how we don't need the LHS equivalent ):
  *)
 
-(* Look for the aha *)
 Lemma about_Magritte_run_aux :
-  forall (ae : arithmetic_expression)
+  forall (ae : Magritte_expressible_value)
          (ds : Magritte_data_stack),
     Magritte_fetch_decode_execute_loop (compile_aux ae) ds =
       OK (ae :: ds).
@@ -463,7 +460,6 @@ Proof.
     reflexivity.
 Qed.  
 
-(* It's always Some *)
 Corollary about_Magritte_run :
   forall (sp : source_program)
          (ae : Magritte_expressible_value),
@@ -478,37 +474,29 @@ Proof.
   reflexivity.
 Qed.
 
-(*
-  3. A commuting diagram also holds about Magritte_interpret,
-  compile, and Magritte_run. State and prove the Magritte
-  analogue of the capstone theorem.
- *)
+Corollary about_Magritte_run_sp :
+  forall (sp : source_program),
+    Magritte_run (compile sp) = Some sp.
+Proof.
+  intros [ae].
+  unfold Magritte_run, compile.
+  Check (about_Magritte_run_aux ae nil).
+  rewrite -> (about_Magritte_run_aux ae nil).
+  reflexivity.
+Qed.
 
-(* We always get Some sp -> proven in about_Magritte_run,
+(* 3. The commuting diagram *)
+
+(* We always get Some sp -> proven in about_Magritte_run_sp,
    so Magritte running on compiled sp gives sp.
    Magritte run is the left-inverse of compile (also known as decompiler *)
-
-(* because of about_Magritte_interpret: *)
-
-(*
-Theorem the_Magritte_commuting_diagram :
-  forall (sp : source_program),
-    Magritte_run (compile sp) = Some sp <->
-    Magritte_interpret sp = sp.
 
 Theorem the_Magritte_commuting_diagram :
   forall (sp sp' : source_program),
     Magritte_run (compile sp) = Some sp' <->
-    Magritte_interpret sp = sp'.
- *)
-
-Theorem the_Magritte_commuting_diagram :
-  forall (ae : arithmetic_expression)
-         (ae' : Magritte_expressible_value),
-    Magritte_run (compile (Source_program ae)) = Some (Source_program ae') <->
-    Magritte_interpret (Source_program ae) = Source_program ae'.
+      Magritte_interpret sp = sp'.
 Proof.
-  intros ae ae'.
+  intros [ae] [ae'].
   unfold Magritte_run, compile.    
   split.
   - rewrite -> (about_Magritte_run_aux ae nil).
