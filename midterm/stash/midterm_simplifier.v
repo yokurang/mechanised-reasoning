@@ -66,62 +66,62 @@ Fixpoint eqb_arithmetic_expression (ae1 ae2 : arithmetic_expression) : bool :=
 Inductive expressible_value : Type :=
   Expressible_nat : nat -> expressible_value.
 
-Fixpoint evaluate (ae : arithmetic_expression) : expressible_value :=
+Fixpoint evaluate_ltr (ae : arithmetic_expression) : expressible_value :=
   match ae with
   | Literal n =>
     Expressible_nat n
   | Plus e1 e2 =>
-    match evaluate e1 with
+    match evaluate_ltr e1 with
     | Expressible_nat n1 =>
-      match evaluate e2 with
+      match evaluate_ltr e2 with
       | Expressible_nat n2 =>
         Expressible_nat (n1 + n2)
       end
     end
   | Times e1 e2 =>
-    match evaluate e1 with
+    match evaluate_ltr e1 with
     | Expressible_nat n1 =>
-      match evaluate e2 with
+      match evaluate_ltr e2 with
       | Expressible_nat n2 =>
         Expressible_nat (n1 * n2)
       end
     end
   end.
 
-Lemma fold_unfold_evaluate_Literal :
+Lemma fold_unfold_evaluate_ltr_Literal :
   forall n : nat,
-    evaluate (Literal n) =
+    evaluate_ltr (Literal n) =
       Expressible_nat n.
 Proof.
-  fold_unfold_tactic evaluate.
+  fold_unfold_tactic evaluate_ltr.
 Qed.
 
-Lemma fold_unfold_evaluate_Plus :
+Lemma fold_unfold_evaluate_ltr_Plus :
   forall e1 e2 : arithmetic_expression,
-    evaluate (Plus e1 e2) =
-    match evaluate e1 with
+    evaluate_ltr (Plus e1 e2) =
+    match evaluate_ltr e1 with
     | Expressible_nat n1 =>
-      match evaluate e2 with
+      match evaluate_ltr e2 with
       | Expressible_nat n2 =>
         Expressible_nat (n1 + n2)
       end
     end.
 Proof.
-  fold_unfold_tactic evaluate.
+  fold_unfold_tactic evaluate_ltr.
 Qed.
 
-Lemma fold_unfold_evaluate_Times :
+Lemma fold_unfold_evaluate_ltr_Times :
   forall e1 e2 : arithmetic_expression,
-    evaluate (Times e1 e2) =
-    match evaluate e1 with
+    evaluate_ltr (Times e1 e2) =
+    match evaluate_ltr e1 with
     | Expressible_nat n1 =>
-      match evaluate e2 with
+      match evaluate_ltr e2 with
       | Expressible_nat n2 =>
         Expressible_nat (n1 * n2)
       end
     end.
 Proof.
-  fold_unfold_tactic evaluate.
+  fold_unfold_tactic evaluate_ltr.
 Qed.
 
 (* ********** *)
@@ -243,7 +243,7 @@ Lemma fold_unfold_simplify_naive_Literal :
     simplify_naive (Literal n) =
       Literal n.
 Proof.
-  fold_unfold_tactic evaluate.
+  fold_unfold_tactic simplify_naive.
 Qed.
 
 Lemma fold_unfold_simplify_naive_Plus :
@@ -307,7 +307,7 @@ Fixpoint arithmetic_expression_of_intermediate_arithmetic_expression (iae : inte
       ae
   end.
   
-Fixpoint simplify (ae : arithmetic_expression) : intermediate_arithmetic_expression :=
+Fixpoint simplify_aux (ae : arithmetic_expression) : intermediate_arithmetic_expression :=
   match ae with
   | Literal n =>
       match n with
@@ -319,11 +319,11 @@ Fixpoint simplify (ae : arithmetic_expression) : intermediate_arithmetic_express
           AE (Literal n)
       end
   | Plus ae1 ae2 =>
-      match simplify ae1 with
+      match simplify_aux ae1 with
       | Z =>
-          simplify ae2
+          simplify_aux ae2
       | W =>
-          match simplify ae2 with
+          match simplify_aux ae2 with
           | Z =>
               W
           | W =>
@@ -332,7 +332,7 @@ Fixpoint simplify (ae : arithmetic_expression) : intermediate_arithmetic_express
               AE (Plus (Literal 1) ae2')
           end
       | AE ae1' =>
-          match simplify ae2 with
+          match simplify_aux ae2 with
           | Z =>
               AE ae1'
           | W =>
@@ -342,13 +342,13 @@ Fixpoint simplify (ae : arithmetic_expression) : intermediate_arithmetic_express
           end
       end
   | Times ae1 ae2 =>
-      match simplify ae1 with
+      match simplify_aux ae1 with
       | Z =>
           Z
       | W =>
-          simplify ae2
+          simplify_aux ae2
       | AE ae1' =>
-          match simplify ae2 with
+          match simplify_aux ae2 with
           | Z =>
               Z
           | W =>
@@ -359,9 +359,9 @@ Fixpoint simplify (ae : arithmetic_expression) : intermediate_arithmetic_express
       end
   (*
   | Minus ae1 ae2 =>
-      match simplify ae1 with
+      match simplify_aux ae1 with
       | Z =>
-          match simplify ae2 with
+          match simplify_aux ae2 with
           | Z =>
               Z
           | W =>
@@ -370,7 +370,7 @@ Fixpoint simplify (ae : arithmetic_expression) : intermediate_arithmetic_express
               AE (Minus (Literal 0) ae2')
           end
       | W =>
-          match simplify ae2 with
+          match simplify_aux ae2 with
           | Z =>
               W
           | W =>
@@ -379,7 +379,7 @@ Fixpoint simplify (ae : arithmetic_expression) : intermediate_arithmetic_express
               AE (Minus (Literal 1) ae2')
           end
       | AE ae1' =>
-          match simplify ae2 with
+          match simplify_aux ae2 with
           | Z =>
               AE ae1'
           | W =>
@@ -390,9 +390,9 @@ Fixpoint simplify (ae : arithmetic_expression) : intermediate_arithmetic_express
       end *)
   end.
 
-Lemma fold_unfold_simplify_Literal :
+Lemma fold_unfold_simplify_aux_Literal :
   forall n : nat,
-    simplify (Literal n) =
+    simplify_aux (Literal n) =
       match n with
       | 0 =>
           Z
@@ -402,17 +402,17 @@ Lemma fold_unfold_simplify_Literal :
           AE (Literal n)
       end.
 Proof.
-  fold_unfold_tactic simplify.
+  fold_unfold_tactic simplify_aux.
 Qed.
 
 Lemma fold_unfold_simplify_Plus :
   forall ae1 ae2 : arithmetic_expression,
-    simplify (Plus ae1 ae2) =
-      match simplify ae1 with
+    simplify_aux (Plus ae1 ae2) =
+      match simplify_aux ae1 with
       | Z =>
-          simplify ae2
+          simplify_aux ae2
       | W =>
-          match simplify ae2 with
+          match simplify_aux ae2 with
           | Z =>
               W
           | W =>
@@ -421,7 +421,7 @@ Lemma fold_unfold_simplify_Plus :
               AE (Plus (Literal 1) ae2')
           end
       | AE ae1' =>
-          match simplify ae2 with
+          match simplify_aux ae2 with
           | Z =>
               AE ae1'
           | W =>
@@ -431,19 +431,19 @@ Lemma fold_unfold_simplify_Plus :
           end
       end.
 Proof.
-  fold_unfold_tactic simplify.
+  fold_unfold_tactic simplify_aux.
 Qed.
 
 Lemma fold_unfold_simplify_Times :
   forall ae1 ae2 : arithmetic_expression,
-    simplify (Times ae1 ae2) =
-      match simplify ae1 with
+    simplify_aux (Times ae1 ae2) =
+      match simplify_aux ae1 with
       | Z =>
           Z
       | W =>
-          simplify ae2
+          simplify_aux ae2
       | AE ae1' =>
-          match simplify ae2 with
+          match simplify_aux ae2 with
           | Z =>
               Z
           | W =>
@@ -453,7 +453,7 @@ Lemma fold_unfold_simplify_Times :
           end
       end.
 Proof.
-  fold_unfold_tactic simplify.
+  fold_unfold_tactic simplify_aux.
 Qed.
 
 Definition eqb_intermediate_arithmetic_expression (iae1 iae2 : intermediate_arithmetic_expression) :=
@@ -481,7 +481,7 @@ Definition eqb_intermediate_arithmetic_expression (iae1 iae2 : intermediate_arit
       end
   end.
 
-Definition test_simplify (candidate : arithmetic_expression -> intermediate_arithmetic_expression) :=
+Definition test_simplify_aux (candidate : arithmetic_expression -> intermediate_arithmetic_expression) :=
   (eqb_intermediate_arithmetic_expression (candidate testcase_P_10) W) &&
     (eqb_intermediate_arithmetic_expression (candidate testcase_P_01) W) &&
     (eqb_intermediate_arithmetic_expression (candidate testcase_T_12) (AE (Literal 2))) &&
@@ -489,13 +489,17 @@ Definition test_simplify (candidate : arithmetic_expression -> intermediate_arit
     (eqb_intermediate_arithmetic_expression (candidate testcase_T_20) Z) &&
     (eqb_intermediate_arithmetic_expression (candidate testcase_T_02) Z).
 
-Compute (test_simplify simplify).
+Compute (test_simplify_aux simplify_aux).
 
+Definition simplify (ae : arithmetic_expression) : arithmetic_expression :=
+  arithmetic_expression_of_intermediate_arithmetic_expression (simplify_aux ae).
+
+(*
 Definition test_simplify_p (candidate : arithmetic_expression -> bool) :=
   (candidate (arithmetic_expression_of_intermediate_arithmetic_expression
-                (simplify testcase_P_10))) &&
+                (simplify_aux testcase_P_10))) &&
     (candidate (arithmetic_expression_of_intermediate_arithmetic_expression
-                  (simplify testcase_P_01))) &&
+                  (simplify_aux testcase_P_01))) &&
     (candidate (arithmetic_expression_of_intermediate_arithmetic_expression
                   (simplify testcase_P_balanced))) &&
     (candidate (arithmetic_expression_of_intermediate_arithmetic_expression
@@ -506,6 +510,7 @@ Definition test_simplify_p (candidate : arithmetic_expression -> bool) :=
                   (simplify testcase_T_20))) &&
     (negb (candidate testcase_T_20)) &&
     (negb (candidate testcase_T_02)).
+ *)
 
 Fixpoint simplify_p (ae : arithmetic_expression) : bool :=
   match ae with
@@ -537,8 +542,10 @@ Fixpoint simplify_p (ae : arithmetic_expression) : bool :=
       end
   end.
 
-Compute (test_simplify_p simplify_p).
-
+Theorem simplify_simplifies :
+  forall ae : arithmetic_expression,
+    simplify_p (simplify ae) = true.
+  
 (* ********** *)
 
 (* end of midterm_simplifier.v *)
