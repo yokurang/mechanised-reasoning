@@ -416,7 +416,6 @@ Definition test_intermediate_expression_from_arithmetic_expression
 Compute (test_intermediate_expression_from_arithmetic_expression
            intermediate_expression_from_arithmetic_expression).
 
-(* add more test cases here vibilan ? *)
 Definition test_super_refactored_rightp (candidate : arithmetic_expression -> bool) :=
   let false_ae1 := (Plus (Plus (Literal 1) (Literal 2))
                       (Plus (Literal 3) (Literal 4))) in
