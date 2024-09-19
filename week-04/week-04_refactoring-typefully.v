@@ -731,6 +731,25 @@ Proof.
   fold_unfold_tactic arithmetic_expression_from_arithmetic_expression_right.
 Qed.
 
+Fixpoint super_refactor_right' (ae : arithmetic_expression) : arithmetic_expression_right :=
+  match ae with
+    Literal n =>
+    Literal_right n
+  | Plus ae1 ae2 =>
+    super_refactor_right'_aux ae1 (super_refactor_right' ae2)
+  | Minus ae1 ae2 =>
+    Minus_right (super_refactor_right' ae1) (super_refactor_right' ae2)
+  end
+  with super_refactor_right'_aux (ae1 : arithmetic_expression) (a : arithmetic_expression_right) : arithmetic_expression_right :=
+    match ae1 with
+      Literal n =>
+      Plus_right_Literal n a
+    | Plus ae1 ae2 =>
+      super_refactor_right'_aux ae1 (super_refactor_right'_aux ae2 a)
+    | Minus ae1 ae2 =>
+      Plus_right_Minus (super_refactor_right' ae1) (super_refactor_right' ae2) a
+    end.
+
 (* soundness of type arithmetic_expression_right *)
 
 Check arithmetic_expression_right_ind.
@@ -872,6 +891,22 @@ Proof.
     reflexivity.
 Qed.
 
+Corollary super_refactor_right_yields_super_refactored_right_results_revisited :
+  forall ae : arithmetic_expression,
+    super_refactored_rightp (arithmetic_expression_from_arithmetic_expression_right (super_refactor_right' ae)) = true.
+Proof.
+  intro ae.
+  unfold super_refactored_rightp.
+  remember (super_refactor_right' ae) as aer.
+  Check (soundness_of_arithmetic_expression_right aer).
+  destruct (soundness_of_arithmetic_expression_right aer) as [ H_aer| H_aer].
+
+  - rewrite -> H_aer.
+    reflexivity.
+
+  - rewrite -> H_aer.
+    reflexivity.
+Qed.
 (* ********** *)
 
 (* \end{NEW} *)
