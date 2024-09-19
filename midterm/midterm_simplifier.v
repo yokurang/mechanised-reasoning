@@ -66,62 +66,62 @@ Fixpoint eqb_arithmetic_expression (ae1 ae2 : arithmetic_expression) : bool :=
 Inductive expressible_value : Type :=
   Expressible_nat : nat -> expressible_value.
 
-Fixpoint evaluate (ae : arithmetic_expression) : expressible_value :=
+Fixpoint evaluate_ltr (ae : arithmetic_expression) : expressible_value :=
   match ae with
   | Literal n =>
     Expressible_nat n
   | Plus e1 e2 =>
-    match evaluate e1 with
+    match evaluate_ltr e1 with
     | Expressible_nat n1 =>
-      match evaluate e2 with
+      match evaluate_ltr e2 with
       | Expressible_nat n2 =>
         Expressible_nat (n1 + n2)
       end
     end
   | Times e1 e2 =>
-    match evaluate e1 with
+    match evaluate_ltr e1 with
     | Expressible_nat n1 =>
-      match evaluate e2 with
+      match evaluate_ltr e2 with
       | Expressible_nat n2 =>
         Expressible_nat (n1 * n2)
       end
     end
   end.
 
-Lemma fold_unfold_evaluate_Literal :
+Lemma fold_unfold_evaluate_ltr_Literal :
   forall n : nat,
-    evaluate (Literal n) =
+    evaluate_ltr (Literal n) =
       Expressible_nat n.
 Proof.
-  fold_unfold_tactic evaluate.
+  fold_unfold_tactic evaluate_ltr.
 Qed.
 
-Lemma fold_unfold_evaluate_Plus :
+Lemma fold_unfold_evaluate_ltr_Plus :
   forall e1 e2 : arithmetic_expression,
-    evaluate (Plus e1 e2) =
-    match evaluate e1 with
+    evaluate_ltr (Plus e1 e2) =
+    match evaluate_ltr e1 with
     | Expressible_nat n1 =>
-      match evaluate e2 with
+      match evaluate_ltr e2 with
       | Expressible_nat n2 =>
         Expressible_nat (n1 + n2)
       end
     end.
 Proof.
-  fold_unfold_tactic evaluate.
+  fold_unfold_tactic evaluate_ltr.
 Qed.
 
-Lemma fold_unfold_evaluate_Times :
+Lemma fold_unfold_evaluate_ltr_Times :
   forall e1 e2 : arithmetic_expression,
-    evaluate (Times e1 e2) =
-    match evaluate e1 with
+    evaluate_ltr (Times e1 e2) =
+    match evaluate_ltr e1 with
     | Expressible_nat n1 =>
-      match evaluate e2 with
+      match evaluate_ltr e2 with
       | Expressible_nat n2 =>
         Expressible_nat (n1 * n2)
       end
     end.
 Proof.
-  fold_unfold_tactic evaluate.
+  fold_unfold_tactic evaluate_ltr.
 Qed.
 
 (* ********** *)
@@ -243,7 +243,7 @@ Lemma fold_unfold_simplify_naive_Literal :
     simplify_naive (Literal n) =
       Literal n.
 Proof.
-  fold_unfold_tactic evaluate.
+  fold_unfold_tactic simplify_naive.
 Qed.
 
 Lemma fold_unfold_simplify_naive_Plus :
