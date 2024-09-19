@@ -1038,3 +1038,26 @@ Qed.
 (* \end{NEW} *)
 
 (* end of week-04_refactoring-typefully.v *)
+
+(* What if we did it in CPS? *)
+
+(*
+Fixpoint super_refactored_right_CPS (ae : arithmetic_expression) (kp : unit -> bool) (ko : unit -> bool) (kn : unit -> bool) : bool :=
+ *)
+
+Fixpoint super_refactored_right_CPS (ae : arithmetic_expression) (kp : unit -> bool) (ko : unit -> bool) : bool :=
+  match ae with
+  | Literal n =>
+      kp tt
+  | Plus ae1 ae2 =>
+      super_refactored_right_CPS ae1
+        (fun _ => false)
+        (fun _ => super_refactored_right_CPS ae2 kp ko)
+  | Minus ae1 ae2 =>
+      super_refactored_right_CPS ae1
+        (fun _ => super_refactored_right_CPS ae1 kp ko)
+        (fun _ => super_refactored_right_CPS ae2 kp ko)
+  end.
+
+Definition super_refactored_right' (ae : arithmetic_expression) : bool :=
+  super_refactored_right_CPS ae (fun _ => true) (fun _ => true).

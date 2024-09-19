@@ -377,7 +377,7 @@ Proof.
 Qed.
 
 (*
-Lemma about_Magritte_OK :
+Lemma about_Magritte_run_aux :
   forall (ae ae': Magritte_expressible_value)
          (ds : Magritte_data_stack),
     Magritte_evaluate ae = ae' ->
@@ -511,4 +511,4 @@ Proof.
     injection H_injection as H_eq_ae_ae'.    
     rewrite -> H_eq_ae_ae'.
     reflexivity.
-Qed.
+Qed. 
