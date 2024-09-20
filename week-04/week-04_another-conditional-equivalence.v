@@ -217,8 +217,8 @@ Proof.
            rewrite -> (H_lt_n1_n2 H_lte_n2_n1).
            destruct (Nat.ltb_ge n1 (n2 + n3)) as [_ H_lt_n1_n2n3].
            rewrite -> (H_lt_n1_n2n3 (H_n3 n3 eq_refl)).
-           destruct (Nat.ltb_ge (n1 - n2) n3) as [_ H_lt_n3_n1n2].
 
+           destruct (Nat.ltb_ge (n1 - n2) n3) as [_ H_lt_n3_n1n2].
            Search (_ <= _ - _).
            Check (Nat.le_add_le_sub_l n2 n1 n3 (H_n3 n3 eq_refl)).
            assert (H_lte_n3_n1n2 := (Nat.le_add_le_sub_l n2 n1 n3 (H_n3 n3 eq_refl))).
@@ -234,8 +234,6 @@ Proof.
       * reflexivity.
     + reflexivity.
 Qed.
-
-(* Reminder: The treatment of errors is simplified. *)
 
 (* ********** *)
 
