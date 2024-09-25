@@ -133,7 +133,6 @@ Proof.
     intro H_absurd.
     injection H_absurd as one_equals_four.
     discriminate one_equals_four.
-
   - simpl.
     unfold not.
     intro H_absurd.
@@ -217,12 +216,10 @@ Proof.
            rewrite -> (H_lt_n1_n2 H_lte_n2_n1).
            destruct (Nat.ltb_ge n1 (n2 + n3)) as [_ H_lt_n1_n2n3].
            rewrite -> (H_lt_n1_n2n3 (H_n3 n3 eq_refl)).
-
            destruct (Nat.ltb_ge (n1 - n2) n3) as [_ H_lt_n3_n1n2].
            Search (_ <= _ - _).
            Check (Nat.le_add_le_sub_l n2 n1 n3 (H_n3 n3 eq_refl)).
            assert (H_lte_n3_n1n2 := (Nat.le_add_le_sub_l n2 n1 n3 (H_n3 n3 eq_refl))).
-
            Check (H_lt_n3_n1n2 H_lte_n3_n1n2).
            rewrite -> (H_lt_n3_n1n2 H_lte_n3_n1n2).
            rewrite -> Nat.sub_add_distr.
@@ -234,6 +231,76 @@ Proof.
       * reflexivity.
     + reflexivity.
 Qed.
+
+Compute (
+    let ae1 := (Literal 1) in
+    let ae2 := (Literal 2) in
+    let ae3 := (Literal 3) in
+    evaluate_ltr (Minus (Minus ae1 ae2) ae3) =
+      evaluate_ltr (Minus ae1 (Plus ae2 ae3)) ->
+    (match evaluate_ltr ae1 with
+     | Expressible_nat n1 =>
+         Expressible_nat n1 =
+         Expressible_msg (Numerical_underflow n1)
+     | Expressible_msg (Numerical_underflow m1) =>
+         Expressible_msg (Numerical_underflow m1) =
+         Expressible_msg (Numerical_underflow m1)
+    end)
+    \/
+    (match evaluate_ltr ae2 with
+     | Expressible_nat n2 =>
+         Expressible_nat n2 =
+         Expressible_msg (Numerical_underflow n2)
+     | Expressible_msg (Numerical_underflow m2) =>
+         Expressible_msg (Numerical_underflow m2) =
+         Expressible_msg (Numerical_underflow m2)
+    end)
+    \/
+    (match evaluate_ltr ae3 with
+     | Expressible_nat n3 =>
+         Expressible_nat n3 =
+         Expressible_nat n3
+     | Expressible_msg (Numerical_underflow m3) =>
+         Expressible_msg (Numerical_underflow m3) =
+         Expressible_msg (Numerical_underflow m3)
+         /\
+         match evaluate_ltr ae1 with
+         | Expressible_nat n1 =>
+             match evaluate_ltr ae2 with
+             | Expressible_nat n2 =>
+                 n2 <= n1 \/ n2 = n1 + m3
+             | Expressible_msg (Numerical_underflow m2) =>
+                 Expressible_nat m2 =
+                 Expressible_msg (Numerical_underflow m2)
+             end
+         | Expressible_msg (Numerical_underflow m1) =>
+             Expressible_nat m1 =
+             Expressible_msg (Numerical_underflow m1)
+         end
+     end)
+    \/
+      (match evaluate_ltr ae1 with
+       | Expressible_nat n1 =>
+           match evaluate_ltr ae2 with
+           | Expressible_nat n2 =>
+               (n2 <= n1 /\
+                  match evaluate_ltr ae3 with
+                  | Expressible_nat n3 =>
+                      evaluate_ltr ae3 =
+                      Expressible_nat n3 ->
+                      n2 + n3 <= n1
+                  | Expressible_msg (Numerical_underflow m3) =>
+                      Expressible_nat m3 =
+                      Expressible_msg (Numerical_underflow m3)
+                  end)
+           | Expressible_msg (Numerical_underflow m2) =>
+               Expressible_nat m2 =
+               Expressible_msg (Numerical_underflow m2)
+           end
+       | Expressible_msg (Numerical_underflow m1) =>
+           Expressible_nat m1 =
+           Expressible_msg (Numerical_underflow m1)
+    end)).
 
 Proposition Minus_is_conditionally_associative_sort_of_backward :
   forall ae1 ae2 ae3 : arithmetic_expression,
@@ -272,25 +339,30 @@ Proof.
         intros _ _.
         split.
         -- case (n1 <? n2) as [|] eqn:H_lt_n1_n2.
-           ++ Search (_ <? _).
-              Check (Nat.ltb_lt n1 n2).
-              destruct (Nat.ltb_lt n1 n2) as [lt_n1_n2 _].
-              Check (lt_n1_n2 H_lt_n1_n2).
-              Search ( _ < _ -> ~ _).
-              Check (Arith_prebase.lt_not_le_stt n1 n2).
-              Check (Arith_prebase.lt_not_le_stt n1 n2 (lt_n1_n2 H_lt_n1_n2)).
-              assert (not_lte_n2_n1 := (Arith_prebase.lt_not_le_stt n1 n2 (lt_n1_n2 H_lt_n1_n2))).
-              unfold not in not_lte_n2_n1.
-              admit. (* impossible *)
+           ++ case (n1 <? n2 + n3) as [|] eqn:H_n1_lt_n2n3.
+              ** injection H as H_absurd.
+                 Search (_ + _ = _ + _ -> _ = _).
+                 (* H_absurd is discriminate-able if n3 is not 0 because then
+                    n2 = n2 + n3 *)
+                 admit.
+              ** discriminate H.
            ++ apply (Nat.ltb_ge n1 n2).
               exact H_lt_n1_n2.
         -- exists n3.
            intros _.
            case (n1 <? n2 + n3) as [|] eqn:H_lt_n1_n2n3.
+           ++ case (n1 <? n2) as [|] eqn:H_lt_n1_n2.
+              ** injection H as H_absurd.
+                 (* H_absurd is discriminate-able if n3 is not 0 because then
+                    0 = n3 *)
+                 admit.
+              ** case (n1 - n2 <? n3) as [|] eqn:H_n1sn2_lt_n3.
+                 --- injection H as H.
+                     (* Nothing is discriminate-able here. *)
+                     admit.
+                 --- discriminate H.
            ++ apply (Nat.ltb_ge n1 (n2 + n3)).
-              admit. (* impossible *)
-           ++ apply (Nat.ltb_ge n1 (n2 + n3)).
-              exact H_lt_n1_n2n3.
+              exact H_lt_n1_n2n3. 
       * right; right; left.
         case m3 as [].
         exists n.
@@ -301,7 +373,7 @@ Proof.
            case (n1 <? n2) as [|] eqn:H_lt_n1_n2.
            ++ right.
               injection H as H.
-              rewrite <- H.
+              Search (_ = _ -> _).
               admit. (* possible but weird *)
            ++ left.
               apply (Nat.ltb_ge n1 n2).
