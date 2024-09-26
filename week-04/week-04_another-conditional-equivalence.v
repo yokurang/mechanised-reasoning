@@ -1,7 +1,27 @@
 (* week-04_another-conditional-equivalence.v *)
 (* MR 2024 - YSC4217 2024-2024, Sem1 *)
 (* Olivier Danvy <danvy@yale-nus.edu.sg> *)
-(* Version of Thu 05 Sep 2024 *)
+(* Version of Thu 26 Sep 2024 *)
+
+(* student name: Adam Chan
+   e-mail address: adam.chan@u.yale-nus.edu.sg
+   student ID number: A0242453O)
+ *)
+
+(* student name: Alan Matthew Anggara
+   e-mail address: alan.matthew@u.yale-nus.edu.sg
+   student ID number: A0224197B
+ *)
+
+(* student name: Kim Young Il
+   e-mail address: youngil.kim@u.yale-nus.edu.sg
+   student ID number: A0207809Y
+ *)
+
+(* student name: Vibilan Jayanth
+   e-mail address: vibilan@u.yale-nus.edu.sg
+   student ID number: A0242417L
+ *)
 
 (* ********** *)
 
@@ -232,76 +252,6 @@ Proof.
     + reflexivity.
 Qed.
 
-Compute (
-    let ae1 := (Literal 1) in
-    let ae2 := (Literal 2) in
-    let ae3 := (Literal 3) in
-    evaluate_ltr (Minus (Minus ae1 ae2) ae3) =
-      evaluate_ltr (Minus ae1 (Plus ae2 ae3)) ->
-    (match evaluate_ltr ae1 with
-     | Expressible_nat n1 =>
-         Expressible_nat n1 =
-         Expressible_msg (Numerical_underflow n1)
-     | Expressible_msg (Numerical_underflow m1) =>
-         Expressible_msg (Numerical_underflow m1) =
-         Expressible_msg (Numerical_underflow m1)
-    end)
-    \/
-    (match evaluate_ltr ae2 with
-     | Expressible_nat n2 =>
-         Expressible_nat n2 =
-         Expressible_msg (Numerical_underflow n2)
-     | Expressible_msg (Numerical_underflow m2) =>
-         Expressible_msg (Numerical_underflow m2) =
-         Expressible_msg (Numerical_underflow m2)
-    end)
-    \/
-    (match evaluate_ltr ae3 with
-     | Expressible_nat n3 =>
-         Expressible_nat n3 =
-         Expressible_nat n3
-     | Expressible_msg (Numerical_underflow m3) =>
-         Expressible_msg (Numerical_underflow m3) =
-         Expressible_msg (Numerical_underflow m3)
-         /\
-         match evaluate_ltr ae1 with
-         | Expressible_nat n1 =>
-             match evaluate_ltr ae2 with
-             | Expressible_nat n2 =>
-                 n2 <= n1 \/ n2 = n1 + m3
-             | Expressible_msg (Numerical_underflow m2) =>
-                 Expressible_nat m2 =
-                 Expressible_msg (Numerical_underflow m2)
-             end
-         | Expressible_msg (Numerical_underflow m1) =>
-             Expressible_nat m1 =
-             Expressible_msg (Numerical_underflow m1)
-         end
-     end)
-    \/
-      (match evaluate_ltr ae1 with
-       | Expressible_nat n1 =>
-           match evaluate_ltr ae2 with
-           | Expressible_nat n2 =>
-               (n2 <= n1 /\
-                  match evaluate_ltr ae3 with
-                  | Expressible_nat n3 =>
-                      evaluate_ltr ae3 =
-                      Expressible_nat n3 ->
-                      n2 + n3 <= n1
-                  | Expressible_msg (Numerical_underflow m3) =>
-                      Expressible_nat m3 =
-                      Expressible_msg (Numerical_underflow m3)
-                  end)
-           | Expressible_msg (Numerical_underflow m2) =>
-               Expressible_nat m2 =
-               Expressible_msg (Numerical_underflow m2)
-           end
-       | Expressible_msg (Numerical_underflow m1) =>
-           Expressible_nat m1 =
-           Expressible_msg (Numerical_underflow m1)
-    end)).
-
 Proposition Minus_is_conditionally_associative_sort_of_backward :
   forall ae1 ae2 ae3 : arithmetic_expression,
     evaluate_ltr (Minus (Minus ae1 ae2) ae3) =
@@ -323,10 +273,10 @@ Proposition Minus_is_conditionally_associative_sort_of_backward :
       (exists n1 n2 : nat,
           evaluate_ltr ae1 = Expressible_nat n1 ->
           evaluate_ltr ae2 = Expressible_nat n2 ->
-          n2 <= n1 /\
-            (exists n3 : nat,
-                evaluate_ltr ae3 = Expressible_nat n3 ->
-                n2 + n3 <= n1)).
+          (n2 <= n1 /\
+             (exists n3 : nat,
+                 evaluate_ltr ae3 = Expressible_nat n3 ->
+                 n2 + n3 <= n1))).
 Proof.
   intros ae1 ae2 ae3 H.
   rewrite ->3 fold_unfold_evaluate_ltr_Minus in H.
@@ -340,10 +290,8 @@ Proof.
         split.
         -- case (n1 <? n2) as [|] eqn:H_lt_n1_n2.
            ++ case (n1 <? n2 + n3) as [|] eqn:H_n1_lt_n2n3.
-              ** injection H as H_absurd.
-                 Search (_ + _ = _ + _ -> _ = _).
-                 (* H_absurd is discriminate-able if n3 is not 0 because then
-                    n2 = n2 + n3 *)
+              ** injection H as H_absurd. (* ae1 = n1, ae2 = n2, ae3 = n3;
+                                             n1 < n2, n1 < n2 + n3 *)
                  admit.
               ** discriminate H.
            ++ apply (Nat.ltb_ge n1 n2).
@@ -352,29 +300,29 @@ Proof.
            intros _.
            case (n1 <? n2 + n3) as [|] eqn:H_lt_n1_n2n3.
            ++ case (n1 <? n2) as [|] eqn:H_lt_n1_n2.
-              ** injection H as H_absurd.
-                 (* H_absurd is discriminate-able if n3 is not 0 because then
-                    0 = n3 *)
+              ** injection H as H_absurd. (* ae1 = n1, ae2 = n2, ae3 = n3;
+                                             n1 < n2, n1 < n2 + n3 *)
                  admit.
               ** case (n1 - n2 <? n3) as [|] eqn:H_n1sn2_lt_n3.
                  --- injection H as H.
-                     (* Nothing is discriminate-able here. *)
-                     admit.
+                     admit. (* ae1 = n1, ae2 = n2, ae3 = n3;
+                               n1 - n2 < n3. *)   
                  --- discriminate H.
            ++ apply (Nat.ltb_ge n1 (n2 + n3)).
               exact H_lt_n1_n2n3. 
       * right; right; left.
-        case m3 as [].
-        exists n.
+        case m3 as [m3].
+        exists m3.
         split.
         -- reflexivity.
         -- exists n1, n2.
            intros _ _.
            case (n1 <? n2) as [|] eqn:H_lt_n1_n2.
            ++ right.
-              injection H as H.
-              Search (_ = _ -> _).
-              admit. (* possible but weird *)
+              injection H as H_useful.
+              Search (_ - _= _ -> _).
+              admit. (* ae1 = n1, ae2 = n2, ae3 = m3;
+                        n1 < n2. *)
            ++ left.
               apply (Nat.ltb_ge n1 n2).
               exact H_lt_n1_n2.
@@ -386,7 +334,7 @@ Proof.
     case m1 as [].
     exists n.
     reflexivity.
-Qed.
+Abort.
 
 (* ********** *)
 
