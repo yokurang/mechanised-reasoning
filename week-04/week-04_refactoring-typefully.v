@@ -1,11 +1,27 @@
 (* week-04_refactoring-typefully.v *)
 (* MR 2024 - YSC4217 2024-2024, Sem1 *)
 (* Olivier Danvy <danvy@yale-nus.edu.sg> *)
-(* Version of Thu 05 Sep 2024 *)
+(* Version of Fri 20 Sep 2024 *)
 
-(* ********** *)
+(* student name: Adam Chan
+   e-mail address: adam.chan@u.yale-nus.edu.sg
+   student ID number: A0242453O)
+ *)
 
-(* The new points below are delimited with \begin{NEW} and \end{NEW}. *)
+(* student name: Alan Matthew Anggara
+   e-mail address: alan.matthew@u.yale-nus.edu.sg
+   student ID number: A0224197B
+ *)
+
+(* student name: Kim Young Il
+   e-mail address: youngil.kim@u.yale-nus.edu.sg
+   student ID number: A0207809Y
+ *)
+
+(* student name: Vibilan Jayanth
+   e-mail address: vibilan@u.yale-nus.edu.sg
+   student ID number: A0242417L
+ *)
 
 (* ********** *)
 
@@ -72,7 +88,6 @@ Proof.
   fold_unfold_tactic arithmetic_expression_fold.
 Qed.
 
-(* \begin{NEW} *)
 (* Simpler error messages than string encoding. *)
 
 Inductive msg : Type :=
@@ -81,7 +96,6 @@ Inductive msg : Type :=
 Inductive expressible_value : Type :=
   Expressible_nat : nat -> expressible_value
 | Expressible_msg : msg -> expressible_value.
-(* \end{NEW} *)
 
 Fixpoint evaluate_ltr (ae : arithmetic_expression) : expressible_value :=
   match ae with
@@ -251,8 +265,6 @@ Proof.
 Qed.
 
 (* ********** *)
-
-(* \begin{NEW} *)
 
 (* Task 1: What does super_refactor_right do?
    Capture the effect of super_refactor_right into a predicate. *)
@@ -908,7 +920,5 @@ Proof.
     reflexivity.
 Qed.
 (* ********** *)
-
-(* \end{NEW} *)
 
 (* end of week-04_refactoring-typefully.v *)
