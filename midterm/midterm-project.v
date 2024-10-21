@@ -482,7 +482,229 @@ Definition test_simplify (candidate : arithmetic_expression -> arithmetic_expres
      (Plus
         (Name "y"%string)
         (Literal 0)))
-(* etc. *).
+  &&
+  (arithmetic_expression_eqb
+     (candidate (Plus
+                   (Plus (Literal 1) (Literal 2))
+                   (Plus (Literal 3) (Name "x"%string))))
+     (Plus
+        (Literal 6)
+        (Name "x"%string)))
+  &&
+  (arithmetic_expression_eqb
+     (candidate (Plus
+                   (Plus (Literal 1) (Literal 2))
+                   (Plus (Name "x"%string) (Literal 3))))
+     (Plus
+        (Literal 3)
+        (Plus (Name "x"%string) (Literal 3))))
+. 
+
+Compute (simplify_ltr_aux (Plus
+                             (Times
+                                (Literal 2)
+                                (Literal 3))
+                             (Name "x"%string))).
+
+Compute (test_simplify simplify_ltr_aux).
+
+(* ***** test cases ***** *)
+
+Definition test_ae1 : arithmetic_expression :=
+  Plus (Literal 1) (Literal 10).
+
+Definition expected_ae1 : arithmetic_expression :=
+  Literal 11.
+
+Definition test_ae2 : arithmetic_expression :=
+  Plus (Literal 1) (Name "x"%string).
+
+Definition expected_ae2 : arithmetic_expression :=
+  Plus (Literal 1) (Name "x"%string).
+
+
+Definition test_ae3 : arithmetic_expression :=
+  Times (Literal 2) (Literal 3).
+
+Definition expected_ae3 : arithmetic_expression :=
+  Literal 6.
+
+Definition test_ae4 : arithmetic_expression :=
+  Times (Literal 2) (Name "y"%string).
+
+Definition expected_ae4 : arithmetic_expression :=
+  Times (Literal 2) (Name "y"%string).
+
+Definition test_ae5 : arithmetic_expression :=
+  Plus (Plus (Literal 1) (Literal 2)) (Plus (Literal 3) (Name "x"%string)).
+
+Definition expected_ae5 : arithmetic_expression :=
+  Plus (Literal 6) (Name "x"%string).
+
+Definition test_ae6 : arithmetic_expression :=
+  Plus (Times (Literal 2) (Literal 3)) (Name "z"%string).
+
+Definition expected_ae6 : arithmetic_expression :=
+  Plus (Literal 6) (Name "z"%string).
+
+Definition test_ae7 : arithmetic_expression :=
+  Plus (Name "x"%string) (Name "y"%string).
+
+Definition expected_ae7 : arithmetic_expression :=
+  Plus (Name "x"%string) (Name "y"%string).
+
+Definition test_ae8 : arithmetic_expression :=
+  Times (Name "x"%string) (Name "y"%string).
+
+Definition expected_ae8 : arithmetic_expression :=
+  Times (Name "x"%string) (Name "y"%string).
+
+Definition test_ae9 : arithmetic_expression :=
+  Plus (Plus (Literal 2) (Name "x"%string)) (Literal 3).
+
+Definition expected_ae9 : arithmetic_expression :=
+  Plus (Literal 2) (Plus (Name "x"%string) (Literal 3)).
+
+Definition test_ae10 : arithmetic_expression :=
+  Times (Times (Literal 4) (Name "y"%string)) (Literal 5).
+
+Definition expected_ae10 : arithmetic_expression :=
+  Times (Literal 4) (Times (Name "y"%string) (Literal 5)).
+
+Definition test_ae11 : arithmetic_expression :=
+  Plus (Times (Literal 2) (Name "a"%string))
+       (Plus (Times (Literal 3) (Name "b"%string)) (Literal 5)).
+
+Definition expected_ae11 : arithmetic_expression :=
+  Plus (Times (Literal 2) (Name "a"%string))
+       (Plus (Times (Literal 3) (Name "b"%string)) (Literal 5)).
+
+Definition test_ae12 : arithmetic_expression :=
+  Times (Plus (Literal 1) (Name "x"%string))
+        (Plus (Name "y"%string) (Literal 2)).
+
+Definition expected_ae12 : arithmetic_expression :=
+  Times (Plus (Literal 1) (Name "x"%string))
+        (Plus (Name "y"%string) (Literal 2)).
+
+Inductive intermediate_expression : Type :=
+| ExpOK : intermediate_expression
+| ExpZ : intermediate_expression
+| ExpW : intermediate_expression
+| ExpKO : intermediate_expression.
+    
+Fixpoint intermediate_expression_from_arithmetic_expression (ae : arithmetic_expression) : intermediate_expression :=
+  match ae with
+  | Literal n =>
+      match n with
+      | O =>
+          ExpZ
+      | 1 =>
+          ExpW
+      | _ =>
+          ExpOK
+      end     
+  | Name s =>
+      ExpKO
+  | Plus ae1 ae2 =>
+      match intermediate_expression_from_arithmetic_expression ae1 with
+      | ExpOK =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpOK =>
+              ExpOK
+          | ExpZ =>
+              ExpOK
+          | ExpW =>
+              ExpOK
+          | ExpKO =>
+              ExpOK
+          end
+      | ExpZ =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpOK =>
+              ExpOK
+          | ExpZ =>
+              ExpZ 
+          | ExpW =>
+              ExpW 
+          | ExpKO =>
+              ExpKO
+          end
+      | ExpW =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpOK =>
+              ExpOK
+          | ExpZ =>
+              ExpW
+          | ExpW =>
+              ExpOK
+          | ExpKO =>
+              ExpOK
+          end
+      | ExpKO =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpOK =>
+              ExpOK
+          | ExpZ =>
+              ExpKO
+          | ExpW =>
+              ExpOK
+          | ExpKO =>
+              ExpKO
+          end
+      end
+  | Times ae1 ae2 =>
+      match intermediate_expression_from_arithmetic_expression ae1 with
+      | ExpOK =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpOK =>
+              ExpOK
+          | ExpZ =>
+              ExpZ
+          | ExpW =>
+              ExpOK
+          | ExpKO =>
+              ExpOK
+          end
+      | ExpZ =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpOK =>
+              ExpZ
+          | ExpZ =>
+              ExpZ 
+          | ExpW =>
+              ExpZ 
+          | ExpKO =>
+              ExpZ
+          end
+      | ExpW =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpOK =>
+              ExpOK
+          | ExpZ =>
+              ExpZ
+          | ExpW =>
+              ExpW
+          | ExpKO =>
+              ExpKO
+          end
+      | ExpKO =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpOK =>
+              ExpOK
+          | ExpZ =>
+              ExpZ
+          | ExpW =>
+              ExpKO
+          | ExpKO =>
+              ExpKO
+          end
+      end
+  end.      
+
+Compute (intermediate_expression_from_arithmetic_expression test_ae1).
+
+(* etc. *)
 
 Compute (test_simplify simplify_ltr_aux).
 

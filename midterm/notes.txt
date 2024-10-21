@@ -62,3 +62,12 @@ If the language has variables, then the simplifier can have constant folding. If
 it should evaluate that expression and return the Literal. If we simplify subtration, there may be 
 errors. So it should return the simplified term or the error. 
 
+
+--------------------------------------------------------------------------------------------------
+
+We need an intermediate expression that tells us if it's a string of nat. 
+
+ExpNat
+ExpStr
+ExpZ 
+ExpW
