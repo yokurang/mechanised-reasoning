@@ -400,11 +400,61 @@ Definition Magritte_run_ltr (tp : target_program) : Magritte_target_expressible_
 (* Definition:
    A _constant expression_ is an expression that does not contain any names.
    We say that it is "constant" because evaluating it always yields the same expressible nat.
-*)
+ *)
 
 (* Task 1:
    Formalize a simplifier that replaces all constant expressions by the corresponding literal.
 *)
+
+Fixpoint simplify_ltr_aux (ae : arithmetic_expression) : arithmetic_expression :=
+  match ae with
+    Literal n =>
+      Literal n
+  | Name x =>
+      Name x
+  | Plus ae1 ae2 =>
+      match ae1 with
+        Literal n1 =>
+          match ae2 with
+            Literal n2 =>
+              Literal (n1 + n2)
+          | Name x2 =>
+              Plus (Literal n1) (Name x2)
+          | _ =>
+              Plus (simplify_ltr_aux ae1) (simplify_ltr_aux ae2)
+          end
+      | Name _ =>
+          Plus ae1 ae2
+      | _ =>
+          match ae2 with
+          | Name _ =>
+              Plus ae1 ae2
+          | _ =>
+              Plus (simplify_ltr_aux ae1) (simplify_ltr_aux ae2)
+          end
+      end
+  | Times ae1 ae2 =>
+      match ae1 with
+        Literal n1 =>
+          match ae2 with
+            Literal n2 =>
+              Literal (n1 + n2)
+          | Name x2 =>
+              Times (Literal n1) (Name x2)
+          | _ =>
+              Times (simplify_ltr_aux ae1) (simplify_ltr_aux ae2)
+          end
+      | Name _ =>
+          Plus ae1 ae2
+      | _ =>
+          match ae2 with
+            Name _ =>
+              Times ae1 ae2
+          | _ =>
+              Times (simplify_ltr_aux ae1) (simplify_ltr_aux ae2)
+          end
+      end
+  end.
 
 Definition test_simplify (candidate : arithmetic_expression -> arithmetic_expression) : bool :=
   (arithmetic_expression_eqb
@@ -432,8 +482,9 @@ Definition test_simplify (candidate : arithmetic_expression -> arithmetic_expres
      (Plus
         (Name "y"%string)
         (Literal 0)))
-  (* etc. *)
-  .
+(* etc. *).
+
+Compute (test_simplify simplify_ltr_aux).
 
 (* Task 1a:
    Expand the unit-test function just above with more tests
