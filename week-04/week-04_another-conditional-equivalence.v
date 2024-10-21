@@ -174,42 +174,48 @@ Proposition Minus_is_conditionally_associative_sort_of :
       (forall m3 : nat,
           evaluate_ltr ae3 = Expressible_msg (Numerical_underflow m3)
           /\
-          forall (n1 n2 : nat),
-            evaluate_ltr ae1 = Expressible_nat n1 ->
-            evaluate_ltr ae2 = Expressible_nat n2 ->
-            n2 <= n1 \/ n2 = n1 + m3)
+            forall (n1 n2 : nat),
+              n2 <= n1 \/ n2 = n1 + m3 ->
+              evaluate_ltr ae1 = Expressible_nat n1 ->
+              evaluate_ltr ae2 = Expressible_nat n2)
     \/
       (forall n1 n2 : nat,
           evaluate_ltr ae1 = Expressible_nat n1 ->
           evaluate_ltr ae2 = Expressible_nat n2 ->
           n2 <= n1 /\
             (forall n3 : nat,
-                evaluate_ltr ae3 = Expressible_nat n3 ->
-                n2 + n3 <= n1))
-    ->
+                n2 + n3 <= n1 ->
+                evaluate_ltr ae3 = Expressible_nat n3))
+    <->
       evaluate_ltr (Minus (Minus ae1 ae2) ae3) =
         evaluate_ltr (Minus ae1 (Plus ae2 ae3)).
 Proof.
-  intros ae1 ae2 ae3 H.
-  destruct H as [E_ae1_m | [ E_ae2_m | [ E_ae3_m | E_ae_n ]]].
-  - rewrite ->3 fold_unfold_evaluate_ltr_Minus.
+  intros ae1 ae2 ae3.
+  split.
+  - intro H.
+    destruct H as [E_ae1_m | [ E_ae2_m | [ E_ae3_m | E_ae_n ]]].
+  + rewrite ->3 fold_unfold_evaluate_ltr_Minus.
     rewrite -> (E_ae1_m 1).
     reflexivity.
-  - rewrite ->3 fold_unfold_evaluate_ltr_Minus.
+  + rewrite ->3 fold_unfold_evaluate_ltr_Minus.
     rewrite -> fold_unfold_evaluate_ltr_Plus.
     case (evaluate_ltr ae1) as [n1 | m1] eqn:E_ae1.
-    + rewrite -> (E_ae2_m 1).
+    * rewrite -> (E_ae2_m 1).
       reflexivity.
-    + reflexivity.
-  - rewrite ->3 fold_unfold_evaluate_ltr_Minus.
+    * reflexivity.
+  + rewrite ->3 fold_unfold_evaluate_ltr_Minus.
     rewrite -> fold_unfold_evaluate_ltr_Plus.
     case (evaluate_ltr ae1) as [n1 | m1] eqn:E_ae1.
-    + case (evaluate_ltr ae2) as [n2 | m2] eqn:E_ae2.
-      * destruct (E_ae3_m 1) as [E_ae3_m' H_ae1_ae2].
-        rewrite -> E_ae3_m'.
+    * case (evaluate_ltr ae2) as [n2 | m2] eqn:E_ae2.
+      -- case (evaluate_ltr ae3) as [n3 | m3] eqn:E_ae3.
+         destruct (E_ae3_m 1) as [H_absurd H_qq].
+         ++ discriminate H_absurd.
+         ++ 
+      -- destruct (E_ae3_m 1) as [E_ae3_m' H_ae1_ae2].
+         rewrite -> E_ae3_m'.
         Check (H_ae1_ae2 n1 n2 eq_refl eq_refl).
         destruct (H_ae1_ae2 n1 n2 eq_refl eq_refl) as [H_lte_n2_n1 | H_eq_n2_Sn1].
-        -- Search (_ <? _).
+        ++ Search (_ <? _).
            Check (Nat.ltb_ge n1 n2).
            destruct (Nat.ltb_ge n1 n2) as [_ H_lt_n1_n2].
            rewrite -> (H_lt_n1_n2 H_lte_n2_n1).
@@ -255,86 +261,69 @@ Qed.
 Proposition Minus_is_conditionally_associative_sort_of_backward :
   forall ae1 ae2 ae3 : arithmetic_expression,
     evaluate_ltr (Minus (Minus ae1 ae2) ae3) =
-      evaluate_ltr (Minus ae1 (Plus ae2 ae3)) ->
-    (exists m1 : nat,
-        evaluate_ltr ae1 = Expressible_msg (Numerical_underflow m1))
-    \/
-      (exists m2 : nat,
-          evaluate_ltr ae2 = Expressible_msg (Numerical_underflow m2))
-    \/
-      (exists m3 : nat,
-          evaluate_ltr ae3 = Expressible_msg (Numerical_underflow m3)
-          /\
-            exists (n1 n2 : nat),
-              evaluate_ltr ae1 = Expressible_nat n1 ->
-              evaluate_ltr ae2 = Expressible_nat n2 ->
-              n2 <= n1 \/ n2 = n1 + m3)
-    \/
-      (exists n1 n2 : nat,
-          evaluate_ltr ae1 = Expressible_nat n1 ->
-          evaluate_ltr ae2 = Expressible_nat n2 ->
-          (n2 <= n1 /\
-             (exists n3 : nat,
-                 evaluate_ltr ae3 = Expressible_nat n3 ->
-                 n2 + n3 <= n1))).
+      evaluate_ltr (Minus ae1 (Plus ae2 ae3)) <->
+      (forall m1 : nat,
+          evaluate_ltr ae1 = Expressible_msg (Numerical_underflow m1))
+      \/
+        (forall m2 : nat,
+            evaluate_ltr ae2 = Expressible_msg (Numerical_underflow m2))
+      \/
+        (forall n1 n2 m3 : nat,
+            n2 <= n1 \/ n2 = n1 + m3 ->
+            evaluate_ltr ae1 = Expressible_nat n1 ->
+            evaluate_ltr ae2 = Expressible_nat n2 ->
+            evaluate_ltr ae3 = Expressible_msg (Numerical_underflow m3))
+      \/
+        (forall n1 n2 n3 : nat,
+            n2 <= n1 /\ n2 + n3 <= n1 ->
+            evaluate_ltr ae1 = Expressible_nat n1 ->
+            evaluate_ltr ae2 = Expressible_nat n2 ->
+            evaluate_ltr ae3 = Expressible_nat n3).
 Proof.
-  intros ae1 ae2 ae3 H.
-  rewrite ->3 fold_unfold_evaluate_ltr_Minus in H.
-  rewrite -> fold_unfold_evaluate_ltr_Plus in H.
-  case (evaluate_ltr ae1) as [n1 | m1] eqn:E_ae1.
-  - case (evaluate_ltr ae2) as [n2 | m2] eqn:E_ae2.
-    + case (evaluate_ltr ae3) as [n3 | m3] eqn:E_ae3.
-      * right; right; right.
-        exists n1, n2.
-        intros _ _.
-        split.
-        -- case (n1 <? n2) as [|] eqn:H_lt_n1_n2.
-           ++ case (n1 <? n2 + n3) as [|] eqn:H_n1_lt_n2n3.
-              ** injection H as H_absurd. (* ae1 = n1, ae2 = n2, ae3 = n3;
-                                             n1 < n2, n1 < n2 + n3 *)
-                 admit.
-              ** discriminate H.
-           ++ apply (Nat.ltb_ge n1 n2).
-              exact H_lt_n1_n2.
-        -- exists n3.
-           intros _.
-           case (n1 <? n2 + n3) as [|] eqn:H_lt_n1_n2n3.
-           ++ case (n1 <? n2) as [|] eqn:H_lt_n1_n2.
-              ** injection H as H_absurd. (* ae1 = n1, ae2 = n2, ae3 = n3;
-                                             n1 < n2, n1 < n2 + n3 *)
-                 admit.
-              ** case (n1 - n2 <? n3) as [|] eqn:H_n1sn2_lt_n3.
-                 --- injection H as H.
-                     admit. (* ae1 = n1, ae2 = n2, ae3 = n3;
-                               n1 - n2 < n3. *)   
-                 --- discriminate H.
-           ++ apply (Nat.ltb_ge n1 (n2 + n3)).
-              exact H_lt_n1_n2n3. 
-      * right; right; left.
-        case m3 as [m3].
-        exists m3.
-        split.
-        -- reflexivity.
-        -- exists n1, n2.
-           intros _ _.
-           case (n1 <? n2) as [|] eqn:H_lt_n1_n2.
-           ++ right.
-              injection H as H_useful.
-              Search (_ - _= _ -> _).
-              admit. (* ae1 = n1, ae2 = n2, ae3 = m3;
-                        n1 < n2. *)
-           ++ left.
-              apply (Nat.ltb_ge n1 n2).
-              exact H_lt_n1_n2.
-    + right; left.
-      case m2 as [].
-      exists n.
+  intros ae1 ae2 ae3.
+  split.
+  - intros _.
+    case (evaluate_ltr ae1) as [n1 | m1] eqn:E_ae1.
+    + case (evaluate_ltr ae2) as [n2 | m2] eqn:E_ae2.
+      * case (evaluate_ltr ae3) as [n3 | m3] eqn:E_ae3.
+        -- right; right; right.
+           intros n1 n2 n3.
+           reflexivity.
+        -- right; right; left.
+           case m3 as [m3].
+           exists n1, n2, m3.
+           intros _ _ _.
+           reflexivity.
+      * right; left.
+        case m2 as [m2].
+        exists m2.
+        reflexivity.
+    + left.
+      case m1 as [m1].
+      exists m1.
       reflexivity.
-  - left.
-    case m1 as [].
-    exists n.
-    reflexivity.
-Abort.
+
+  - intro H.
+    destruct H as [ E_ae1_m | [ E_ae2_m | [ E_ae3_m | E_ae_n ]]].
+    + rewrite ->3 fold_unfold_evaluate_ltr_Minus.
+      destruct E_ae1_m as [m1 E_ae1_m].
+      rewrite -> (E_ae1_m).
+      reflexivity.
+    + rewrite ->3 fold_unfold_evaluate_ltr_Minus.
+      rewrite -> fold_unfold_evaluate_ltr_Plus.
+      case (evaluate_ltr ae1) as [n1 | m1] eqn:E_ae1.
+      * destruct E_ae2_m as [m2 E_ae2_m].
+        rewrite -> E_ae2_m.
+        reflexivity.
+      * reflexivity.
+    + rewrite ->3 fold_unfold_evaluate_ltr_Minus.
+      rewrite -> fold_unfold_evaluate_ltr_Plus.
+      case (evaluate_ltr ae1) as [n1 | m1] eqn:E_ae1.
+      * case (evaluate_ltr ae2) as [n2 | m2] eqn:E_ae2.
+        -- destruct E_ae3_m as [_ _ _ H_ae1_ae2].
+                rewrite -> E_ae3_m'.
+
+Qed.
 
 (* ********** *)
 
