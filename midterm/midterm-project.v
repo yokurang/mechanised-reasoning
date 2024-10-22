@@ -699,8 +699,99 @@ Fixpoint intermediate_expression_from_arithmetic_expression (ae : arithmetic_exp
               ExpSLR ie11 (ExpSLR ie12 (ExpSLR ie21 ie22))
           end
       end
-  | _ =>
-      ExpS "not implemented"
+  | Times ae1 ae2 =>
+      match intermediate_expression_from_arithmetic_expression ae1 with
+      | ExpN n1 =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpN n2 =>
+              ExpN (n1 * n2)
+          | ExpS s2 =>
+              ExpNL n1 (ExpS s2)
+          | ExpNL n2 ie2 =>
+              ExpNL (n1 * n2) ie2
+          | ExpNR ie2 n2 =>
+              ExpNLR n1 ie2 n2
+          | ExpNLR nl2 ie2 nr2 =>
+              ExpNLR (n1 * nl2) ie2 nr2
+          | ExpSLR ie1 ie2 =>
+              ExpNL n1 (ExpSLR ie1 ie2)
+          end
+      | ExpS s1 =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpN n2 =>
+              ExpNR (ExpS s1) n2
+          | ExpS s2 =>
+              ExpSLR (ExpS s1) (ExpS s2)
+          | ExpNL n2 ie2 =>
+              ExpSLR (ExpS s1) (ExpNL n2 ie2)
+          | ExpNR ie2 n2 =>
+              ExpNR (ExpSLR (ExpS s1) ie2) n2
+          | ExpNLR n21 ie2 n22 =>
+              ExpNR (ExpSLR (ExpSLR (ExpS s1) (ExpN n21)) ie2) n22
+          | ExpSLR ie21 ie22 =>
+              ExpSLR (ExpSLR (ExpS s1) ie21) ie22
+          end
+      | ExpNL n1 ie1 =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpN n2 =>
+              ExpNLR n1 ie1 n2
+          | ExpS s2 =>
+              ExpNL n1 (ExpSLR ie1 (ExpS s2))
+          | ExpNL n2 ie2 =>
+              ExpNL n1 (ExpSLR ie1 (ExpSLR (ExpN n2) ie2))
+          | ExpNR ie2 n2 =>
+              ExpNLR n1 (ExpSLR ie1 ie2) n2
+          | ExpNLR n21 ie2 n22 =>
+              ExpNLR n1 (ExpSLR ie1 (ExpSLR (ExpN n21) ie2)) n22
+          | ExpSLR ie21 ie22 =>
+              ExpNL n1 (ExpSLR ie1 (ExpSLR ie21 ie22))
+          end
+      | ExpNR ie1 n1 =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpN n2 =>
+              ExpNR ie1 (n1 * n2)
+          | ExpS s2 =>
+              ExpSLR ie1 (ExpSLR (ExpN n1) (ExpS s2))
+          | ExpNL n2 ie2 =>
+              ExpSLR ie1 (ExpSLR (ExpN (n1 * n2)) ie2)
+          | ExpNR ie2 n2 =>
+              ExpNR (ExpSLR ie1 (ExpSLR (ExpN n1) ie2)) n2
+          | ExpNLR n21 ie2 n22 =>
+              ExpNR (ExpSLR ie1 (ExpSLR (ExpN (n1 * n21)) ie2)) n22
+          | ExpSLR ie21 ie22 =>
+              ExpSLR ie1 (ExpSLR (ExpN n1) (ExpSLR ie21 ie22))
+          end
+      | ExpNLR n11 ie1 n12 =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpN n2 =>
+              ExpNLR n11 ie1 (n12 * n2)
+          | ExpS s2 =>
+              ExpNL n11 (ExpSLR ie1 (ExpSLR (ExpN n12) (ExpS s2)))
+          | ExpNL n2 ie2 =>
+              ExpNL n11 (ExpSLR ie1 (ExpSLR (ExpN (n12 * n2)) ie2))
+          | ExpNR ie2 n2 =>
+              ExpNLR n11 (ExpSLR ie1 (ExpSLR (ExpN n12) ie2)) n2
+          | ExpNLR n21 ie2 n22 =>
+              ExpNLR n11 (ExpSLR ie1 (ExpSLR (ExpN (n12 * n21)) ie2)) n22
+          | ExpSLR ie21 ie22 =>
+              ExpNL n11 (ExpSLR ie1 (ExpSLR (ExpN n12) (ExpSLR ie21 ie22)))
+          end
+      | ExpSLR ie11 ie12 =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpN n2 =>
+              ExpNR (ExpSLR ie11 ie12) n2
+          | ExpS s2 =>
+              ExpSLR ie11 (ExpSLR ie12 (ExpS s2))
+          | ExpNL n2 ie2 =>
+              ExpSLR ie11 (ExpSLR ie12 (ExpSLR (ExpN n2) ie2))
+          | ExpNR ie2 n2 =>
+              ExpNR (ExpSLR ie11 (ExpSLR ie12 ie2)) n2
+          | ExpNLR n21 ie2 n22 =>
+              ExpNR (ExpSLR ie11 (ExpSLR ie12 (ExpSLR (ExpN n21) ie2))) n22
+          | ExpSLR ie21 ie22 =>
+              ExpSLR ie11 (ExpSLR ie12 (ExpSLR ie21 ie22))
+          end
+      end
   end.
 
 Compute (intermediate_expression_from_arithmetic_expression test_ae1).
