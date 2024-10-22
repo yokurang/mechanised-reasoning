@@ -662,7 +662,7 @@ Inductive constant_or_not_constant : Type :=
 | C : nat -> constant_or_not_constant
 | NC : arithmetic_expression -> constant_or_not_constant.
 
-Fixpoint constant_or_not_constant_from_arithmetic_expression (ae : arithmetic_expression) :
+Fixpoint constant_or_not_constant_from_arithmetic_expression_ltr (ae : arithmetic_expression) :
   constant_or_not_constant :=
   match ae with
   | Literal n =>
@@ -670,16 +670,16 @@ Fixpoint constant_or_not_constant_from_arithmetic_expression (ae : arithmetic_ex
   | Name x =>
       NC (Name x)
   | Plus ae1 ae2 =>
-      match constant_or_not_constant_from_arithmetic_expression ae1 with
+      match constant_or_not_constant_from_arithmetic_expression_ltr ae1 with
       | C n1 =>
-          match constant_or_not_constant_from_arithmetic_expression ae2 with
+          match constant_or_not_constant_from_arithmetic_expression_ltr ae2 with
           | C n2 =>
               C (n1 + n2)
           | NC ae2 =>
               NC (Plus (Literal n1) ae2)
           end
       | NC ae1 =>
-          match constant_or_not_constant_from_arithmetic_expression ae2 with
+          match constant_or_not_constant_from_arithmetic_expression_ltr ae2 with
           | C n2 =>
               NC (Plus ae1 (Literal n2))
           | NC ae2 =>
@@ -687,16 +687,16 @@ Fixpoint constant_or_not_constant_from_arithmetic_expression (ae : arithmetic_ex
           end
       end
   | Times ae1 ae2 =>
-      match constant_or_not_constant_from_arithmetic_expression ae1 with
+      match constant_or_not_constant_from_arithmetic_expression_ltr ae1 with
       | C n1 =>
-          match constant_or_not_constant_from_arithmetic_expression ae2 with
+          match constant_or_not_constant_from_arithmetic_expression_ltr ae2 with
           | C n2 =>
               C (n1 * n2)
           | NC ae2 =>
               NC (Times (Literal n1) ae2)
           end
       | NC ae1 =>
-          match constant_or_not_constant_from_arithmetic_expression ae2 with
+          match constant_or_not_constant_from_arithmetic_expression_ltr ae2 with
           | C n2 =>
               NC (Times ae1 (Literal n2))
           | NC ae2 =>
@@ -705,8 +705,68 @@ Fixpoint constant_or_not_constant_from_arithmetic_expression (ae : arithmetic_ex
       end
   end.
 
+Lemma fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Literal :
+  forall n : nat,
+    constant_or_not_constant_from_arithmetic_expression_ltr (Literal n) = C n.
+Proof.
+  fold_unfold_tactic constant_or_not_constant_from_arithmetic_expression_ltr.
+Qed.
+
+Lemma fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Name :
+  forall x : string,
+    constant_or_not_constant_from_arithmetic_expression_ltr (Name x) = NC (Name x).
+Proof.
+  fold_unfold_tactic constant_or_not_constant_from_arithmetic_expression_ltr.
+Qed.
+
+Lemma fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Plus :
+  forall ae1 ae2 : arithmetic_expression,
+    constant_or_not_constant_from_arithmetic_expression_ltr (Plus ae1 ae2) =
+      match constant_or_not_constant_from_arithmetic_expression_ltr ae1 with
+      | C n1 =>
+          match constant_or_not_constant_from_arithmetic_expression_ltr ae2 with
+          | C n2 =>
+              C (n1 + n2)
+          | NC ae2 =>
+              NC (Plus (Literal n1) ae2)
+          end
+      | NC ae1 =>
+          match constant_or_not_constant_from_arithmetic_expression_ltr ae2 with
+          | C n2 =>
+              NC (Plus ae1 (Literal n2))
+          | NC ae2 =>
+              NC (Plus ae1 ae2)
+          end
+      end.
+Proof.
+  fold_unfold_tactic constant_or_not_constant_from_arithmetic_expression_ltr.
+Qed.
+
+Lemma fold_unfold_intermediate_expression_from_arithmetic_expression_ltr_Times :
+  forall ae1 ae2 : arithmetic_expression,
+    constant_or_not_constant_from_arithmetic_expression_ltr (Times ae1 ae2) =
+      match constant_or_not_constant_from_arithmetic_expression_ltr ae1 with
+      | C n1 =>
+          match constant_or_not_constant_from_arithmetic_expression_ltr ae2 with
+          | C n2 =>
+              C (n1 * n2)
+          | NC ae2 =>
+              NC (Times (Literal n1) ae2)
+          end
+      | NC ae1 =>
+          match constant_or_not_constant_from_arithmetic_expression_ltr ae2 with
+          | C n2 =>
+              NC (Times ae1 (Literal n2))
+          | NC ae2 =>
+              NC (Times ae1 ae2)
+          end
+      end.
+Proof.
+  fold_unfold_tactic constant_or_not_constant_from_arithmetic_expression_ltr.
+Qed.
+
 Definition simplify_ltr (ae : arithmetic_expression) : arithmetic_expression :=
-  match constant_or_not_constant_from_arithmetic_expression ae with
+  match constant_or_not_constant_from_arithmetic_expression_ltr ae with
   | C n =>
       Literal n
   | NC ae' =>
@@ -714,6 +774,119 @@ Definition simplify_ltr (ae : arithmetic_expression) : arithmetic_expression :=
   end.
 
 Compute (test_simplify simplify_ltr).
+
+Fixpoint constant_or_not_constant_from_arithmetic_expression_rtl (ae : arithmetic_expression) :
+  constant_or_not_constant :=
+  match ae with
+  | Literal n =>
+      C n
+  | Name x =>
+      NC (Name x)
+  | Plus ae1 ae2 =>
+      match constant_or_not_constant_from_arithmetic_expression_rtl ae2 with
+      | C n2 =>
+          match constant_or_not_constant_from_arithmetic_expression_rtl ae1 with
+          | C n1 =>
+              C (n1 + n2)
+          | NC ae1 =>
+              NC (Plus ae1 (Literal n2))
+          end
+      | NC ae2 =>
+          match constant_or_not_constant_from_arithmetic_expression_rtl ae1 with
+          | C n1 =>
+              NC (Plus (Literal n1) ae2)
+          | NC ae1 =>
+              NC (Plus ae1 ae2)
+          end
+      end
+  | Times ae1 ae2 =>
+      match constant_or_not_constant_from_arithmetic_expression_rtl ae2 with
+      | C n2 =>
+          match constant_or_not_constant_from_arithmetic_expression_rtl ae1 with
+          | C n1 =>
+              C (n1 * n2)
+          | NC ae1 =>
+              NC (Times ae1 (Literal n2))
+          end
+      | NC ae2 =>
+          match constant_or_not_constant_from_arithmetic_expression_rtl ae1 with
+          | C n1 =>
+              NC (Times (Literal n1) ae2)
+          | NC ae1 =>
+              NC (Times ae1 ae2)
+          end
+      end
+  end.
+
+Lemma fold_unfold_constant_or_not_constant_from_arithmetic_expression_rtl_Literal :
+  forall n : nat,
+    constant_or_not_constant_from_arithmetic_expression_rtl (Literal n) = C n.
+Proof.
+  fold_unfold_tactic constant_or_not_constant_from_arithmetic_expression_rtl.
+Qed.
+
+Lemma fold_unfold_constant_or_not_constant_from_arithmetic_expression_rtl_Name :
+  forall x : string,
+    constant_or_not_constant_from_arithmetic_expression_rtl (Name x) = NC (Name x).
+Proof.
+  fold_unfold_tactic constant_or_not_constant_from_arithmetic_expression_rtl.
+Qed.
+
+Lemma fold_unfold_constant_or_not_constant_from_arithmetic_expression_rtl_Plus :
+  forall ae1 ae2 : arithmetic_expression,
+    constant_or_not_constant_from_arithmetic_expression_rtl (Plus ae1 ae2) =
+      match constant_or_not_constant_from_arithmetic_expression_rtl ae2 with
+      | C n2 =>
+          match constant_or_not_constant_from_arithmetic_expression_rtl ae1 with
+          | C n1 =>
+              C (n1 + n2)
+          | NC ae1 =>
+              NC (Plus ae1 (Literal n2))
+          end
+      | NC ae2 =>
+          match constant_or_not_constant_from_arithmetic_expression_rtl ae1 with
+          | C n1 =>
+              NC (Plus (Literal n1) ae2)
+          | NC ae1 =>
+              NC (Plus ae1 ae2)
+          end
+      end.
+Proof.
+  fold_unfold_tactic constant_or_not_constant_from_arithmetic_expression_rtl.
+Qed.
+
+Lemma fold_unfold_intermediate_expression_from_arithmetic_expression_rtl_Times :
+  forall ae1 ae2 : arithmetic_expression,
+    constant_or_not_constant_from_arithmetic_expression_rtl (Times ae1 ae2) =
+      match constant_or_not_constant_from_arithmetic_expression_rtl ae2 with
+      | C n2 =>
+          match constant_or_not_constant_from_arithmetic_expression_rtl ae1 with
+          | C n1 =>
+              C (n1 * n2)
+          | NC ae1 =>
+              NC (Times ae1 (Literal n2))
+          end
+      | NC ae2 =>
+          match constant_or_not_constant_from_arithmetic_expression_rtl ae1 with
+          | C n1 =>
+              NC (Times (Literal n1) ae2)
+          | NC ae1 =>
+              NC (Times ae1 ae2)
+          end
+      end.
+Proof.
+  fold_unfold_tactic constant_or_not_constant_from_arithmetic_expression_rtl.
+Qed.
+
+Definition simplify_rtl (ae : arithmetic_expression) : arithmetic_expression :=
+  match constant_or_not_constant_from_arithmetic_expression_rtl ae with
+  | C n =>
+      Literal n
+  | NC ae' =>
+      ae'
+  end.
+
+Compute (test_simplify simplify_rtl).
 
 (* Task 1c:
    Argue that your unit tests provide code coverage.
