@@ -406,7 +406,7 @@ Definition Magritte_run_ltr (tp : target_program) : Magritte_target_expressible_
    Formalize a simplifier that replaces all constant expressions by the corresponding literal.
 *)
 
-Fixpoint simplify_ltr_aux (ae : arithmetic_expression) : arithmetic_expression :=
+Fixpoint simplify_ltr_simple (ae : arithmetic_expression) : arithmetic_expression :=
   match ae with
     Literal n =>
       Literal n
@@ -421,39 +421,13 @@ Fixpoint simplify_ltr_aux (ae : arithmetic_expression) : arithmetic_expression :
           | Name x2 =>
               Plus (Literal n1) (Name x2)
           | _ =>
-              Plus (simplify_ltr_aux ae1) (simplify_ltr_aux ae2)
+              Plus (simplify_ltr_simple ae1) (simplify_ltr_simple ae2) (* Need to peak *)
           end
-      | Name _ =>
-          Plus ae1 ae2
       | _ =>
-          match ae2 with
-          | Name _ =>
-              Plus ae1 ae2
-          | _ =>
-              Plus (simplify_ltr_aux ae1) (simplify_ltr_aux ae2)
-          end
+          Name "not implemented"%string
       end
-  | Times ae1 ae2 =>
-      match ae1 with
-        Literal n1 =>
-          match ae2 with
-            Literal n2 =>
-              Literal (n1 + n2)
-          | Name x2 =>
-              Times (Literal n1) (Name x2)
-          | _ =>
-              Times (simplify_ltr_aux ae1) (simplify_ltr_aux ae2)
-          end
-      | Name _ =>
-          Plus ae1 ae2
-      | _ =>
-          match ae2 with
-            Name _ =>
-              Times ae1 ae2
-          | _ =>
-              Times (simplify_ltr_aux ae1) (simplify_ltr_aux ae2)
-          end
-      end
+  | _ =>
+      Name "not implemented"%string
   end.
 
 Definition test_simplify (candidate : arithmetic_expression -> arithmetic_expression) : bool :=
@@ -485,28 +459,31 @@ Definition test_simplify (candidate : arithmetic_expression -> arithmetic_expres
   &&
   (arithmetic_expression_eqb
      (candidate (Plus
-                   (Plus (Literal 1) (Literal 2))
-                   (Plus (Literal 3) (Name "x"%string))))
-     (Plus
-        (Literal 6)
-        (Name "x"%string)))
-  &&
-  (arithmetic_expression_eqb
-     (candidate (Plus
-                   (Plus (Literal 1) (Literal 2))
-                   (Plus (Name "x"%string) (Literal 3))))
+                   (Plus
+                      (Literal 1)
+                      (Literal 2))
+                   (Plus
+                      (Literal 3)
+                      (Name "x"%string))))
      (Plus
         (Literal 3)
-        (Plus (Name "x"%string) (Literal 3))))
-. 
-
-Compute (simplify_ltr_aux (Plus
-                             (Times
-                                (Literal 2)
-                                (Literal 3))
-                             (Name "x"%string))).
-
-Compute (test_simplify simplify_ltr_aux).
+        (Plus
+           (Literal 3)
+           (Name "x"%string))))
+  &&
+  (arithmetic_expression_eqb
+     (candidate
+        (Plus
+           (Plus
+              (Literal 1)
+              (Literal 2))
+           (Plus
+              (Name "x"%string)
+              (Literal 3))))
+     (Plus
+        (Literal 3)
+        (Plus (Name "x"%string)
+           (Literal 3)))).
 
 (* ***** test cases ***** *)
 
@@ -590,148 +567,6 @@ Definition expected_ae12 : arithmetic_expression :=
   Times (Plus (Literal 1) (Name "x"%string))
         (Plus (Name "y"%string) (Literal 2)).
 
-(* Intuition: where are the natural numbers? *)
-Inductive intermediate_expression : Type :=
-| ExpN : nat -> intermediate_expression
-| ExpS : string -> intermediate_expression
-| ExpNL : nat -> intermediate_expression -> intermediate_expression (* leftmost position *) 
-| ExpNR : intermediate_expression -> nat -> intermediate_expression (* rightmost position *)
-| ExpNLR : nat -> intermediate_expression -> nat -> intermediate_expression (* left and right most *)
-| ExpSLR : intermediate_expression -> intermediate_expression -> intermediate_expression (* not at left and right most *)
-.
-    
-Fixpoint intermediate_expression_from_arithmetic_expression (ae : arithmetic_expression) : intermediate_expression :=
-  match ae with
-  | Literal n =>
-      ExpN n
-  | Name s =>
-      ExpS s
-  | Plus ae1 ae2 =>
-      match intermediate_expression_from_arithmetic_expression ae1 with
-      | ExpN n1 =>
-          match intermediate_expression_from_arithmetic_expression ae2 with
-          | ExpN n2 =>
-              ExpN (n1 + n2)
-          | ExpS s2 =>
-              ExpNL n1 (ExpS s2)
-          | ExpNL n2 ie2 =>
-              ExpNL (n1 + n2) ie2
-          | ExpNR ie2 n2 =>
-              ExpNLR n1 ie2 n2
-          | ExpNLR nl2 ie2 nr2 =>
-              ExpNLR (n1 + nl2) ie2 nr2
-          | ExpSLR ie1 ie2 =>
-              ExpNL n1 (ExpSLR ie1 ie2)
-          end
-      | ExpS s1 =>
-          match intermediate_expression_from_arithmetic_expression ae2 with
-          | ExpN n2 =>
-              ExpNR (ExpS s1) n2
-          | ExpS s2 =>
-              ExpSLR (ExpS s1) (ExpS s2)
-          | ExpNL n2 ie2 =>
-              ExpSLR (ExpS s1) (ExpNL n2 ie2)
-          | ExpNR ie2 n2 =>
-              ExpNR (ExpSLR (ExpS s1) ie2) n2
-          | ExpNLR n21 ie2 n22 =>
-              ExpNR (ExpSLR (ExpSLR (ExpS s1) (ExpN n21)) ie2) n22
-          | ExpSLR ie21 ie22 =>
-              ExpSLR (ExpSLR (ExpS s1) ie21) ie22
-          end
-      | ExpNL n1 ie1 =>
-          match intermediate_expression_from_arithmetic_expression ae2 with
-          | ExpN n2 =>
-              ExpNLR n1 ie1 n2
-          | ExpS s2 =>
-              ExpNL n1 (ExpSLR ie1 (ExpS s2))
-          | ExpNL n2 ie2 =>
-              ExpNL n1 (ExpSLR ie1 (ExpSLR (ExpN n2) ie2))
-          | ExpNR ie2 n2 =>
-              ExpNLR n1 (ExpSLR ie1 ie2) n2
-          | ExpNLR n21 ie2 n22 =>
-              ExpNLR n1 (ExpSLR ie1 (ExpSLR (ExpN n21) ie2)) n22
-          | ExpSLR ie21 ie22 =>
-              ExpNL n1 (ExpSLR ie1 (ExpSLR ie21 ie22))
-          end
-      | ExpNR ie1 n1 =>
-          match intermediate_expression_from_arithmetic_expression ae2 with
-          | ExpN n2 =>
-              ExpNR ie1 (n1 + n2)
-          | ExpS s2 =>
-              ExpSLR ie1 (ExpSLR (ExpN n1) (ExpS s2))
-          | ExpNL n2 ie2 =>
-              ExpSLR ie1 (ExpSLR (ExpN (n1 + n2)) ie2)
-          | ExpNR ie2 n2 =>
-              ExpNR (ExpSLR ie1 (ExpSLR (ExpN n1) ie2)) n2
-          | ExpNLR n21 ie2 n22 =>
-              ExpNR (ExpSLR ie1 (ExpSLR (ExpN (n1 + n21)) ie2)) n22
-          | ExpSLR ie21 ie22 =>
-              ExpSLR ie1 (ExpSLR (ExpN n1) (ExpSLR ie21 ie22))
-          end
-      | ExpNLR n11 ie1 n12 =>
-          match intermediate_expression_from_arithmetic_expression ae2 with
-          | ExpN n2 =>
-              ExpNLR n11 ie1 (n12 + n2)
-          | ExpS s2 =>
-              ExpNL n11 (ExpSLR ie1 (ExpSLR (ExpN n12) (ExpS s2)))
-          | ExpNL n2 ie2 =>
-              ExpNL n11 (ExpSLR ie1 (ExpSLR (ExpN (n12 + n2)) ie2))
-          | ExpNR ie2 n2 =>
-              ExpNLR n11 (ExpSLR ie1 (ExpSLR (ExpN n12) ie2)) n2
-          | ExpNLR n21 ie2 n22 =>
-              ExpNLR n11 (ExpSLR ie1 (ExpSLR (ExpN (n12 + n21)) ie2)) n22
-          | ExpSLR ie21 ie22 =>
-              ExpNL n11 (ExpSLR ie1 (ExpSLR (ExpN n12) (ExpSLR ie21 ie22)))
-          end
-      | ExpSLR ie11 ie12 =>
-          match intermediate_expression_from_arithmetic_expression ae2 with
-          | ExpN n2 =>
-              ExpNR (ExpSLR ie11 ie12) n2
-          | ExpS s2 =>
-              ExpSLR ie11 (ExpSLR ie12 (ExpS s2))
-          | ExpNL n2 ie2 =>
-              ExpSLR ie11 (ExpSLR ie12 (ExpSLR (ExpN n2) ie2))
-          | ExpNR ie2 n2 =>
-              ExpNR (ExpSLR ie11 (ExpSLR ie12 ie2)) n2
-          | ExpNLR n21 ie2 n22 =>
-              ExpNR (ExpSLR ie11 (ExpSLR ie12 (ExpSLR (ExpN n21) ie2))) n22
-          | ExpSLR ie21 ie22 =>
-              ExpSLR ie11 (ExpSLR ie12 (ExpSLR ie21 ie22))
-          end
-      end
-  | _ =>
-      ExpS "not implemented"
-  end.
-
-Compute (intermediate_expression_from_arithmetic_expression test_ae1).
-Compute (intermediate_expression_from_arithmetic_expression test_ae2).
-Compute (intermediate_expression_from_arithmetic_expression test_ae5).
-Compute (intermediate_expression_from_arithmetic_expression test_ae7).
-Compute (intermediate_expression_from_arithmetic_expression test_ae9).
-Compute (intermediate_expression_from_arithmetic_expression
-           (Plus
-              (Plus
-                 (Plus
-                    (Plus
-                       (Literal 1)
-                       (Name "x"%string))
-                    (Plus
-                       (Name "y"%string)
-                       (Literal 1)))
-                 (Plus
-                    (Plus
-                       (Plus
-                          (Literal 1)
-                          (Plus
-                             (Name "z"%string)
-                             (Literal 1)))
-                       (Literal 1))
-                    (Literal 1)))
-                 (Name "foo"%string))).
-  (* etc. *)
-
-Compute (test_simplify simplify_ltr_aux).
-
 (* Task 1a:
    Expand the unit-test function just above with more tests
    and argue that your tests cover all possible cases.
@@ -740,6 +575,62 @@ Compute (test_simplify simplify_ltr_aux).
 (* Task 1b:
    Implement a simplifier and verify that it satisfies the unit-test function.
 *)
+
+Inductive constant_or_not_constant : Type :=
+  C : nat -> constant_or_not_constant
+| NC : arithmetic_expression -> constant_or_not_constant.
+
+Fixpoint simplify_ltr_aux (ae : arithmetic_expression) : constant_or_not_constant :=
+  match ae with
+  | Literal n =>
+      C n
+  | Name s =>
+      NC (Name s)
+  | Plus ae1 ae2 =>
+      match simplify_ltr_aux ae1 with
+      | C n1 => 
+          match simplify_ltr_aux ae2 with
+          | C n2 =>
+              C (n1 + n2)
+          | NC ncae2 =>
+              NC (Plus (Literal n1) ncae2)
+          end
+      | NC ncae1 =>
+          match simplify_ltr_aux ae2 with
+          | C n2 =>
+              NC (Plus ncae1 (Literal n2))
+          | NC ncae2 =>
+              NC (Plus ncae1 ncae2)
+          end
+      end
+  | Times ae1 ae2 =>
+      match simplify_ltr_aux ae1 with
+      | C n1 => 
+          match simplify_ltr_aux ae2 with
+          | C n2 =>
+              C (n1 * n2)
+          | NC ncae2 =>
+              NC (Times (Literal n1) ncae2)
+          end
+      | NC ncae1 =>
+          match simplify_ltr_aux ae2 with
+          | C n2 =>
+              NC (Times ncae1 (Literal n2))
+          | NC ncae2 =>
+              NC (Times ncae1 ncae2)
+          end
+      end
+  end.
+
+Definition simplify_ltr (ae : arithmetic_expression) : arithmetic_expression :=
+  match simplify_ltr_aux ae with
+    C n =>
+      Literal n
+  | NC ae' =>
+      ae'
+  end.
+
+Compute (test_simplify simplify_ltr).
 
 (* Task 1c:
    Argue that your unit tests provide code coverage.
