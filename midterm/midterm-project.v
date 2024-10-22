@@ -950,7 +950,7 @@ Proposition not_constant_is_injective :
     ae1 = ae2.
 Admitted.
 
-Proposition simplify_ltr_aux_is_injective :
+Proposition about_simplify_ltr_aux :
   forall ae1 a1 ae2 a2 : arithmetic_expression,
     simplify_ltr_aux ae1 = NC a1 ->
     simplify_ltr_aux ae2 = NC a2 ->
@@ -971,7 +971,7 @@ Proof.
     rewrite -> fold_unfold_simplify_ltr_aux_Literal in H_absurd.
     discriminate H_absurd.
   - intro H.
-    Check (simplify_ltr_aux_is_injective (Name x) a a a).
+    Check (not_constant_is_injective (Name x) a).
     rewrite -> fold_unfold_simplify_ltr_aux_Name in H.
     Check (not_constant_is_injective (Name x) a H).
     rewrite <- (not_constant_is_injective (Name x) a H).
@@ -980,6 +980,13 @@ Proof.
   - intro H.
     case (simplify_ltr_aux (Plus ae1 ae2)) as [c | nc] eqn:C_Plus.
     + discriminate H.
+    + assert (H_inj := not_constant_is_injective nc a H).
+      rewrite <- H.
+      rewrite <- C_Plus.
+      rewrite <- H_inj.
+      
+      rewrite <- H_inj.
+      assert (IHae1 := IHae1 nc).
     
 Admitted.
 
