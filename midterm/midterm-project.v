@@ -522,7 +522,6 @@ Definition test_ae2 : arithmetic_expression :=
 Definition expected_ae2 : arithmetic_expression :=
   Plus (Literal 1) (Name "x"%string).
 
-
 Definition test_ae3 : arithmetic_expression :=
   Times (Literal 2) (Literal 3).
 
@@ -536,13 +535,17 @@ Definition expected_ae4 : arithmetic_expression :=
   Times (Literal 2) (Name "y"%string).
 
 Definition test_ae5 : arithmetic_expression :=
-  Plus (Plus (Literal 1) (Literal 2)) (Plus (Literal 3) (Name "x"%string)).
+  Plus
+    (Plus (Literal 1) (Literal 2))
+    (Plus (Literal 3) (Name "x"%string)).
 
 Definition expected_ae5 : arithmetic_expression :=
   Plus (Literal 6) (Name "x"%string).
 
 Definition test_ae6 : arithmetic_expression :=
-  Plus (Times (Literal 2) (Literal 3)) (Name "z"%string).
+  Plus
+    (Times (Literal 2) (Literal 3))
+    (Name "z"%string).
 
 Definition expected_ae6 : arithmetic_expression :=
   Plus (Literal 6) (Name "z"%string).
@@ -587,124 +590,145 @@ Definition expected_ae12 : arithmetic_expression :=
   Times (Plus (Literal 1) (Name "x"%string))
         (Plus (Name "y"%string) (Literal 2)).
 
+(* Intuition: where are the natural numbers? *)
 Inductive intermediate_expression : Type :=
-| ExpOK : intermediate_expression
-| ExpZ : intermediate_expression
-| ExpW : intermediate_expression
-| ExpKO : intermediate_expression.
+| ExpN : nat -> intermediate_expression
+| ExpS : string -> intermediate_expression
+| ExpNL : nat -> intermediate_expression -> intermediate_expression (* leftmost position *) 
+| ExpNR : intermediate_expression -> nat -> intermediate_expression (* rightmost position *)
+| ExpNLR : nat -> intermediate_expression -> nat -> intermediate_expression (* left and right most *)
+| ExpSLR : intermediate_expression -> intermediate_expression -> intermediate_expression (* not at left and right most *)
+.
     
 Fixpoint intermediate_expression_from_arithmetic_expression (ae : arithmetic_expression) : intermediate_expression :=
   match ae with
   | Literal n =>
-      match n with
-      | O =>
-          ExpZ
-      | 1 =>
-          ExpW
-      | _ =>
-          ExpOK
-      end     
+      ExpN n
   | Name s =>
-      ExpKO
+      ExpS s
   | Plus ae1 ae2 =>
       match intermediate_expression_from_arithmetic_expression ae1 with
-      | ExpOK =>
+      | ExpN n1 =>
           match intermediate_expression_from_arithmetic_expression ae2 with
-          | ExpOK =>
-              ExpOK
-          | ExpZ =>
-              ExpOK
-          | ExpW =>
-              ExpOK
-          | ExpKO =>
-              ExpOK
+          | ExpN n2 =>
+              ExpN (n1 + n2)
+          | ExpS s2 =>
+              ExpNL n1 (ExpS s2)
+          | ExpNL n2 ie2 =>
+              ExpNL (n1 + n2) ie2
+          | ExpNR ie2 n2 =>
+              ExpNLR n1 ie2 n2
+          | ExpNLR nl2 ie2 nr2 =>
+              ExpNLR (n1 + nl2) ie2 nr2
+          | ExpSLR ie1 ie2 =>
+              ExpNL n1 (ExpSLR ie1 ie2)
           end
-      | ExpZ =>
+      | ExpS s1 =>
           match intermediate_expression_from_arithmetic_expression ae2 with
-          | ExpOK =>
-              ExpOK
-          | ExpZ =>
-              ExpZ 
-          | ExpW =>
-              ExpW 
-          | ExpKO =>
-              ExpKO
+          | ExpN n2 =>
+              ExpNR (ExpS s1) n2
+          | ExpS s2 =>
+              ExpSLR (ExpS s1) (ExpS s2)
+          | ExpNL n2 ie2 =>
+              ExpSLR (ExpS s1) (ExpNL n2 ie2)
+          | ExpNR ie2 n2 =>
+              ExpNR (ExpSLR (ExpS s1) ie2) n2
+          | ExpNLR n21 ie2 n22 =>
+              ExpNR (ExpSLR (ExpSLR (ExpS s1) (ExpN n21)) ie2) n22
+          | ExpSLR ie21 ie22 =>
+              ExpSLR (ExpSLR (ExpS s1) ie21) ie22
           end
-      | ExpW =>
+      | ExpNL n1 ie1 =>
           match intermediate_expression_from_arithmetic_expression ae2 with
-          | ExpOK =>
-              ExpOK
-          | ExpZ =>
-              ExpW
-          | ExpW =>
-              ExpOK
-          | ExpKO =>
-              ExpOK
+          | ExpN n2 =>
+              ExpNLR n1 ie1 n2
+          | ExpS s2 =>
+              ExpNL n1 (ExpSLR ie1 (ExpS s2))
+          | ExpNL n2 ie2 =>
+              ExpNL n1 (ExpSLR ie1 (ExpSLR (ExpN n2) ie2))
+          | ExpNR ie2 n2 =>
+              ExpNLR n1 (ExpSLR ie1 ie2) n2
+          | ExpNLR n21 ie2 n22 =>
+              ExpNLR n1 (ExpSLR ie1 (ExpSLR (ExpN n21) ie2)) n22
+          | ExpSLR ie21 ie22 =>
+              ExpNL n1 (ExpSLR ie1 (ExpSLR ie21 ie22))
           end
-      | ExpKO =>
+      | ExpNR ie1 n1 =>
           match intermediate_expression_from_arithmetic_expression ae2 with
-          | ExpOK =>
-              ExpOK
-          | ExpZ =>
-              ExpKO
-          | ExpW =>
-              ExpOK
-          | ExpKO =>
-              ExpKO
+          | ExpN n2 =>
+              ExpNR ie1 (n1 + n2)
+          | ExpS s2 =>
+              ExpSLR ie1 (ExpSLR (ExpN n1) (ExpS s2))
+          | ExpNL n2 ie2 =>
+              ExpSLR ie1 (ExpSLR (ExpN (n1 + n2)) ie2)
+          | ExpNR ie2 n2 =>
+              ExpNR (ExpSLR ie1 (ExpSLR (ExpN n1) ie2)) n2
+          | ExpNLR n21 ie2 n22 =>
+              ExpNR (ExpSLR ie1 (ExpSLR (ExpN (n1 + n21)) ie2)) n22
+          | ExpSLR ie21 ie22 =>
+              ExpSLR ie1 (ExpSLR (ExpN n1) (ExpSLR ie21 ie22))
+          end
+      | ExpNLR n11 ie1 n12 =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpN n2 =>
+              ExpNLR n11 ie1 (n12 + n2)
+          | ExpS s2 =>
+              ExpNL n11 (ExpSLR ie1 (ExpSLR (ExpN n12) (ExpS s2)))
+          | ExpNL n2 ie2 =>
+              ExpNL n11 (ExpSLR ie1 (ExpSLR (ExpN (n12 + n2)) ie2))
+          | ExpNR ie2 n2 =>
+              ExpNLR n11 (ExpSLR ie1 (ExpSLR (ExpN n12) ie2)) n2
+          | ExpNLR n21 ie2 n22 =>
+              ExpNLR n11 (ExpSLR ie1 (ExpSLR (ExpN (n12 + n21)) ie2)) n22
+          | ExpSLR ie21 ie22 =>
+              ExpNL n11 (ExpSLR ie1 (ExpSLR (ExpN n12) (ExpSLR ie21 ie22)))
+          end
+      | ExpSLR ie11 ie12 =>
+          match intermediate_expression_from_arithmetic_expression ae2 with
+          | ExpN n2 =>
+              ExpNR (ExpSLR ie11 ie12) n2
+          | ExpS s2 =>
+              ExpSLR ie11 (ExpSLR ie12 (ExpS s2))
+          | ExpNL n2 ie2 =>
+              ExpSLR ie11 (ExpSLR ie12 (ExpSLR (ExpN n2) ie2))
+          | ExpNR ie2 n2 =>
+              ExpNR (ExpSLR ie11 (ExpSLR ie12 ie2)) n2
+          | ExpNLR n21 ie2 n22 =>
+              ExpNR (ExpSLR ie11 (ExpSLR ie12 (ExpSLR (ExpN n21) ie2))) n22
+          | ExpSLR ie21 ie22 =>
+              ExpSLR ie11 (ExpSLR ie12 (ExpSLR ie21 ie22))
           end
       end
-  | Times ae1 ae2 =>
-      match intermediate_expression_from_arithmetic_expression ae1 with
-      | ExpOK =>
-          match intermediate_expression_from_arithmetic_expression ae2 with
-          | ExpOK =>
-              ExpOK
-          | ExpZ =>
-              ExpZ
-          | ExpW =>
-              ExpOK
-          | ExpKO =>
-              ExpOK
-          end
-      | ExpZ =>
-          match intermediate_expression_from_arithmetic_expression ae2 with
-          | ExpOK =>
-              ExpZ
-          | ExpZ =>
-              ExpZ 
-          | ExpW =>
-              ExpZ 
-          | ExpKO =>
-              ExpZ
-          end
-      | ExpW =>
-          match intermediate_expression_from_arithmetic_expression ae2 with
-          | ExpOK =>
-              ExpOK
-          | ExpZ =>
-              ExpZ
-          | ExpW =>
-              ExpW
-          | ExpKO =>
-              ExpKO
-          end
-      | ExpKO =>
-          match intermediate_expression_from_arithmetic_expression ae2 with
-          | ExpOK =>
-              ExpOK
-          | ExpZ =>
-              ExpZ
-          | ExpW =>
-              ExpKO
-          | ExpKO =>
-              ExpKO
-          end
-      end
-  end.      
+  | _ =>
+      ExpS "not implemented"
+  end.
 
 Compute (intermediate_expression_from_arithmetic_expression test_ae1).
-
-(* etc. *)
+Compute (intermediate_expression_from_arithmetic_expression test_ae2).
+Compute (intermediate_expression_from_arithmetic_expression test_ae5).
+Compute (intermediate_expression_from_arithmetic_expression test_ae7).
+Compute (intermediate_expression_from_arithmetic_expression test_ae9).
+Compute (intermediate_expression_from_arithmetic_expression
+           (Plus
+              (Plus
+                 (Plus
+                    (Plus
+                       (Literal 1)
+                       (Name "x"%string))
+                    (Plus
+                       (Name "y"%string)
+                       (Literal 1)))
+                 (Plus
+                    (Plus
+                       (Plus
+                          (Literal 1)
+                          (Plus
+                             (Name "z"%string)
+                             (Literal 1)))
+                       (Literal 1))
+                    (Literal 1)))
+                 (Name "foo"%string))).
+  (* etc. *)
 
 Compute (test_simplify simplify_ltr_aux).
 
