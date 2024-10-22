@@ -1,0 +1,3 @@
+TODO:
+1. Implement code coverage unit tests for constnat_not_constant_from_arithmetic_expression and simplify_ltr.
+2. Someone implement the solution for the commuting diagram? Just to get it out of the way. Should be a lot of copy pasting but removing SUB and adding Times.
