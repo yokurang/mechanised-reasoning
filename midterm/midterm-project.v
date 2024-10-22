@@ -440,7 +440,7 @@ Fixpoint simplify_ltr_simple (ae : arithmetic_expression) : arithmetic_expressio
   TODO: Implement a more robust but non-redundant unit test for constant_or_not_constant_from_arithmetic_expression with code coverage.
 *)
 
-
+(*
 Definition test_simplify (candidate : arithmetic_expression -> arithmetic_expression) : bool :=
   (arithmetic_expression_eqb
      (candidate (Plus
@@ -495,6 +495,7 @@ Definition test_simplify (candidate : arithmetic_expression -> arithmetic_expres
         (Literal 3)
         (Plus (Name "x"%string)
            (Literal 3)))).
+ *)
 
 (* ***** test cases ***** *)
 
@@ -591,10 +592,10 @@ Definition test_ae9 : arithmetic_expression :=
 
 Definition expected_ae9 : arithmetic_expression :=
   Plus
-    (Literal 2)
     (Plus
-       (Name "x"%string)
-       (Literal 3)).
+       (Literal 2)
+       (Name "x"%string))
+    (Literal 3).
 
 Definition test_ae10 : arithmetic_expression :=
   Times
@@ -605,10 +606,10 @@ Definition test_ae10 : arithmetic_expression :=
 
 Definition expected_ae10 : arithmetic_expression :=
   Times
-    (Literal 4)
     (Times
-       (Name "y"%string)
-       (Literal 5)).
+       (Literal 4)
+       (Name "y"%string))
+    (Literal 5).
 
 Definition test_ae11 : arithmetic_expression :=
   Plus
@@ -649,6 +650,52 @@ Definition expected_ae12 : arithmetic_expression :=
     (Plus
        (Name "y"%string)
        (Literal 2)).
+
+Definition test_ae13 : arithmetic_expression :=
+  (Plus
+     (Plus
+        (Literal 1)
+        (Literal 2))
+     (Plus
+        (Name "x"%string)
+        (Literal 3))).
+
+Definition expected_ae13 : arithmetic_expression :=
+  (Plus
+     (Literal 3)
+     (Plus (Name "x"%string)
+        (Literal 3))).
+
+Definition test_ae14 : arithmetic_expression :=
+  (Times
+     (Times
+        (Literal 1)
+        (Literal 2))
+     (Times
+        (Name "x"%string)
+        (Literal 3))).
+
+Definition expected_ae14 : arithmetic_expression :=
+  (Times
+     (Literal 2)
+     (Times (Name "x"%string)
+        (Literal 3))).
+  
+Definition test_simplify (candidate : arithmetic_expression -> arithmetic_expression) : bool :=
+  (arithmetic_expression_eqb (candidate test_ae1) expected_ae1) &&
+  (arithmetic_expression_eqb (candidate test_ae2) expected_ae2) &&
+  (arithmetic_expression_eqb (candidate test_ae3) expected_ae3) &&
+  (arithmetic_expression_eqb (candidate test_ae4) expected_ae4) &&
+  (arithmetic_expression_eqb (candidate test_ae5) expected_ae5) &&
+  (arithmetic_expression_eqb (candidate test_ae6) expected_ae6) &&
+  (arithmetic_expression_eqb (candidate test_ae7) expected_ae7) &&
+  (arithmetic_expression_eqb (candidate test_ae8) expected_ae8) &&
+  (arithmetic_expression_eqb (candidate test_ae9) expected_ae9) &&
+  (arithmetic_expression_eqb (candidate test_ae10) expected_ae10) &&
+  (arithmetic_expression_eqb (candidate test_ae11) expected_ae11) &&
+  (arithmetic_expression_eqb (candidate test_ae12) expected_ae12) &&
+  (arithmetic_expression_eqb (candidate test_ae13) expected_ae13) &&
+  (arithmetic_expression_eqb (candidate test_ae14) expected_ae14).
 
 (* Task 1b:
    Implement a simplifier and verify that it satisfies the unit-test function.
@@ -704,7 +751,7 @@ Fixpoint constant_or_not_constant_from_arithmetic_expression_ltr (ae : arithmeti
           end
       end
   end.
-
+  
 Lemma fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Literal :
   forall n : nat,
     constant_or_not_constant_from_arithmetic_expression_ltr (Literal n) = C n.
@@ -895,7 +942,33 @@ Compute (test_simplify simplify_rtl).
 
 (* Task 1d:
    Prove that your simplifier is idempotent: Once an expression is simplified, it contains no constant sub-expressions.
-*)
+ *)
+
+(* simplify ltr *)
+
+Proposition simplify_ltr_is_idempotent :
+  forall ae : arithmetic_expression,
+    simplify_ltr ae = simplify_ltr (simplify_ltr ae).
+Proof.
+  intro ae.
+  unfold simplify_ltr.
+  induction ae as [ n | x | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
+  - rewrite -> fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Literal.
+    rewrite -> fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Literal.
+    reflexivity.
+  - rewrite -> fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Name.
+    rewrite -> fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Name.
+    reflexivity.
+  - rewrite -> fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Plus.
+    case (constant_or_not_constant_from_arithmetic_expression_ltr ae1) as [Cae1 | NCae1].
+    + case (constant_or_not_constant_from_arithmetic_expression_ltr ae2) as [Cae2 | NCae2].
+      * rewrite -> fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Literal.
+        reflexivity.
+      * rewrite -> fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Plus.
+        rewrite -> fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Literal.
+        case NCae2 as [n | x | |].
+        -- rewrite -> fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Literal.
+
 
 (* Task 1e:
    Prove that your simplifier is meaning-preserving,
