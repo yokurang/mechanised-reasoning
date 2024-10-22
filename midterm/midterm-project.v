@@ -946,29 +946,71 @@ Compute (test_simplify simplify_rtl).
 
 (* simplify ltr *)
 
+Lemma simplify_ltr_is_idempotent_aux :
+  forall ae : arithmetic_expression,
+    (forall a : arithmetic_expression, 
+        constant_or_not_constant_from_arithmetic_expression_ltr ae = NC a
+        /\
+          constant_or_not_constant_from_arithmetic_expression_ltr a = NC a).
+Admitted.
+
+
+(*
+1 goal (ID 76)
+  
+  ae : arithmetic_expression
+  ============================
+  match constant_or_not_constant_from_arithmetic_expression_ltr ae with
+  | C n => Literal n
+  | NC ae' => ae'
+  end =
+  match
+    constant_or_not_constant_from_arithmetic_expression_ltr
+      match constant_or_not_constant_from_arithmetic_expression_ltr ae with
+      | C n => Literal n
+      | NC ae' => ae'
+      end
+  with
+  | C n => Literal n
+  | NC ae' => ae'
+  end
+ *)
+
 Proposition simplify_ltr_is_idempotent :
   forall ae : arithmetic_expression,
     simplify_ltr ae = simplify_ltr (simplify_ltr ae).
+  Compute (let x := simplify_ltr test_ae5 in
+           let y := simplify_ltr (simplify_ltr test_ae5) in
+           x = y).
+  Compute (let x := simplify_ltr test_ae10 in
+           let y := simplify_ltr (simplify_ltr test_ae10) in
+           x = y).
+  Compute (let x := simplify_ltr test_ae12 in
+           let y := simplify_ltr (simplify_ltr test_ae12) in
+           x = y).
+  Compute (let x := simplify_ltr test_ae14 in
+           let y := simplify_ltr (simplify_ltr test_ae14) in
+           x = y).
 Proof.
   intro ae.
   unfold simplify_ltr.
-  induction ae as [ n | x | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
-  - rewrite -> fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Literal.
-    rewrite -> fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Literal.
+  case ae as [n | x | a | a] eqn:C_ae.
+  - rewrite ->2 fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Literal.
     reflexivity.
-  - rewrite -> fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Name.
-    rewrite -> fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Name.
+  - Check (simplify_ltr_is_idempotent_aux (Name x) ae).
+    destruct (simplify_ltr_is_idempotent_aux (Name x) ae) as [H_aux1 H_aux2] eqn:H_aux.
+    rewrite -> H_aux1.
+    rewrite -> H_aux2.
     reflexivity.
-  - rewrite -> fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Plus.
-    case (constant_or_not_constant_from_arithmetic_expression_ltr ae1) as [Cae1 | NCae1].
-    + case (constant_or_not_constant_from_arithmetic_expression_ltr ae2) as [Cae2 | NCae2].
-      * rewrite -> fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Literal.
-        reflexivity.
-      * rewrite -> fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Plus.
-        rewrite -> fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Literal.
-        case NCae2 as [n | x | |].
-        -- rewrite -> fold_unfold_constant_or_not_constant_from_arithmetic_expression_ltr_Literal.
-
+  - destruct (simplify_ltr_is_idempotent_aux (Plus a a1) ae) as [H_aux1 H_aux2] eqn:H_aux.
+    rewrite -> H_aux1.
+    rewrite -> H_aux2.
+    reflexivity.
+  - destruct (simplify_ltr_is_idempotent_aux (Times a a1) ae) as [H_aux1 H_aux2] eqn:H_aux.
+    rewrite -> H_aux1.
+    rewrite -> H_aux2.
+    reflexivity.
+Qed.
 
 (* Task 1e:
    Prove that your simplifier is meaning-preserving,
