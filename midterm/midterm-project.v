@@ -171,6 +171,66 @@ Fixpoint evaluate_ltr (ae : arithmetic_expression) (e : environment nat) : sourc
     end
   end.
 
+Lemma fold_unfold_evaluate_ltr_Literal :
+  forall (n : nat)
+         (e : environment nat),
+    evaluate_ltr (Literal n) e = Source_expressible_nat n.
+Proof.
+  fold_unfold_tactic evaluate_ltr.
+Qed.
+
+Lemma fold_unfold_evaluate_ltr_Name :
+  forall (x : string)
+         (e : environment nat),
+    evaluate_ltr (Name x) e =
+      match lookup nat x e with
+        Some n =>
+          Source_expressible_nat n
+      | None =>
+          Source_expressible_msg (Source_undeclared_name x)
+      end.
+Proof.
+  fold_unfold_tactic evaluate_ltr.
+Qed.
+
+Lemma fold_unfold_evaluate_ltr_Plus :
+  forall (ae1 ae2 : arithmetic_expression)
+         (e : environment nat),
+    evaluate_ltr (Plus ae1 ae2) e =
+      match evaluate_ltr ae1 e with
+        Source_expressible_nat n1 =>
+          match evaluate_ltr ae2 e with
+            Source_expressible_nat n2 =>
+            Source_expressible_nat (n1 + n2)
+          | Source_expressible_msg s2 =>
+            Source_expressible_msg s2
+          end
+      | Source_expressible_msg s1 =>
+          Source_expressible_msg s1
+      end.
+Proof.
+  fold_unfold_tactic evaluate_ltr.
+Qed.
+
+Lemma fold_unfold_evaluate_ltr_Times :
+  forall (ae1 ae2 : arithmetic_expression)
+         (e : environment nat),
+    evaluate_ltr (Times ae1 ae2) e =
+      match evaluate_ltr ae1 e with
+        Source_expressible_nat n1 =>
+          match evaluate_ltr ae2 e with
+            Source_expressible_nat n2 =>
+            Source_expressible_nat (n1 * n2)
+          | Source_expressible_msg s2 =>
+            Source_expressible_msg s2
+          end
+      | Source_expressible_msg s1 =>
+          Source_expressible_msg s1
+      end.
+Proof.
+  fold_unfold_tactic evaluate_ltr.
+Qed.
+
 Definition interpret_ltr (sp : source_program) (e : environment nat) : source_expressible_value :=
   match sp with
     Source_program ae =>
@@ -709,6 +769,8 @@ Inductive constant_or_not_constant : Type :=
 | C : nat -> constant_or_not_constant
 | NC : arithmetic_expression -> constant_or_not_constant.
 
+(* simplify_ltr *)
+
 Fixpoint simplify_ltr_aux (ae : arithmetic_expression) : constant_or_not_constant :=
   match ae with
   | Literal n =>
@@ -820,6 +882,8 @@ Definition simplify_ltr (ae : arithmetic_expression) : arithmetic_expression :=
   end.
 
 Compute (test_simplify simplify_ltr).
+
+(* simplify_rtl *)
 
 Fixpoint simplify_rtl_aux (ae : arithmetic_expression) : constant_or_not_constant :=
   match ae with
@@ -1017,7 +1081,7 @@ Proof.
         reflexivity.
 Qed.
 
-Proposition simplify_ltr_is_idempotent :
+Theorem simplify_ltr_is_idempotent :
   forall ae : arithmetic_expression,
     simplify_ltr ae = simplify_ltr (simplify_ltr ae).
   Compute (let x := simplify_ltr test_ae5 in
@@ -1035,33 +1099,101 @@ Proposition simplify_ltr_is_idempotent :
 Proof.
   intro ae.
   unfold simplify_ltr.
-  Check (simplify_ltr_is_idempotent_aux ae).
   assert (H_aux := simplify_ltr_is_idempotent_aux ae).
-  case ae as [n | x | a | a] eqn:C_ae.
+  case ae as [n | x | ae1 ae2 | ae1 ae2] eqn:C_ae.
   - rewrite ->2 fold_unfold_simplify_ltr_aux_Literal.
     reflexivity.
   - rewrite ->2 fold_unfold_simplify_ltr_aux_Name.
     reflexivity.
-  - case (simplify_ltr_aux (Plus a a1)) as [c | nc].
+  - case (simplify_ltr_aux (Plus ae1 ae2)) as [c | nc].
     + rewrite -> fold_unfold_simplify_ltr_aux_Literal.
       reflexivity.
     + rewrite -> ((H_aux nc) eq_refl).
       reflexivity.
-  - case (simplify_ltr_aux (Times a a1)) as [c | nc].
+  - case (simplify_ltr_aux (Times ae1 ae2)) as [c | nc].
     + rewrite -> fold_unfold_simplify_ltr_aux_Literal.
       reflexivity.
     + rewrite -> ((H_aux nc) eq_refl).
       reflexivity.
 Qed.
 
+(* simplify_rtl *)
+
+(* TODO : Theorem simplify_ltr_is_idempotent *)
+
 (* Task 1e:
    Prove that your simplifier is meaning-preserving,
    i.e., that evaluating an expression and a simplified expression always yield the same expressible value.
-*)
+ *)
+
+(* simplify_ltr *)
+
+Lemma simplify_ltr_is_preserving_aux :
+  forall (ae : arithmetic_expression)
+         (e : environment nat),
+    evaluate_ltr ae e =
+      evaluate_ltr match simplify_ltr_aux ae with
+        | C n => Literal n
+        | NC ae' => ae'
+        end e.
+Proof.
+  intros ae e.
+  induction ae as [ n | x | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
+  - rewrite -> fold_unfold_simplify_ltr_aux_Literal.
+    reflexivity.
+  - rewrite -> fold_unfold_simplify_ltr_aux_Name.
+    reflexivity.
+  - rewrite -> fold_unfold_evaluate_ltr_Plus.
+    rewrite -> fold_unfold_simplify_ltr_aux_Plus.
+    rewrite -> IHae1, IHae2.
+    case (simplify_ltr_aux ae1) as [c1 | nc1] eqn:C_simplify_ae1.
+    rewrite -> fold_unfold_evaluate_ltr_Literal.
+    + case (simplify_ltr_aux ae2) as [c2 | nc2] eqn:C_simplify_ae2.
+      * rewrite ->2 fold_unfold_evaluate_ltr_Literal.
+        reflexivity.
+      * rewrite -> fold_unfold_evaluate_ltr_Plus.
+        rewrite -> fold_unfold_evaluate_ltr_Literal.
+        reflexivity.
+    + case (simplify_ltr_aux ae2) as [c2 | nc2] eqn:C_simplify_ae2.
+      * rewrite -> fold_unfold_evaluate_ltr_Plus.
+        reflexivity.
+      * rewrite -> fold_unfold_evaluate_ltr_Plus.
+        reflexivity.
+  - rewrite -> fold_unfold_evaluate_ltr_Times.
+    rewrite -> fold_unfold_simplify_ltr_aux_Times.
+    rewrite -> IHae1, IHae2.
+    case (simplify_ltr_aux ae1) as [c1 | nc1] eqn:C_simplify_ae1.
+    rewrite -> fold_unfold_evaluate_ltr_Literal.
+    + case (simplify_ltr_aux ae2) as [c2 | nc2] eqn:C_simplify_ae2.
+      * rewrite ->2 fold_unfold_evaluate_ltr_Literal.
+        reflexivity.
+      * rewrite -> fold_unfold_evaluate_ltr_Times.
+        rewrite -> fold_unfold_evaluate_ltr_Literal.
+        reflexivity.
+    + case (simplify_ltr_aux ae2) as [c2 | nc2] eqn:C_simplify_ae2.
+      * rewrite -> fold_unfold_evaluate_ltr_Times.
+        reflexivity.
+      * rewrite -> fold_unfold_evaluate_ltr_Times.
+        reflexivity.
+Qed.
+
+Theorem simplify_ltr_is_preserving :
+  forall (ae : arithmetic_expression)
+         (e : environment nat),
+    evaluate_ltr ae e = evaluate_ltr (simplify_ltr ae) e.
+Proof.
+  intros ae e.
+  unfold simplify_ltr.
+  exact (simplify_ltr_is_preserving_aux ae e).
+Qed.
+
+(* simplify_rtl *)
+
+(* TODO: Theorem simplify_rtl_is_preserving_aux *)
 
 (* ********** *)
 
-(* Task 2:
+(* task 2:
    Each of the following "optimizing" compilers exploits a semantic property of arithmetic expressions.
    Your task is to identify this property for each compiler.
 
