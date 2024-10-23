@@ -950,7 +950,68 @@ Qed.
    Prove that your simplifier is meaning-preserving,
    i.e., that evaluating an expression and a simplified expression always yield the same expressible value.
  *)
- *)
+
+(* young's way *)
+
+ Lemma simplify_ltr_preserves_evaluation_aux' :
+  forall (ae : arithmetic_expression)
+         (e : environment nat),
+    evaluate_ltr ae e =
+      evaluate_ltr match simplify_ltr_aux ae with
+        | C n => Literal n
+        | NC ae' => ae'
+        end e.
+Proof.
+  intros ae e.
+  induction ae as [ n | x | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ].
+  - rewrite -> fold_unfold_simplify_ltr_aux_Literal.
+    reflexivity.
+  - rewrite -> fold_unfold_simplify_ltr_aux_Name.
+    reflexivity.
+  - rewrite -> fold_unfold_evaluate_ltr_Plus.
+    rewrite -> fold_unfold_simplify_ltr_aux_Plus.
+    rewrite -> IHae1, IHae2.
+    case (simplify_ltr_aux ae1) as [c1 | nc1] eqn:C_simplify_ae1.
+    rewrite -> fold_unfold_evaluate_ltr_Literal.
+    + case (simplify_ltr_aux ae2) as [c2 | nc2] eqn:C_simplify_ae2.
+      * rewrite ->2 fold_unfold_evaluate_ltr_Literal.
+        reflexivity.
+      * rewrite -> fold_unfold_evaluate_ltr_Plus.
+        rewrite -> fold_unfold_evaluate_ltr_Literal.
+        reflexivity.
+    + case (simplify_ltr_aux ae2) as [c2 | nc2] eqn:C_simplify_ae2.
+      * rewrite -> fold_unfold_evaluate_ltr_Plus.
+        reflexivity.
+      * rewrite -> fold_unfold_evaluate_ltr_Plus.
+        reflexivity.
+  - rewrite -> fold_unfold_evaluate_ltr_Times.
+    rewrite -> fold_unfold_simplify_ltr_aux_Times.
+    rewrite -> IHae1, IHae2.
+    case (simplify_ltr_aux ae1) as [c1 | nc1] eqn:C_simplify_ae1.
+    rewrite -> fold_unfold_evaluate_ltr_Literal.
+    + case (simplify_ltr_aux ae2) as [c2 | nc2] eqn:C_simplify_ae2.
+      * rewrite ->2 fold_unfold_evaluate_ltr_Literal.
+        reflexivity.
+      * rewrite -> fold_unfold_evaluate_ltr_Times.
+        rewrite -> fold_unfold_evaluate_ltr_Literal.
+        reflexivity.
+    + case (simplify_ltr_aux ae2) as [c2 | nc2] eqn:C_simplify_ae2.
+      * rewrite -> fold_unfold_evaluate_ltr_Times.
+        reflexivity.
+      * rewrite -> fold_unfold_evaluate_ltr_Times.
+        reflexivity.
+Qed.
+Theorem simplify_ltr_preserves_evaluation' :
+  forall (ae : arithmetic_expression)
+         (e : environment nat),
+    evaluate_ltr ae e = evaluate_ltr (simplify_ltr ae) e.
+Proof.
+  intros ae e.
+  unfold simplify_ltr.
+  exact (simplify_ltr_is_preserving_aux ae e).
+Qed.
+
+(* alan's way *)
 
 Lemma simplify_ltr_preserves_evaluation_aux :
   forall (ae : arithmetic_expression) (e : environment nat),
