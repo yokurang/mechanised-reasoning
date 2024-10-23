@@ -708,6 +708,8 @@ Inductive constant_or_not_constant : Type :=
 | C : nat -> constant_or_not_constant
 | NC : arithmetic_expression -> constant_or_not_constant.
 
+(* simplify_ltr *)
+
 Fixpoint simplify_ltr_aux (ae : arithmetic_expression) : constant_or_not_constant :=
   match ae with
   | Literal n =>
@@ -904,7 +906,7 @@ Proof.
         reflexivity.
 Qed.
 
-Proposition simplify_ltr_is_idempotent :
+Theorem simplify_ltr_is_idempotent :
   forall ae : arithmetic_expression,
     simplify_ltr ae = simplify_ltr (simplify_ltr ae).
   Compute (let x := simplify_ltr test_ae5 in
@@ -922,28 +924,32 @@ Proposition simplify_ltr_is_idempotent :
 Proof.
   intro ae.
   unfold simplify_ltr.
-  Check (simplify_ltr_is_idempotent_aux ae).
   assert (H_aux := simplify_ltr_is_idempotent_aux ae).
-  case ae as [n | x | a | a] eqn:C_ae.
+  case ae as [n | x | ae1 ae2 | ae1 ae2] eqn:C_ae.
   - rewrite ->2 fold_unfold_simplify_ltr_aux_Literal.
     reflexivity.
   - rewrite ->2 fold_unfold_simplify_ltr_aux_Name.
     reflexivity.
-  - case (simplify_ltr_aux (Plus a a1)) as [c | nc].
+  - case (simplify_ltr_aux (Plus ae1 ae2)) as [c | nc].
     + rewrite -> fold_unfold_simplify_ltr_aux_Literal.
       reflexivity.
     + rewrite -> ((H_aux nc) eq_refl).
       reflexivity.
-  - case (simplify_ltr_aux (Times a a1)) as [c | nc].
+  - case (simplify_ltr_aux (Times ae1 ae2)) as [c | nc].
     + rewrite -> fold_unfold_simplify_ltr_aux_Literal.
       reflexivity.
     + rewrite -> ((H_aux nc) eq_refl).
       reflexivity.
 Qed.
 
+(* simplify_rtl *)
+
+(* TODO : Theorem simplify_ltr_is_idempotent *)
+
 (* Task 1e:
    Prove that your simplifier is meaning-preserving,
    i.e., that evaluating an expression and a simplified expression always yield the same expressible value.
+ *)
  *)
 
 Lemma simplify_ltr_preserves_evaluation_aux :
@@ -1130,7 +1136,7 @@ Qed.
 
 (* ********** *)
 
-(* Task 2:
+(* task 2:
    Each of the following "optimizing" compilers exploits a semantic property of arithmetic expressions.
    Your task is to identify this property for each compiler.
 
