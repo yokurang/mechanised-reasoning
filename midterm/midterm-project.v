@@ -708,6 +708,61 @@ Inductive constant_or_not_constant : Type :=
 | C : nat -> constant_or_not_constant
 | NC : arithmetic_expression -> constant_or_not_constant.
 
+Definition constant_or_not_constant_eqb (cnc1 cnc2 : constant_or_not_constant) :  bool :=
+  match cnc1 with
+  | C n1 =>
+      match cnc2 with
+      | C n2 =>
+          Nat.eqb n1 n2
+      | NC _ =>
+          false
+      end
+  | NC ae1 =>
+      match cnc2 with
+      | C n2 =>
+          false
+      | NC ae2 =>
+          arithmetic_expression_eqb ae1 ae2
+      end
+  end.
+
+(* test structure *)
+(* if two nats are equal, then our predicate applied to C of each of those nats should return true *)
+Compute (Nat.eqb 0 0).
+Definition test_cnc_equal_constants (candidate : constant_or_not_constant -> constant_or_not_constant -> bool) : bool :=
+  candidate (C 0) (C 0).
+
+(* if two nats are not equal, then our predicate applied to C of each of those nats should return false *)
+Compute negb (Nat.eqb 0 1).
+Definition test_cnc_unequal_constants (candidate : constant_or_not_constant -> constant_or_not_constant -> bool) : bool :=
+  negb (candidate (C 0) (C 1)).
+
+(* if two arithmetic expressions are equal, then our predicate applied to NC of those two aes should return true *)
+Compute (arithmetic_expression_eqb (Literal 0) (Literal 0)).
+Definition test_cnc_equal_non_constants (candidate : constant_or_not_constant -> constant_or_not_constant -> bool) : bool :=
+  candidate (NC (Literal 0)) (NC (Literal 0)).
+
+(* if two arithmetic expressions are not equal, then our predicate applied to NC of those two aes should return false *)
+Compute negb (arithmetic_expression_eqb (Literal 0) (Literal 1)).
+Definition test_cnc_unequal_non_constants (candidate : constant_or_not_constant -> constant_or_not_constant -> bool) : bool :=
+  negb (candidate (NC (Literal 0)) (NC (Literal 1))).
+
+(* our predicate applied to a C and an NC in either order should return false *)
+Definition test_cnc_different_constructors (candidate : constant_or_not_constant -> constant_or_not_constant -> bool) : bool :=
+  (negb (candidate (C 0) (NC (Literal 0)))) &&
+    (negb (candidate (NC (Literal 0)) (C 0))).
+
+(* altogether: *)
+Definition test_constant_or_not_constant_eqb (candidate : constant_or_not_constant -> constant_or_not_constant -> bool) : bool :=
+  (test_cnc_equal_constants candidate) &&
+    (test_cnc_unequal_constants candidate) &&
+    (test_cnc_equal_non_constants candidate) &&
+    (test_cnc_unequal_non_constants candidate) &&
+    (test_cnc_different_constructors candidate).
+
+Compute (test_constant_or_not_constant_eqb constant_or_not_constant_eqb).
+
+
 (* simplify_ltr *)
 
 Fixpoint simplify_ltr_aux (ae : arithmetic_expression) : constant_or_not_constant :=
