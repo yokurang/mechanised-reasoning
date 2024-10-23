@@ -497,204 +497,127 @@ Fixpoint simplify_ltr_simple (ae : arithmetic_expression) : arithmetic_expressio
 *)
 
 (* ***** test cases ***** *)
+Inductive constant_or_not_constant : Type :=
+| C : nat -> constant_or_not_constant
+| NC : arithmetic_expression -> constant_or_not_constant.
 
-Definition test_ae1 : arithmetic_expression :=
-  Plus
-    (Literal 1)
-    (Literal 10).
+(* case constant *)
 
-Definition expected_ae1 : arithmetic_expression :=
+Definition test_in_simplify_Literal : arithmetic_expression :=
+  Literal 0.
+
+Definition intermediate_simplify_Literal : constant_or_not_constant :=
+  C 0.
+
+Definition result_simplify_Literal: arithmetic_expression :=
+  Literal 0.
+
+(* case Name *)
+Definition test_in_simplify_Name : arithmetic_expression :=
+  Name "x"%string.
+
+Definition intermediate_simplify_Name : constant_or_not_constant :=
+  NC (Name "x"%string).
+
+Definition result_simplify_Name : arithmetic_expression :=
+  Name "x"%string.
+
+(* case Plus C C *)
+Definition test_in_simplify_Plus_C_C : arithmetic_expression :=
+  Plus (Literal 1) (Literal 10).
+
+Definition intermediate_simplify_Plus_C_C : constant_or_not_constant :=
+  C 11.
+
+Definition result_simplify_Plus_C_C: arithmetic_expression :=
   Literal 11.
 
-Definition test_ae2 : arithmetic_expression :=
-  Plus
-    (Literal 1)
-    (Name "x"%string).
+(* case Plus C NC *)
+Definition test_in_simplify_Plus_C_NC: arithmetic_expression :=
+  Plus (Literal 1) (Name "x"%string).
 
-Definition expected_ae2 : arithmetic_expression :=
-  Plus
-    (Literal 1)
-    (Name "x"%string).
+Definition intermediate_simplify_Plus_C_NC: constant_or_not_constant :=
+  NC (Plus (Literal 1) (Name "x"%string)).
 
-Definition test_ae3 : arithmetic_expression :=
-  Times
-    (Literal 2)
-    (Literal 3).
+Definition result_simplify_Plus_C_NC: arithmetic_expression :=
+  Plus (Literal 1) (Name "x"%string).
 
-Definition expected_ae3 : arithmetic_expression :=
-  Literal 6.
+(* case Plus NC C *)
+Definition test_in_simplify_Plus_NC_C: arithmetic_expression :=
+  Plus (Name "x"%string) (Literal 1).
 
-Definition test_ae4 : arithmetic_expression :=
-  Times
-    (Literal 2)
-    (Name "y"%string).
+Definition intermediate_simplify_Plus_NC_C: constant_or_not_constant :=
+  NC (Plus (Name "x"%string) (Literal 1)).
 
-Definition expected_ae4 : arithmetic_expression :=
-  Times
-    (Literal 2)
-    (Name "y"%string).
+Definition result_simplify_Plus_NC_C: arithmetic_expression :=
+  Plus (Name "x"%string) (Literal 1).
 
-Definition test_ae5 : arithmetic_expression :=
-  Plus
-    (Plus
-       (Literal 1)
-       (Literal 2))
-    (Plus
-       (Literal 3)
-       (Name "x"%string)).
+(* case Plus NC NC *)
+Definition test_in_simplify_Plus_NC_NC : arithmetic_expression :=
+  Plus (Name "x"%string) (Name "y"%string).
 
-Definition expected_ae5 : arithmetic_expression :=
-  Plus
-    (Literal 3)
-    (Plus
-       (Literal 3)
-       (Name "x"%string)).
+Definition intermediate_simplify_Plus_NC_NC : constant_or_not_constant :=
+  NC (Plus (Name "x"%string) (Name "y"%string)).
 
-Definition test_ae6 : arithmetic_expression :=
-  Plus
-    (Times
-       (Literal 2)
-       (Literal 3))
-    (Name "z"%string).
+Definition result_simplify_Plus_NC_NC : arithmetic_expression :=
+  Plus (Name "x"%string) (Name "y"%string).
 
-Definition expected_ae6 : arithmetic_expression :=
-  Plus
-    (Literal 6)
-    (Name "z"%string).
+(* Times versions, really just the Plus versions with mutatis mutandis *)
+(* case Times C C *)
+Definition test_in_simplify_Times_C_C : arithmetic_expression :=
+  Times (Literal 1) (Literal 10).
 
-Definition test_ae7 : arithmetic_expression :=
-  Plus
-    (Name "x"%string)
-    (Name "y"%string).
+Definition intermediate_simplify_Times_C_C : constant_or_not_constant :=
+  C 10.
 
-Definition expected_ae7 : arithmetic_expression :=
-  Plus
-    (Name "x"%string)
-    (Name "y"%string).
+Definition result_simplify_Times_C_C: arithmetic_expression :=
+  Literal 10.
 
-Definition test_ae8 : arithmetic_expression :=
-  Times
-    (Name "x"%string)
-    (Name "y"%string).
+(* case Times C NC *)
+Definition test_in_simplify_Times_C_NC: arithmetic_expression :=
+  Times (Literal 1) (Name "x"%string).
 
-Definition expected_ae8 : arithmetic_expression :=
-  Times
-    (Name "x"%string)
-    (Name "y"%string).
+Definition intermediate_simplify_Times_C_NC: constant_or_not_constant :=
+  NC (Times (Literal 1) (Name "x"%string)).
 
-Definition test_ae9 : arithmetic_expression :=
-  Plus
-    (Plus
-       (Literal 2)
-       (Name "x"%string))
-    (Literal 3).
+Definition result_simplify_Times_C_NC: arithmetic_expression :=
+  Times (Literal 1) (Name "x"%string).
 
-Definition expected_ae9 : arithmetic_expression :=
-  Plus
-    (Plus
-       (Literal 2)
-       (Name "x"%string))
-    (Literal 3).
+(* case Times NC C *)
+Definition test_in_simplify_Times_NC_C: arithmetic_expression :=
+  Times (Name "x"%string) (Literal 1).
 
-Definition test_ae10 : arithmetic_expression :=
-  Times
-    (Times
-       (Literal 4)
-       (Name "y"%string))
-    (Literal 5).
+Definition intermediate_simplify_Times_NC_C: constant_or_not_constant :=
+  NC (Times (Name "x"%string) (Literal 1)).
 
-Definition expected_ae10 : arithmetic_expression :=
-  Times
-    (Times
-       (Literal 4)
-       (Name "y"%string))
-    (Literal 5).
+Definition result_simplify_Times_NC_C: arithmetic_expression :=
+  Times (Name "x"%string) (Literal 1).
 
-Definition test_ae11 : arithmetic_expression :=
-  Plus
-    (Times
-       (Literal 2)
-       (Name "a"%string))
-    (Plus
-       (Times
-          (Literal 3)
-          (Name "b"%string))
-       (Literal 5)).
+(* case Times NC NC *)
+Definition test_in_simplify_Times_NC_NC : arithmetic_expression :=
+  Times (Name "x"%string) (Name "y"%string).
 
-Definition expected_ae11 : arithmetic_expression :=
-  Plus
-    (Times
-       (Literal 2)
-       (Name "a"%string))
-    (Plus
-       (Times
-          (Literal 3)
-          (Name "b"%string))
-       (Literal 5)).
+Definition intermediate_simplify_Times_NC_NC : constant_or_not_constant :=
+  NC (Times (Name "x"%string) (Name "y"%string)).
 
-Definition test_ae12 : arithmetic_expression :=
-  Times
-    (Plus
-       (Literal 1)
-       (Name "x"%string))
-    (Plus
-       (Name "y"%string)
-       (Literal 2)).
+Definition result_simplify_Times_NC_NC : arithmetic_expression :=
+  Times (Name "x"%string) (Name "y"%string).
 
-Definition expected_ae12 : arithmetic_expression :=
-  Times
-    (Plus
-       (Literal 1)
-       (Name "x"%string))
-    (Plus
-       (Name "y"%string)
-       (Literal 2)).
+Definition make_test_simplify (test_in expected : arithmetic_expression) : (arithmetic_expression -> arithmetic_expression) -> bool :=
+  fun candidate : arithmetic_expression -> arithmetic_expression =>
+    (arithmetic_expression_eqb (candidate test_in) (expected)).
 
-Definition test_ae13 : arithmetic_expression :=
-  (Plus
-     (Plus
-        (Literal 1)
-        (Literal 2))
-     (Plus
-        (Name "x"%string)
-        (Literal 3))).
-
-Definition expected_ae13 : arithmetic_expression :=
-  (Plus
-     (Literal 3)
-     (Plus (Name "x"%string)
-        (Literal 3))).
-
-Definition test_ae14 : arithmetic_expression :=
-  (Times
-     (Times
-        (Literal 1)
-        (Literal 2))
-     (Times
-        (Name "x"%string)
-        (Literal 3))).
-
-Definition expected_ae14 : arithmetic_expression :=
-  (Times
-     (Literal 2)
-     (Times (Name "x"%string)
-        (Literal 3))).
-  
 Definition test_simplify (candidate : arithmetic_expression -> arithmetic_expression) : bool :=
-  (arithmetic_expression_eqb (candidate test_ae1) expected_ae1) &&
-  (arithmetic_expression_eqb (candidate test_ae2) expected_ae2) &&
-  (arithmetic_expression_eqb (candidate test_ae3) expected_ae3) &&
-  (arithmetic_expression_eqb (candidate test_ae4) expected_ae4) &&
-  (arithmetic_expression_eqb (candidate test_ae5) expected_ae5) &&
-  (arithmetic_expression_eqb (candidate test_ae6) expected_ae6) &&
-  (arithmetic_expression_eqb (candidate test_ae7) expected_ae7) &&
-  (arithmetic_expression_eqb (candidate test_ae8) expected_ae8) &&
-  (arithmetic_expression_eqb (candidate test_ae9) expected_ae9) &&
-  (arithmetic_expression_eqb (candidate test_ae10) expected_ae10) &&
-  (arithmetic_expression_eqb (candidate test_ae11) expected_ae11) &&
-  (arithmetic_expression_eqb (candidate test_ae12) expected_ae12) &&
-  (arithmetic_expression_eqb (candidate test_ae13) expected_ae13) &&
-  (arithmetic_expression_eqb (candidate test_ae14) expected_ae14).
+  (make_test_simplify test_in_simplify_Literal result_simplify_Literal candidate) &&
+    (make_test_simplify test_in_simplify_Name result_simplify_Name candidate) &&
+    (make_test_simplify test_in_simplify_Plus_C_C result_simplify_Plus_C_C candidate) &&
+    (make_test_simplify test_in_simplify_Plus_C_NC result_simplify_Plus_C_NC candidate) &&
+    (make_test_simplify test_in_simplify_Plus_NC_C result_simplify_Plus_NC_C candidate) &&
+    (make_test_simplify test_in_simplify_Plus_NC_NC result_simplify_Plus_NC_NC candidate) &&
+    (make_test_simplify test_in_simplify_Times_C_C result_simplify_Times_C_C candidate) &&
+    (make_test_simplify test_in_simplify_Times_C_NC result_simplify_Times_C_NC candidate) &&
+    (make_test_simplify test_in_simplify_Times_NC_C result_simplify_Times_NC_C candidate) &&
+    (make_test_simplify test_in_simplify_Times_NC_NC result_simplify_Times_NC_NC candidate).
 
 (* Task 1b:
    Implement a simplifier and verify that it satisfies the unit-test function.
@@ -704,9 +627,11 @@ Definition test_simplify (candidate : arithmetic_expression -> arithmetic_expres
   the simplifier maps a given arithmetic expression either to a nat(a constant arithmetic expression), or to an arithmetic expression that is not a nat (a non-constant arithmetic expression)
 *)
 
+(*
 Inductive constant_or_not_constant : Type :=
 | C : nat -> constant_or_not_constant
 | NC : arithmetic_expression -> constant_or_not_constant.
+ *)
 
 Definition constant_or_not_constant_eqb (cnc1 cnc2 : constant_or_not_constant) :  bool :=
   match cnc1 with
