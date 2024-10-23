@@ -171,6 +171,62 @@ Fixpoint evaluate_ltr (ae : arithmetic_expression) (e : environment nat) : sourc
     end
   end.
 
+Lemma fold_unfold_evaluate_ltr_Literal :
+  forall (n : nat) (e : environment nat),
+    evaluate_ltr (Literal n) e = Source_expressible_nat n.
+Proof.
+  fold_unfold_tactic evaluate_ltr.
+Qed.
+    
+Lemma fold_unfold_evaluate_ltr_Name :
+  forall (x : string) (e : environment nat),
+    evaluate_ltr (Name x) e =
+      match lookup nat x e with
+        Some n =>
+          Source_expressible_nat n
+      | None =>
+          Source_expressible_msg (Source_undeclared_name x)
+      end.
+Proof.
+  fold_unfold_tactic evaluate_ltr.
+Qed.
+
+Lemma fold_unfold_evaluate_ltr_Plus :
+  forall (ae1 ae2 : arithmetic_expression) (e : environment nat),
+    evaluate_ltr (Plus ae1 ae2) e = 
+      match evaluate_ltr ae1 e with
+        Source_expressible_nat n1 =>
+          match evaluate_ltr ae2 e with
+            Source_expressible_nat n2 =>
+              Source_expressible_nat (n1 + n2)
+          | Source_expressible_msg s2 =>
+              Source_expressible_msg s2
+          end
+      | Source_expressible_msg s1 =>
+          Source_expressible_msg s1
+      end.
+Proof.
+  fold_unfold_tactic evaluate_ltr.
+Qed.
+
+Lemma fold_unfold_evaluate_ltr_Times :
+  forall (ae1 ae2 : arithmetic_expression) (e : environment nat),
+    evaluate_ltr (Times ae1 ae2) e =
+      match evaluate_ltr ae1 e with
+        Source_expressible_nat n1 =>
+          match evaluate_ltr ae2 e with
+            Source_expressible_nat n2 =>
+              Source_expressible_nat (n1 * n2)
+          | Source_expressible_msg s2 =>
+              Source_expressible_msg s2
+          end
+      | Source_expressible_msg s1 =>
+          Source_expressible_msg s1
+      end.
+Proof.
+  fold_unfold_tactic evaluate_ltr.
+Qed.
+
 Definition interpret_ltr (sp : source_program) (e : environment nat) : source_expressible_value :=
   match sp with
     Source_program ae =>
@@ -439,63 +495,6 @@ Fixpoint simplify_ltr_simple (ae : arithmetic_expression) : arithmetic_expressio
 (*
   TODO: Implement a more robust but non-redundant unit test for constant_or_not_constant_from_arithmetic_expression with code coverage.
 *)
-
-(*
-Definition test_simplify (candidate : arithmetic_expression -> arithmetic_expression) : bool :=
-  (arithmetic_expression_eqb
-     (candidate (Plus
-                   (Literal 1)
-                   (Literal 10)))
-     (Literal 11))
-  &&
-  (arithmetic_expression_eqb
-     (candidate (Plus
-                   (Times
-                      (Literal 2)
-                      (Literal 3))
-                   (Name "x"%string)))
-     (Plus
-        (Literal 6)
-        (Name "x"%string)))
-  &&
-  (arithmetic_expression_eqb
-     (candidate (Plus
-                   (Name "y"%string)
-                   (Times
-                      (Literal 2)
-                      (Literal 0))))
-     (Plus
-        (Name "y"%string)
-        (Literal 0)))
-  &&
-  (arithmetic_expression_eqb
-     (candidate (Plus
-                   (Plus
-                      (Literal 1)
-                      (Literal 2))
-                   (Plus
-                      (Literal 3)
-                      (Name "x"%string))))
-     (Plus
-        (Literal 3)
-        (Plus
-           (Literal 3)
-           (Name "x"%string))))
-  &&
-  (arithmetic_expression_eqb
-     (candidate
-        (Plus
-           (Plus
-              (Literal 1)
-              (Literal 2))
-           (Plus
-              (Name "x"%string)
-              (Literal 3))))
-     (Plus
-        (Literal 3)
-        (Plus (Name "x"%string)
-           (Literal 3)))).
- *)
 
 (* ***** test cases ***** *)
 
@@ -821,118 +820,6 @@ Definition simplify_ltr (ae : arithmetic_expression) : arithmetic_expression :=
 
 Compute (test_simplify simplify_ltr).
 
-Fixpoint simplify_rtl_aux (ae : arithmetic_expression) : constant_or_not_constant :=
-  match ae with
-  | Literal n =>
-      C n
-  | Name x =>
-      NC (Name x)
-  | Plus ae1 ae2 =>
-      match simplify_rtl_aux ae2 with
-      | C n2 =>
-          match simplify_rtl_aux ae1 with
-          | C n1 =>
-              C (n1 + n2)
-          | NC ae1 =>
-              NC (Plus ae1 (Literal n2))
-          end
-      | NC ae2 =>
-          match simplify_rtl_aux ae1 with
-          | C n1 =>
-              NC (Plus (Literal n1) ae2)
-          | NC ae1 =>
-              NC (Plus ae1 ae2)
-          end
-      end
-  | Times ae1 ae2 =>
-      match simplify_rtl_aux ae2 with
-      | C n2 =>
-          match simplify_rtl_aux ae1 with
-          | C n1 =>
-              C (n1 * n2)
-          | NC ae1 =>
-              NC (Times ae1 (Literal n2))
-          end
-      | NC ae2 =>
-          match simplify_rtl_aux ae1 with
-          | C n1 =>
-              NC (Times (Literal n1) ae2)
-          | NC ae1 =>
-              NC (Times ae1 ae2)
-          end
-      end
-  end.
-
-Lemma fold_unfold_simplify_rtl_aux_Literal :
-  forall n : nat,
-    simplify_rtl_aux (Literal n) = C n.
-Proof.
-  fold_unfold_tactic simplify_rtl_aux.
-Qed.
-
-Lemma fold_unfold_simplify_rtl_aux_Name :
-  forall x : string,
-    simplify_rtl_aux (Name x) = NC (Name x).
-Proof.
-  fold_unfold_tactic simplify_rtl_aux.
-Qed.
-
-Lemma fold_unfold_simplify_rtl_aux_Plus :
-  forall ae1 ae2 : arithmetic_expression,
-    simplify_rtl_aux (Plus ae1 ae2) =
-      match simplify_rtl_aux ae2 with
-      | C n2 =>
-          match simplify_rtl_aux ae1 with
-          | C n1 =>
-              C (n1 + n2)
-          | NC ae1 =>
-              NC (Plus ae1 (Literal n2))
-          end
-      | NC ae2 =>
-          match simplify_rtl_aux ae1 with
-          | C n1 =>
-              NC (Plus (Literal n1) ae2)
-          | NC ae1 =>
-              NC (Plus ae1 ae2)
-          end
-      end.
-Proof.
-  fold_unfold_tactic simplify_rtl_aux.
-Qed.
-
-Lemma fold_unfold_simplify_rtl_aux_Times :
-  forall ae1 ae2 : arithmetic_expression,
-    simplify_rtl_aux (Times ae1 ae2) =
-      match simplify_rtl_aux ae2 with
-      | C n2 =>
-          match simplify_rtl_aux ae1 with
-          | C n1 =>
-              C (n1 * n2)
-          | NC ae1 =>
-              NC (Times ae1 (Literal n2))
-          end
-      | NC ae2 =>
-          match simplify_rtl_aux ae1 with
-          | C n1 =>
-              NC (Times (Literal n1) ae2)
-          | NC ae1 =>
-              NC (Times ae1 ae2)
-          end
-      end.
-Proof.
-  fold_unfold_tactic simplify_rtl_aux.
-Qed.
-
-Definition simplify_rtl (ae : arithmetic_expression) : arithmetic_expression :=
-  match simplify_rtl_aux ae with
-  | C n =>
-      Literal n
-  | NC ae' =>
-      ae'
-  end.
-
-Compute (test_simplify simplify_rtl).
-
 (* Task 1c:
    Argue that your unit tests provide code coverage.
    (And if they don't, expand test_simplify so that they do.)
@@ -1057,7 +944,189 @@ Qed.
 (* Task 1e:
    Prove that your simplifier is meaning-preserving,
    i.e., that evaluating an expression and a simplified expression always yield the same expressible value.
-*)
+ *)
+
+Lemma simplify_ltr_preserves_evaluation_aux :
+  forall (ae : arithmetic_expression) (e : environment nat),
+    (forall n : nat,
+        simplify_ltr_aux ae = C n ->
+        evaluate_ltr ae e = Source_expressible_nat n)
+    /\
+    (forall a' : arithmetic_expression,
+        simplify_ltr_aux ae = NC a' ->
+        evaluate_ltr ae e = evaluate_ltr a' e).
+Proof.
+  intro ae.
+  induction ae as [ n | x | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ];
+    intro e.
+  - split.
+    + intros n1 H.
+      rewrite -> fold_unfold_simplify_ltr_aux_Literal in H.
+      injection H as H.
+      rewrite -> fold_unfold_evaluate_ltr_Literal.
+      rewrite -> H.
+      reflexivity.
+    + intros a H.
+      rewrite -> fold_unfold_simplify_ltr_aux_Literal in H.
+      discriminate H.
+  - split.
+    + intros n H.
+      rewrite -> fold_unfold_simplify_ltr_aux_Name in H.
+      discriminate H.
+    + intros a H.
+      rewrite -> fold_unfold_simplify_ltr_aux_Name in H.
+      injection H as H.
+      rewrite -> H.
+      reflexivity.
+  - split.
+    + intros n H.
+      rewrite -> fold_unfold_simplify_ltr_aux_Plus in H.
+      case (simplify_ltr_aux ae1) as [c1 | nc1] eqn:C_simplify_ae1.
+      * case (simplify_ltr_aux ae2) as [c2 | nc2] eqn:C_simplify_ae2.
+        -- injection H as H.
+           rewrite <- H.
+           rewrite -> fold_unfold_evaluate_ltr_Plus.
+           assert (IHae2 := IHae2 e).
+           destruct IHae2 as [IHae2_n _].
+           assert (IHae2_n := IHae2_n c2 eq_refl).
+           rewrite -> IHae2_n.
+           assert (IHae1 := IHae1 e).
+           destruct IHae1 as [IHae1_n _].
+           assert (IHae1_n := IHae1_n c1 eq_refl).
+           rewrite -> IHae1_n.
+           reflexivity.
+        -- discriminate H.
+      * case (simplify_ltr_aux ae2) as [c2 | nc2] eqn:C_simplify_ae2.
+        -- discriminate H.
+        -- discriminate H.
+    + intros a H.
+      rewrite -> fold_unfold_simplify_ltr_aux_Plus in H.
+      case (simplify_ltr_aux ae1) as [c1 | nc1] eqn:C_simplify_ae1.
+      * case (simplify_ltr_aux ae2) as [c2 | nc2] eqn:C_simplify_ae2.
+        -- discriminate H.
+        -- injection H as H.
+           rewrite <- H.
+           rewrite ->2 fold_unfold_evaluate_ltr_Plus.
+           assert (IHae1 := IHae1 e).
+           destruct IHae1 as [IHae1_n _].
+           assert (IHae1_n := IHae1_n c1 eq_refl).
+           rewrite -> IHae1_n.
+           assert (IHae2 := IHae2 e).
+           destruct IHae2 as [_ IHae2_nc].
+           assert (IHae2_nc := IHae2_nc nc2 eq_refl).
+           rewrite -> IHae2_nc.
+           rewrite -> fold_unfold_evaluate_ltr_Literal.
+           reflexivity.
+      * case (simplify_ltr_aux ae2) as [c2 | nc2] eqn:C_simplify_ae2.
+        -- injection H as H.
+           rewrite <- H.
+           rewrite ->2 fold_unfold_evaluate_ltr_Plus.
+           assert (IHae2 := IHae2 e).
+           destruct IHae2 as [IHae2_n _].
+           assert (IHae2_n := IHae2_n c2 eq_refl).
+           rewrite -> IHae2_n.
+           assert (IHae1 := IHae1 e).
+           destruct IHae1 as [_ IHae1_nc].
+           assert (IHae1_nc := IHae1_nc nc1 eq_refl).
+           rewrite -> IHae1_nc.
+           rewrite -> fold_unfold_evaluate_ltr_Literal.
+           reflexivity.
+        -- injection H as H.
+           rewrite <- H.
+           rewrite ->2 fold_unfold_evaluate_ltr_Plus.
+           assert (IHae2 := IHae2 e).
+           destruct IHae2 as [_ IHae2_nc].
+           assert (IHae2_nc := IHae2_nc nc2 eq_refl).
+           rewrite -> IHae2_nc.
+           assert (IHae1 := IHae1 e).
+           destruct IHae1 as [_ IHae1_nc].
+           assert (IHae1_nc := IHae1_nc nc1 eq_refl).
+           rewrite -> IHae1_nc.
+           reflexivity.
+  - split.
+    + intros n H.
+      rewrite -> fold_unfold_simplify_ltr_aux_Times in H.
+      case (simplify_ltr_aux ae1) as [c1 | nc1] eqn:C_simplify_ae1.
+      * case (simplify_ltr_aux ae2) as [c2 | nc2] eqn:C_simplify_ae2.
+        -- injection H as H.
+           rewrite <- H.
+           rewrite -> fold_unfold_evaluate_ltr_Times.
+           assert (IHae2 := IHae2 e).
+           destruct IHae2 as [IHae2_n _].
+           assert (IHae2_n := IHae2_n c2 eq_refl).
+           rewrite -> IHae2_n.
+           assert (IHae1 := IHae1 e).
+           destruct IHae1 as [IHae1_n _].
+           assert (IHae1_n := IHae1_n c1 eq_refl).
+           rewrite -> IHae1_n.
+           reflexivity.
+        -- discriminate H.
+      * case (simplify_ltr_aux ae2) as [c2 | nc2] eqn:C_simplify_ae2.
+        -- discriminate H.
+        -- discriminate H.
+    + intros a H.
+      rewrite -> fold_unfold_simplify_ltr_aux_Times in H.
+      case (simplify_ltr_aux ae1) as [c1 | nc1] eqn:C_simplify_ae1.
+      * case (simplify_ltr_aux ae2) as [c2 | nc2] eqn:C_simplify_ae2.
+        -- discriminate H.
+        -- injection H as H.
+           rewrite <- H.
+           rewrite ->2 fold_unfold_evaluate_ltr_Times.
+           assert (IHae1 := IHae1 e).
+           destruct IHae1 as [IHae1_n _].
+           assert (IHae1_n := IHae1_n c1 eq_refl).
+           rewrite -> IHae1_n.
+           assert (IHae2 := IHae2 e).
+           destruct IHae2 as [_ IHae2_nc].
+           assert (IHae2_nc := IHae2_nc nc2 eq_refl).
+           rewrite -> IHae2_nc.
+           rewrite -> fold_unfold_evaluate_ltr_Literal.
+           reflexivity.
+      * case (simplify_ltr_aux ae2) as [c2 | nc2] eqn:C_simplify_ae2.
+        -- injection H as H.
+           rewrite <- H.
+           rewrite ->2 fold_unfold_evaluate_ltr_Times.
+           assert (IHae2 := IHae2 e).
+           destruct IHae2 as [IHae2_n _].
+           assert (IHae2_n := IHae2_n c2 eq_refl).
+           rewrite -> IHae2_n.
+           assert (IHae1 := IHae1 e).
+           destruct IHae1 as [_ IHae1_nc].
+           assert (IHae1_nc := IHae1_nc nc1 eq_refl).
+           rewrite -> IHae1_nc.
+           rewrite -> fold_unfold_evaluate_ltr_Literal.
+           reflexivity.
+        -- injection H as H.
+           rewrite <- H.
+           rewrite ->2 fold_unfold_evaluate_ltr_Times.
+           assert (IHae2 := IHae2 e).
+           destruct IHae2 as [_ IHae2_nc].
+           assert (IHae2_nc := IHae2_nc nc2 eq_refl).
+           rewrite -> IHae2_nc.
+           assert (IHae1 := IHae1 e).
+           destruct IHae1 as [_ IHae1_nc].
+           assert (IHae1_nc := IHae1_nc nc1 eq_refl).
+           rewrite -> IHae1_nc.
+           reflexivity.
+Qed.
+
+Proposition simplify_ltr_preserves_evaluation :
+  forall (ae : arithmetic_expression) (e : environment nat),
+    evaluate_ltr (simplify_ltr ae) e = evaluate_ltr ae e.
+Proof.
+  intros ae e.
+  unfold simplify_ltr.
+  Check (simplify_ltr_preserves_evaluation_aux ae e).
+  destruct (simplify_ltr_preserves_evaluation_aux ae e) as [H_C H_NC].
+  destruct (simplify_ltr_aux ae) as [c | nc].
+  - assert (H_C := H_C c eq_refl).
+    rewrite -> H_C.
+    rewrite -> fold_unfold_evaluate_ltr_Literal.
+    reflexivity.
+  - assert (H_NC := H_NC nc eq_refl).
+    rewrite -> H_NC.
+    reflexivity.
+Qed.
 
 (* ********** *)
 
