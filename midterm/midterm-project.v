@@ -944,25 +944,10 @@ Compute (test_simplify simplify_rtl).
 
 (* simplify ltr *)
 
-Proposition not_constant_is_injective :
-  forall ae1 ae2 : arithmetic_expression,
-    NC ae1 = NC ae2 ->
-    ae1 = ae2.
-Admitted.
-
-Proposition about_simplify_ltr_aux :
-  forall ae1 a1 ae2 a2 : arithmetic_expression,
-    simplify_ltr_aux ae1 = NC a1 ->
-    simplify_ltr_aux ae2 = NC a2 ->
-    NC a1 = NC a2 ->
-    ae1 = ae2.
-Admitted.
-
 Lemma simplify_ltr_is_idempotent_aux :
-  forall ae : arithmetic_expression,
-    (forall a : arithmetic_expression,
-        simplify_ltr_aux ae = NC a ->
-        simplify_ltr_aux a = NC a).
+  forall ae ae' : arithmetic_expression,
+    simplify_ltr_aux ae = NC ae' ->
+    simplify_ltr_aux ae' = NC ae'.
 Proof.
   intro ae.
   induction ae as [ n | x | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ];
@@ -971,25 +956,66 @@ Proof.
     rewrite -> fold_unfold_simplify_ltr_aux_Literal in H_absurd.
     discriminate H_absurd.
   - intro H.
-    Check (not_constant_is_injective (Name x) a).
     rewrite -> fold_unfold_simplify_ltr_aux_Name in H.
-    Check (not_constant_is_injective (Name x) a H).
-    rewrite <- (not_constant_is_injective (Name x) a H).
+    injection H as H.
+    rewrite <- H.
     rewrite -> fold_unfold_simplify_ltr_aux_Name.
     reflexivity.
   - intro H.
-    case (simplify_ltr_aux (Plus ae1 ae2)) as [c | nc] eqn:C_Plus.
-    + discriminate H.
-    + assert (H_inj := not_constant_is_injective nc a H).
-      rewrite <- H.
-      rewrite <- C_Plus.
-      rewrite <- H_inj.
-      
-      rewrite <- H_inj.
-      assert (IHae1 := IHae1 nc).
-    
-Admitted.
-
+    rewrite -> fold_unfold_simplify_ltr_aux_Plus in H.
+    case (simplify_ltr_aux ae1) as [c1 | nc1] eqn:C_simplify_ae1.
+    + case (simplify_ltr_aux ae2) as [c2 | nc2] eqn:C_simplify_ae2.
+      * discriminate H.
+      * injection H as H.
+        rewrite <- H.
+        rewrite -> fold_unfold_simplify_ltr_aux_Plus.
+        rewrite -> fold_unfold_simplify_ltr_aux_Literal.
+        Check (IHae2 nc2 eq_refl).
+        rewrite -> (IHae2 nc2 eq_refl).
+        reflexivity.
+    + case (simplify_ltr_aux ae2) as [c2 | nc2] eqn:C_simplify_ae2.
+      * injection H as H.
+        rewrite <- H.
+        rewrite -> fold_unfold_simplify_ltr_aux_Plus.
+        Check (IHae1 nc1 eq_refl).
+        rewrite -> (IHae1 nc1 eq_refl).
+        rewrite -> fold_unfold_simplify_ltr_aux_Literal.
+        reflexivity.
+      * injection H as H.
+        rewrite <- H.
+        rewrite -> fold_unfold_simplify_ltr_aux_Plus.
+        Check (IHae1 nc1 eq_refl).
+        rewrite -> (IHae1 nc1 eq_refl).
+        rewrite -> (IHae2 nc2 eq_refl).
+        reflexivity.
+  - intro H.
+    rewrite -> fold_unfold_simplify_ltr_aux_Times in H.
+    case (simplify_ltr_aux ae1) as [c1 | nc1] eqn:C_simplify_ae1.
+    + case (simplify_ltr_aux ae2) as [c2 | nc2] eqn:C_simplify_ae2.
+      * discriminate H.
+      * injection H as H.
+        rewrite <- H.
+        rewrite -> fold_unfold_simplify_ltr_aux_Times.
+        rewrite -> fold_unfold_simplify_ltr_aux_Literal.
+        Check (IHae2 nc2 eq_refl).
+        rewrite -> (IHae2 nc2 eq_refl).
+        reflexivity.
+    + case (simplify_ltr_aux ae2) as [c2 | nc2] eqn:C_simplify_ae2.
+      * injection H as H.
+        rewrite <- H.
+        rewrite -> fold_unfold_simplify_ltr_aux_Times.
+        Check (IHae1 nc1 eq_refl).
+        rewrite -> (IHae1 nc1 eq_refl).
+        rewrite -> fold_unfold_simplify_ltr_aux_Literal.
+        reflexivity.
+      * injection H as H.
+        rewrite <- H.
+        rewrite -> fold_unfold_simplify_ltr_aux_Times.
+        Check (IHae1 nc1 eq_refl).
+        rewrite -> (IHae1 nc1 eq_refl).
+        rewrite -> (IHae2 nc2 eq_refl).
+        reflexivity.
+Qed.
 
 Proposition simplify_ltr_is_idempotent :
   forall ae : arithmetic_expression,
