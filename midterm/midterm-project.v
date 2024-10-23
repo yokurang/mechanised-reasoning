@@ -501,7 +501,7 @@ Inductive constant_or_not_constant : Type :=
 | C : nat -> constant_or_not_constant
 | NC : arithmetic_expression -> constant_or_not_constant.
 
-(* case constant *)
+(* case Literal *)
 
 Definition test_in_simplify_Literal : arithmetic_expression :=
   Literal 0.
