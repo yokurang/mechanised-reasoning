@@ -6,7 +6,7 @@
 (* ********** *)
 
 Ltac fold_unfold_tactic name := intros; unfold name; fold name; reflexivity.
-  
+
 Require Import Arith Bool List String Ascii.
 
 (* ********** *)
@@ -67,7 +67,7 @@ Fixpoint arithmetic_expression_eqb (ae1 ae2 : arithmetic_expression) : bool :=
       false
     end
   | Name x1 =>
-    match ae2 with 
+    match ae2 with
       Name x2 =>
       name_eqb x1 x2
     | _ =>
@@ -177,7 +177,7 @@ Lemma fold_unfold_evaluate_ltr_Literal :
 Proof.
   fold_unfold_tactic evaluate_ltr.
 Qed.
-    
+
 Lemma fold_unfold_evaluate_ltr_Name :
   forall (x : string) (e : environment nat),
     evaluate_ltr (Name x) e =
@@ -193,7 +193,7 @@ Qed.
 
 Lemma fold_unfold_evaluate_ltr_Plus :
   forall (ae1 ae2 : arithmetic_expression) (e : environment nat),
-    evaluate_ltr (Plus ae1 ae2) e = 
+    evaluate_ltr (Plus ae1 ae2) e =
       match evaluate_ltr ae1 e with
         Source_expressible_nat n1 =>
           match evaluate_ltr ae2 e with
@@ -261,6 +261,30 @@ Fixpoint compile_ltr_aux (ae : arithmetic_expression) : list byte_code_instructi
     | Times ae1 ae2 =>
       compile_ltr_aux ae1 ++ compile_ltr_aux ae2 ++ MUL :: nil
     end.
+
+Lemma fold_unfold_compile_ltr_aux_Literal :
+  forall (n : nat),
+    compile_ltr_aux (Literal n) =
+      PUSH n :: nil.
+Proof.
+  fold_unfold_tactic compile_ltr_aux.
+Qed.
+
+Lemma fold_unfold_compile_ltr_aux_Name :
+  forall (x : string),
+    compile_ltr_aux (Name x) =
+      LOOKUP x :: nil.
+Proof.
+  fold_unfold_tactic compile_ltr_aux.
+Qed.
+
+Lemma fold_unfold_compile_ltr_aux_Plus :
+  forall (ae1 ae2 : arithmetic_expression),
+    compile_ltr_aux (Plus ae1 ae2) =
+       compile_ltr_aux ae1 ++ compile_ltr_aux ae2 ++ (ADD :: nil).
+Proof.
+  fold_unfold_tactic compile_ltr_aux.
+Qed.
 
 Definition compile_ltr (sp : source_program) : target_program :=
   match sp with
@@ -333,6 +357,29 @@ Fixpoint fetch_decode_execute_loop_ltr (bcis : list byte_code_instruction) (e : 
     end
   end.
 
+Lemma fold_unfold_fetch_decode_execute_loop_ltr_nil :
+  forall (e : environment nat)
+         (ds : data_stack),
+    fetch_decode_execute_loop_ltr nil e ds =
+      OK ds.
+Proof.
+  fold_unfold_tactic fetch_decode_execute_loop_ltr.
+Qed.
+
+Lemma fold_unfold_fetch_decode_execute_loop_ltr_cons :
+  forall (bci : byte_code_instruction)
+         (bcis' : list byte_code_instruction)
+         (e : environment nat)
+         (ds : data_stack),
+    fetch_decode_execute_loop_ltr (bci :: bcis') e ds =
+      match decode_execute_ltr bci e ds with
+      | OK ds' => fetch_decode_execute_loop_ltr bcis' e ds'
+      | KO s => KO s
+      end.
+Proof.
+  fold_unfold_tactic fetch_decode_execute_loop_ltr.
+Qed.
+
 Inductive target_msg : Type :=
   Target_undeclared_name : string -> target_msg
 | Target_stack_underflow : byte_code_instruction -> target_msg
@@ -362,6 +409,66 @@ Definition run_ltr (tp : target_program) (e : environment nat) : target_expressi
 
 (* ********** *)
 
+Lemma about_eval_nat :
+  forall (ae : arithmetic_expression)
+         (e : environment nat)
+         (ds : data_stack),
+    (forall (n : nat),
+        evaluate_ltr ae e = Source_expressible_nat n ->
+        fetch_decode_execute_loop_ltr (compile_ltr_aux ae) e ds = OK (n :: ds)).
+Proof.
+  intros ae.
+  induction ae as [n' | s | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intros e ds n H_ae.
+  - rewrite -> fold_unfold_compile_ltr_aux_Literal.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_ltr_cons.
+    unfold decode_execute_ltr.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_ltr_nil.
+    rewrite -> fold_unfold_evaluate_ltr_Literal in H_ae.
+    injection H_ae as eq_n_n'.
+    rewrite -> eq_n_n'.
+    reflexivity.
+  - rewrite -> fold_unfold_compile_ltr_aux_Name.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_ltr_cons.
+    unfold decode_execute_ltr.
+    case (lookup nat s e) as [n' | s'] eqn:H_lookup.
+    * rewrite -> fold_unfold_fetch_decode_execute_loop_ltr_nil.
+      rewrite -> fold_unfold_evaluate_ltr_Name in H_ae.
+      rewrite -> H_lookup in H_ae.
+      injection H_ae as eq_n_n'.
+      rewrite -> eq_n_n'.
+      reflexivity.
+Admitted.
+
+Lemma about_eval_msg :
+  forall (ae : arithmetic_expression)
+         (e : environment nat)
+         (ds : data_stack),
+    (forall (s : string),
+        evaluate_ltr ae e = Source_expressible_msg (Source_undeclared_name s) ->
+        fetch_decode_execute_loop_ltr (compile_ltr_aux ae) e ds = KO (Result_undeclared_name s)).
+Proof.
+Admitted.
+
+Lemma about_run_nat :
+  forall (ae : arithmetic_expression)
+         (e : environment nat)
+         (ds : data_stack),
+    (forall (n : nat),
+        run_ltr (Target_program (compile_ltr_aux ae)) e = Target_expressible_nat n ->
+        evaluate_ltr ae e = Source_expressible_nat n).
+Proof.
+Admitted.
+
+Lemma about_run_msg :
+  forall (ae : arithmetic_expression)
+         (e : environment nat)
+         (ds : data_stack),
+    (forall (s : string),
+        run_ltr (Target_program (compile_ltr_aux ae)) e = Target_expressible_msg (Target_undeclared_name s) ->
+        evaluate_ltr ae e = Source_expressible_msg (Source_undeclared_name s)).
+Proof.
+Admitted.
+
 Theorem the_commuting_diagram_ltr :
   forall (sp : source_program)
          (e : environment nat),
@@ -375,7 +482,53 @@ Theorem the_commuting_diagram_ltr :
         <->
         run_ltr (compile_ltr sp) e = Target_expressible_msg (Target_undeclared_name s)).
 Proof.
-Admitted.
+  intros [ae] e.
+  unfold interpret_ltr, compile_ltr.
+  split.
+  - intros n.
+    split; intro H.
+    + case (evaluate_ltr ae e) as [n' | [s]] eqn:H_ae.
+      * unfold run_ltr.
+        Check (about_eval_nat ae e nil n' H_ae).
+        rewrite -> (about_eval_nat ae e nil n' H_ae).
+        injection H as H.
+        rewrite -> H.
+        reflexivity.
+      * discriminate H.
+    + case (run_ltr (Target_program (compile_ltr_aux ae)) e) as [n' | [s | bcis | | ]] eqn:H_ae.
+      * Check (about_run_nat ae e nil n' H_ae).
+        rewrite -> (about_run_nat ae e nil n' H_ae).
+        injection H as H.
+        rewrite -> H.
+        reflexivity.
+      * discriminate H.
+      * discriminate H.
+      * discriminate H.
+      * discriminate H.
+  - intros s.
+    split; intro H.
+    + case (evaluate_ltr ae e) as [n | [s']] eqn:H_ae.
+      * discriminate H.
+      * unfold run_ltr.
+        Check (about_eval_msg ae e nil s' H_ae).
+        rewrite -> (about_eval_msg ae e nil s' H_ae).
+        injection H as H.
+        rewrite -> H.
+        reflexivity.
+    + case (run_ltr (Target_program (compile_ltr_aux ae)) e) as [n | [s' | bci | | ]] eqn:H_ae.
+      * discriminate H.
+      * Check (about_run_msg ae e nil s' H_ae).
+        rewrite -> (about_run_msg ae e nil s' H_ae).
+        injection H as H.
+        rewrite -> H.
+        reflexivity.
+      * injection H as H.
+        discriminate H.
+      * injection H as H.
+        discriminate H.
+      * injection H as H.
+        discriminate H.
+Qed.
 
 (* ********** *)
 
@@ -731,7 +884,7 @@ Fixpoint simplify_ltr_aux (ae : arithmetic_expression) : constant_or_not_constan
           end
       end
   end.
-  
+
 Lemma fold_unfold_simplify_ltr_aux_Literal :
   forall n : nat,
     simplify_ltr_aux (Literal n) = C n.
