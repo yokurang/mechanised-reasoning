@@ -889,18 +889,6 @@ Qed.
 Theorem simplify_ltr_is_idempotent :
   forall ae : arithmetic_expression,
     simplify_ltr ae = simplify_ltr (simplify_ltr ae).
-  Compute (let x := simplify_ltr test_ae5 in
-           let y := simplify_ltr (simplify_ltr test_ae5) in
-           x = y).
-  Compute (let x := simplify_ltr test_ae10 in
-           let y := simplify_ltr (simplify_ltr test_ae10) in
-           x = y).
-  Compute (let x := simplify_ltr test_ae12 in
-           let y := simplify_ltr (simplify_ltr test_ae12) in
-           x = y).
-  Compute (let x := simplify_ltr test_ae14 in
-           let y := simplify_ltr (simplify_ltr test_ae14) in
-           x = y).
 Proof.
   intro ae.
   unfold simplify_ltr.
@@ -981,6 +969,7 @@ Proof.
       * rewrite -> fold_unfold_evaluate_ltr_Times.
         reflexivity.
 Qed.
+
 Theorem simplify_ltr_preserves_evaluation' :
   forall (ae : arithmetic_expression)
          (e : environment nat),
@@ -988,7 +977,7 @@ Theorem simplify_ltr_preserves_evaluation' :
 Proof.
   intros ae e.
   unfold simplify_ltr.
-  exact (simplify_ltr_is_preserving_aux ae e).
+  exact (simplify_ltr_preserves_evaluation_aux' ae e).
 Qed.
 
 (* alan's way *)
@@ -999,9 +988,9 @@ Lemma simplify_ltr_preserves_evaluation_aux :
         simplify_ltr_aux ae = C n ->
         evaluate_ltr ae e = Source_expressible_nat n)
     /\
-    (forall a' : arithmetic_expression,
-        simplify_ltr_aux ae = NC a' ->
-        evaluate_ltr ae e = evaluate_ltr a' e).
+    (forall ae' : arithmetic_expression,
+        simplify_ltr_aux ae = NC ae' ->
+        evaluate_ltr ae e = evaluate_ltr ae' e).
 Proof.
   intro ae.
   induction ae as [ n | x | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ];
@@ -1244,6 +1233,166 @@ Compute (let sp1 := Source_program (Plus (Name "x"%string) (Name "y"%string)) in
 
 (* ***** *)
 
+
+(* nice stuff *)
+
+Definition sp_from_ae (ae : arithmetic_expression) : source_program :=
+  Source_program ae.
+
+Definition apply_candidate (candidate : source_program -> target_program)
+  (test : arithmetic_expression) :=
+  candidate (sp_from_ae test).
+
+Compute (apply_candidate compile_peculiar test_in_simplify_Literal).
+
+Compute (apply_candidate compile_peculiar test_in_simplify_Name).
+
+Compute (apply_candidate compile_peculiar test_in_simplify_Plus_C_C).
+
+Compute (apply_candidate compile_peculiar test_in_simplify_Plus_C_NC).
+
+Compute (apply_candidate compile_peculiar test_in_simplify_Plus_NC_C).
+
+Compute (apply_candidate compile_peculiar test_in_simplify_Plus_NC_NC).
+
+Compute (apply_candidate compile_peculiar test_in_simplify_Times_C_C).
+
+Compute (apply_candidate compile_peculiar test_in_simplify_Times_C_NC).
+
+Compute (apply_candidate compile_peculiar test_in_simplify_Times_NC_C).
+
+Compute (apply_candidate compile_peculiar test_in_simplify_Times_NC_NC).
+
+(* ***** test cases ***** *)
+
+Definition test_ae1 : arithmetic_expression :=
+  Plus
+    (Literal 1)
+    (Literal 10).
+
+Definition test_ae2 : arithmetic_expression :=
+  Plus
+    (Literal 1)
+    (Name "x"%string).
+
+Definition test_ae3 : arithmetic_expression :=
+  Times
+    (Literal 2)
+    (Literal 3).
+
+Definition test_ae4 : arithmetic_expression :=
+  Times
+    (Literal 2)
+    (Name "y"%string).
+
+Definition test_ae5 : arithmetic_expression :=
+  Plus
+    (Plus
+       (Literal 1)
+       (Literal 2))
+    (Plus
+       (Literal 3)
+       (Name "x"%string)).
+
+Definition test_ae6 : arithmetic_expression :=
+  Plus
+    (Times
+       (Literal 2)
+       (Literal 3))
+    (Name "z"%string).
+
+Definition test_ae7 : arithmetic_expression :=
+  Plus
+    (Name "x"%string)
+    (Name "y"%string).
+
+Definition test_ae8 : arithmetic_expression :=
+  Times
+    (Name "x"%string)
+    (Name "y"%string).
+
+Definition test_ae9 : arithmetic_expression :=
+  Plus
+    (Plus
+       (Literal 2)
+       (Name "x"%string))
+    (Literal 3).
+
+Definition test_ae10 : arithmetic_expression :=
+  Times
+    (Times
+       (Literal 4)
+       (Name "y"%string))
+    (Literal 5).
+
+Definition test_ae11 : arithmetic_expression :=
+  Plus
+    (Times
+       (Literal 2)
+       (Name "a"%string))
+    (Plus
+       (Times
+          (Literal 3)
+          (Name "b"%string))
+       (Literal 5)).
+
+Definition test_ae12 : arithmetic_expression :=
+  Times
+    (Plus
+       (Literal 1)
+       (Name "x"%string))
+    (Plus
+       (Name "y"%string)
+       (Literal 2)).
+
+Definition test_ae13 : arithmetic_expression :=
+  (Plus
+     (Plus
+        (Literal 1)
+        (Literal 2))
+     (Plus
+        (Name "x"%string)
+        (Literal 3))).
+
+Definition test_ae14 : arithmetic_expression :=
+  (Times
+     (Times
+        (Literal 1)
+        (Literal 2))
+     (Times
+        (Name "x"%string)
+        (Literal 3))).
+
+Compute (apply_candidate compile_peculiar test_ae1).
+
+Compute (apply_candidate compile_peculiar test_ae2).
+
+Compute (apply_candidate compile_peculiar test_ae3).
+
+Compute (apply_candidate compile_peculiar test_ae4).
+
+Compute (apply_candidate compile_peculiar test_ae5).
+
+Compute (apply_candidate compile_peculiar test_ae6).
+
+Compute (apply_candidate compile_peculiar test_ae7).
+
+Compute (apply_candidate compile_peculiar test_ae8).
+
+Compute (apply_candidate compile_peculiar test_ae9).
+
+Compute (apply_candidate compile_peculiar test_ae10).
+
+Compute (apply_candidate compile_peculiar test_ae11).
+
+Compute (apply_candidate compile_peculiar test_ae12).
+
+Compute (apply_candidate compile_peculiar test_ae13).
+
+Compute (apply_candidate compile_peculiar test_ae14).
+
+(* ***** *)
+
 (* compile_bizarre *)
 
 Fixpoint compile_bizarre_aux_Plus (ae : arithmetic_expression) (k : list byte_code_instruction -> list byte_code_instruction -> list byte_code_instruction) (a : list byte_code_instruction) : list byte_code_instruction :=
@@ -1287,7 +1436,59 @@ Definition compile_bizarre (sp : source_program) : target_program :=
     Target_program (compile_bizarre_aux ae)
   end.
 
+Compute (apply_candidate compile_bizarre test_ae1).
+
+Compute (apply_candidate compile_bizarre test_ae2).
+
+Compute (apply_candidate compile_bizarre test_ae3).
+
+Compute (apply_candidate compile_bizarre test_ae4).
+
+Compute (apply_candidate compile_bizarre test_ae5).
+
+Compute (apply_candidate compile_bizarre test_ae6).
+
+Compute (apply_candidate compile_bizarre test_ae7).
+
+Compute (apply_candidate compile_bizarre test_ae8).
+
+Compute (apply_candidate compile_bizarre test_ae9).
+
+Compute (apply_candidate compile_bizarre test_ae10).
+
+Compute (apply_candidate compile_bizarre test_ae11).
+
+Compute (apply_candidate compile_bizarre test_ae12).
+
+Compute (apply_candidate compile_bizarre test_ae13).
+
+Compute (apply_candidate compile_bizarre test_ae14).
+
+Compute (apply_candidate compile_bizarre test_in_simplify_Literal).
+
+Compute (apply_candidate compile_bizarre test_in_simplify_Name).
+
+Compute (apply_candidate compile_bizarre test_in_simplify_Plus_C_C).
+
+Compute (apply_candidate compile_bizarre test_in_simplify_Plus_C_NC).
+
+Compute (apply_candidate compile_bizarre test_in_simplify_Plus_NC_C).
+
+Compute (apply_candidate compile_bizarre test_in_simplify_Plus_NC_NC).
+
+Compute (apply_candidate compile_bizarre test_in_simplify_Times_C_C).
+
+Compute (apply_candidate compile_bizarre test_in_simplify_Times_C_NC).
+
+Compute (apply_candidate compile_bizarre test_in_simplify_Times_NC_C).
+
+Compute (apply_candidate compile_bizarre test_in_simplify_Times_NC_NC).
+
 (* ***** *)
+
+(*
+  compile_bizarre applies super_refactor_right. 
+*)
 
 (* compile_quaint *)
 
