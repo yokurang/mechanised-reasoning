@@ -262,6 +262,30 @@ Fixpoint compile_ltr_aux (ae : arithmetic_expression) : list byte_code_instructi
       compile_ltr_aux ae1 ++ compile_ltr_aux ae2 ++ MUL :: nil
     end.
 
+Lemma fold_unfold_compile_ltr_aux_Literal :
+  forall (n : nat),
+    compile_ltr_aux (Literal n) =
+      PUSH n :: nil.
+Proof.
+  fold_unfold_tactic compile_ltr_aux.
+Qed.
+
+Lemma fold_unfold_compile_ltr_aux_Name :
+  forall (x : string),
+    compile_ltr_aux (Name x) =
+      LOOKUP x :: nil.
+Proof.
+  fold_unfold_tactic compile_ltr_aux.
+Qed.
+
+Lemma fold_unfold_compile_ltr_aux_Plus :
+  forall (ae1 ae2 : arithmetic_expression),
+    compile_ltr_aux (Plus ae1 ae2) =
+       compile_ltr_aux ae1 ++ compile_ltr_aux ae2 ++ (ADD :: nil).
+Proof.
+  fold_unfold_tactic compile_ltr_aux.
+Qed.
+
 Definition compile_ltr (sp : source_program) : target_program :=
   match sp with
     Source_program ae =>
@@ -333,6 +357,29 @@ Fixpoint fetch_decode_execute_loop_ltr (bcis : list byte_code_instruction) (e : 
     end
   end.
 
+Lemma fold_unfold_fetch_decode_execute_loop_ltr_nil :
+  forall (e : environment nat)
+         (ds : data_stack),
+    fetch_decode_execute_loop_ltr nil e ds =
+      OK ds.
+Proof.
+  fold_unfold_tactic fetch_decode_execute_loop_ltr.
+Qed.
+
+Lemma fold_unfold_fetch_decode_execute_loop_ltr_cons :
+  forall (bci : byte_code_instruction)
+         (bcis' : list byte_code_instruction)
+         (e : environment nat)
+         (ds : data_stack),
+    fetch_decode_execute_loop_ltr (bci :: bcis') e ds =
+      match decode_execute_ltr bci e ds with
+      | OK ds' => fetch_decode_execute_loop_ltr bcis' e ds'
+      | KO s => KO s
+      end.
+Proof.
+  fold_unfold_tactic fetch_decode_execute_loop_ltr.
+Qed.
+
 Inductive target_msg : Type :=
   Target_undeclared_name : string -> target_msg
 | Target_stack_underflow : byte_code_instruction -> target_msg
@@ -370,6 +417,26 @@ Lemma about_eval_nat :
         evaluate_ltr ae e = Source_expressible_nat n ->
         fetch_decode_execute_loop_ltr (compile_ltr_aux ae) e ds = OK (n :: ds)).
 Proof.
+  intros ae.
+  induction ae as [n' | s | ae1 IHae1 ae2 IHae2 | ae1 IHae1 ae2 IHae2 ]; intros e ds n H_ae.
+  - rewrite -> fold_unfold_compile_ltr_aux_Literal.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_ltr_cons.
+    unfold decode_execute_ltr.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_ltr_nil.
+    rewrite -> fold_unfold_evaluate_ltr_Literal in H_ae.
+    injection H_ae as eq_n_n'.
+    rewrite -> eq_n_n'.
+    reflexivity.
+  - rewrite -> fold_unfold_compile_ltr_aux_Name.
+    rewrite -> fold_unfold_fetch_decode_execute_loop_ltr_cons.
+    unfold decode_execute_ltr.
+    case (lookup nat s e) as [n' | s'] eqn:H_lookup.
+    * rewrite -> fold_unfold_fetch_decode_execute_loop_ltr_nil.
+      rewrite -> fold_unfold_evaluate_ltr_Name in H_ae.
+      rewrite -> H_lookup in H_ae.
+      injection H_ae as eq_n_n'.
+      rewrite -> eq_n_n'.
+      reflexivity.
 Admitted.
 
 Lemma about_eval_msg :
